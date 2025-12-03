@@ -1,0 +1,311 @@
+/* Государственный пожарный контроль МЧС РК - Портальная тема */
+
+:root {
+  /* Основные цвета портала */
+  --portal-primary: #1e3a8a;
+  --portal-primary-light: #3b82f6;
+  --portal-secondary: #1f2937;
+  --portal-accent: #dc2626;
+  --portal-warning: #f59e0b;
+  --portal-success: #10b981;
+  
+  /* Градиенты фона */
+  --portal-bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%);
+  --portal-card-gradient: linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  
+  /* Тени и эффекты */
+  --portal-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  --portal-shadow-hover: 0 15px 35px rgba(0,0,0,0.4);
+  --portal-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Основной фон портала */
+.portal-bg {
+  background: var(--portal-bg-gradient);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.portal-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Заголовок портала */
+.portal-header {
+  background: rgba(30, 58, 138, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--portal-shadow);
+}
+
+.portal-title {
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin: 0;
+  padding: 1rem 0;
+}
+
+.portal-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* Плитки модулей */
+.portal-modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  padding: 3rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.portal-module {
+  background: var(--portal-card-gradient);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  color: white;
+}
+
+.portal-module::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--portal-primary-light), var(--portal-accent));
+  transition: height 0.3s ease;
+}
+
+.portal-module:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--portal-shadow-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.portal-module:hover::before {
+  height: 6px;
+  box-shadow: var(--portal-glow);
+}
+
+.portal-module-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+  opacity: 0.9;
+}
+
+.portal-module h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: white;
+}
+
+.portal-module p {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+}
+
+.portal-module-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+/* Статусы модулей */
+.module-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.module-status.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.module-status.development {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.module-status.planned {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Навигационная панель */
+.portal-nav {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 1rem 0;
+  margin: 2rem 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.portal-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.portal-nav a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.portal-nav a:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Футер портала */
+.portal-footer {
+  text-align: center;
+  padding: 2rem 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 4rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .portal-modules {
+    grid-template-columns: 1fr;
+    padding: 2rem 1rem;
+    gap: 1.5rem;
+  }
+  
+  .portal-module {
+    padding: 1.5rem;
+  }
+  
+  .portal-title {
+    font-size: 1.5rem;
+  }
+  
+  .portal-nav ul {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+/* Анимации */
+@keyframes portal-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-module {
+  animation: portal-fade-in 0.6s ease-out;
+}
+
+.portal-module:nth-child(1) { animation-delay: 0.1s; }
+.portal-module:nth-child(2) { animation-delay: 0.2s; }
+.portal-module:nth-child(3) { animation-delay: 0.3s; }
+
+/* Темная/светлая тема переключатель */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Светлая тема */
+body.light-theme {
+  --portal-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 75%, #64748b 100%);
+}
+
+body.light-theme .portal-bg {
+  background: var(--portal-bg-gradient);
+}
+
+body.light-theme .portal-module {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .portal-module h3 {
+  color: #1f2937;
+}
+
+body.light-theme .portal-module p {
+  color: #4b5563;
+}
+
+body.light-theme .portal-header {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+}
+
+body.light-theme .portal-title {
+  color: #1e3a8a;
+}
+
+body.light-theme .portal-subtitle {
+  color: #4b5563;
+}

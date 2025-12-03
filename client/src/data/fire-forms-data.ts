@@ -1,0 +1,170 @@
+// Данные для форм отчетности согласно Приказу № 928 МЧС РК
+
+// Форма 2-ССГ: Случаи горения, не подлежащие учету как пожары
+export const NON_FIRE_CASES = [
+  {
+    code: '1',
+    name: 'Случаи горения, обусловленные спецификой технологического процесса производства (заложенные в технологический регламент или техническую документацию) или условиями работы промышленных установок и агрегатов, а также бытовых печей для обогрева помещений'
+  },
+  {
+    code: '2', 
+    name: 'Случаи горения, как результат обработки предметов огнем, теплом, или иным термическим (тепловым) воздействием с целью их переработки, изменения качественных характеристик (сушка, варка, глажение, копчение, жаренье, плавление)'
+  },
+  {
+    code: '3',
+    name: 'Взрывы, вспышки и разряды статического электричества, не вызвавшие возникновения пожара'
+  },
+  {
+    code: '4',
+    name: 'Случаи коротких замыканий электросетей, в электрооборудовании, бытовых и промышленных электроприборах, не вызвавшие распространения горения за пределы аппарата, агрегата и механизма'
+  },
+  {
+    code: '5',
+    name: 'Случаи задымления при неисправности бытовых электроприборов и сгорания пищи при ее приготовлении, не вызвавшие возникновения пожара'
+  },
+  {
+    code: '6',
+    name: 'Загорания бесхозных зданий и бесхозных транспортных средств, сухой травы, листьев, тополиного пуха на открытых территориях и степных массивах, пожнивных остатков, стерни, а также мусора на свалках, пустырях, на территории домовладений и объектов хозяйствования, обочинах дорог, контейнерных площадок для его сбора, в контейнерах (урнах) для его сбора, в лифтовых шахтах (лифтах) жилых домов, в мусоросборниках (мусоропроводах) жилых домов, на лестничных клетках жилых домов, в подвальных и чердачных помещениях жилых домов'
+  },
+  {
+    code: '7',
+    name: 'Случаи покушения на самоубийство и самоубийств путем самосожжения, если они не вызвали распространения горения'
+  },
+  {
+    code: '8',
+    name: 'Случаи пожаров автотранспортных средств, причиной которых явилось дорожно-транспортное происшествие'
+  },
+  {
+    code: '9',
+    name: 'Пожары, причиной которых явились авиационные, железнодорожные аварии, террористические акты, военные действия, спецоперации правоохранительных органов, землетрясения'
+  },
+  {
+    code: '10',
+    name: 'Случаи отравления людей угарным газом со смертельным исходом, от печного отопления (каминов)'
+  },
+  {
+    code: '11',
+    name: 'Случаи самовозгорания пирофорных соединений, без последствий и ущерба'
+  }
+];
+
+// Форма 4-СОВП: Объекты возникновения пожаров (расширенная согласно приказу)
+export const FIRE_OBJECTS = [
+  // Жилые здания
+  { code: '1.1', name: 'Жилые дома (индивидуальные)', category: 'residential', subcategory: 'individual' },
+  { code: '1.2', name: 'Жилые дома (многоквартирные)', category: 'residential', subcategory: 'apartment' },
+  { code: '1.3', name: 'Общежития', category: 'residential', subcategory: 'dormitory' },
+  { code: '1.4', name: 'Гостиницы, мотели', category: 'residential', subcategory: 'hotel' },
+  
+  // Административные и общественные здания
+  { code: '2.1', name: 'Административные здания', category: 'public', subcategory: 'administrative' },
+  { code: '2.2', name: 'Учреждения образования', category: 'public', subcategory: 'education' },
+  { code: '2.3', name: 'Учреждения здравоохранения', category: 'public', subcategory: 'healthcare' },
+  { code: '2.4', name: 'Учреждения культуры', category: 'public', subcategory: 'culture' },
+  { code: '2.5', name: 'Спортивные сооружения', category: 'public', subcategory: 'sports' },
+  
+  // Торговые предприятия
+  { code: '3.1', name: 'Магазины, торговые центры', category: 'commercial', subcategory: 'retail' },
+  { code: '3.2', name: 'Рынки, базары', category: 'commercial', subcategory: 'market' },
+  { code: '3.3', name: 'Предприятия общественного питания', category: 'commercial', subcategory: 'catering' },
+  
+  // Производственные объекты
+  { code: '4.1', name: 'Промышленные предприятия', category: 'industrial', subcategory: 'manufacturing' },
+  { code: '4.2', name: 'Энергетические объекты', category: 'industrial', subcategory: 'energy' },
+  { code: '4.3', name: 'Нефтегазовые объекты', category: 'industrial', subcategory: 'oil_gas' },
+  { code: '4.4', name: 'Химические предприятия', category: 'industrial', subcategory: 'chemical' },
+  
+  // Складские помещения
+  { code: '5.1', name: 'Склады готовой продукции', category: 'storage', subcategory: 'finished_goods' },
+  { code: '5.2', name: 'Склады сырья и материалов', category: 'storage', subcategory: 'raw_materials' },
+  { code: '5.3', name: 'Зернохранилища', category: 'storage', subcategory: 'grain' },
+  
+  // Сельскохозяйственные объекты
+  { code: '6.1', name: 'Животноводческие фермы', category: 'agricultural', subcategory: 'livestock' },
+  { code: '6.2', name: 'Растениеводческие объекты', category: 'agricultural', subcategory: 'crops' },
+  { code: '6.3', name: 'Сельскохозяйственная техника', category: 'agricultural', subcategory: 'machinery' },
+  
+  // Транспорт
+  { code: '7.1', name: 'Легковые автомобили', category: 'transport', subcategory: 'passenger_car' },
+  { code: '7.2', name: 'Грузовые автомобили', category: 'transport', subcategory: 'truck' },
+  { code: '7.3', name: 'Автобусы', category: 'transport', subcategory: 'bus' },
+  { code: '7.4', name: 'Железнодорожный транспорт', category: 'transport', subcategory: 'railway' },
+  { code: '7.5', name: 'Авиационный транспорт', category: 'transport', subcategory: 'aviation' },
+  { code: '7.6', name: 'Водный транспорт', category: 'transport', subcategory: 'marine' },
+  
+  // Природные территории
+  { code: '8.1', name: 'Лесные массивы', category: 'natural', subcategory: 'forest' },
+  { code: '8.2', name: 'Степная растительность', category: 'natural', subcategory: 'steppe' },
+  { code: '8.3', name: 'Сельскохозяйственные угодья', category: 'natural', subcategory: 'farmland' },
+  
+  // Прочие объекты
+  { code: '9.1', name: 'Мусорные полигоны', category: 'other', subcategory: 'waste' },
+  { code: '9.2', name: 'Строящиеся объекты', category: 'other', subcategory: 'construction' },
+  { code: '9.3', name: 'Заброшенные здания', category: 'other', subcategory: 'abandoned' }
+];
+
+// Форма 6-ССПЗ: Типы степных пожаров и загораний
+export const STEPPE_FIRE_TYPES = [
+  { code: '1', name: 'Степные пожары (травяные)', area_type: 'steppe' },
+  { code: '2', name: 'Лесные пожары', area_type: 'forest' },
+  { code: '3', name: 'Пожары на сельскохозяйственных землях', area_type: 'agricultural' },
+  { code: '4', name: 'Пожары тростника и камыша', area_type: 'wetland' },
+  { code: '5', name: 'Торфяные пожары', area_type: 'peat' },
+  { code: '6', name: 'Пожары мусорных свалок', area_type: 'waste' }
+];
+
+// Классификация населенных пунктов для отчетности
+export const SETTLEMENT_TYPES = [
+  { code: 'city', name: 'Города', description: 'Городские населенные пункты' },
+  { code: 'rural', name: 'Сельская местность', description: 'Сельские населенные пункты' }
+];
+
+// Возрастные группы для статистики жертв
+export const AGE_GROUPS = [
+  { code: 'children', name: 'Дети', description: 'Лица до 18 лет', min_age: 0, max_age: 17 },
+  { code: 'adults', name: 'Взрослые', description: 'Лица от 18 до 65 лет', min_age: 18, max_age: 65 },
+  { code: 'elderly', name: 'Пожилые', description: 'Лица старше 65 лет', min_age: 65, max_age: null }
+];
+
+// Состояния пострадавших для учета
+export const VICTIM_CONDITIONS = [
+  { code: 'sober', name: 'В трезвом состоянии' },
+  { code: 'intoxicated', name: 'В нетрезвом состоянии' },
+  { code: 'unknown', name: 'Состояние не установлено' }
+];
+
+// Типы травм и повреждений
+export const INJURY_TYPES = [
+  { code: 'burns', name: 'Ожоги', severity: ['легкие', 'средние', 'тяжелые'] },
+  { code: 'poisoning', name: 'Отравление угарным газом', severity: ['легкое', 'среднее', 'тяжелое'] },
+  { code: 'smoke_inhalation', name: 'Отравление продуктами горения', severity: ['легкое', 'среднее', 'тяжелое'] },
+  { code: 'trauma', name: 'Механические травмы', severity: ['легкие', 'средние', 'тяжелые'] },
+  { code: 'combined', name: 'Комбинированные травмы', severity: ['средние', 'тяжелые'] }
+];
+
+// Причины отравления угарным газом (для формы CO)
+export const CO_POISONING_CAUSES = [
+  { code: '1', name: 'Неисправность печного отопления' },
+  { code: '2', name: 'Неисправность газового оборудования' },
+  { code: '3', name: 'Нарушение правил эксплуатации каминов' },
+  { code: '4', name: 'Использование мангалов в закрытых помещениях' },
+  { code: '5', name: 'Неисправность вентиляции' },
+  { code: '6', name: 'Работающий двигатель в гараже' },
+  { code: '7', name: 'Прочие причины' }
+];
+
+export function getFireCauseByCode(code: string) {
+  return FIRE_CAUSES.find(cause => cause.code === code);
+}
+
+export function getFireObjectByCode(code: string) {
+  return FIRE_OBJECTS.find(obj => obj.code === code);
+}
+
+export function getNonFireCaseByCode(code: string) {
+  return NON_FIRE_CASES.find(case_ => case_.code === code);
+}
+
+export function getSteppeFireTypeByCode(code: string) {
+  return STEPPE_FIRE_TYPES.find(type => type.code === code);
+}

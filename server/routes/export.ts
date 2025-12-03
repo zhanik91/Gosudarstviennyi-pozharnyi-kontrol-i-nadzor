@@ -1,0 +1,219 @@
+import { Router } from 'express';
+import XLSX from 'xlsx';
+import { isAuthenticated } from '../replitAuth';
+import { storage } from '../storage';
+
+const router = Router();
+
+// Экспорт отчетов в XLSX
+router.get('/api/export/report', isAuthenticated, async (req: any, res) => {
+  try {
+    const { form, period, orgId, includeChildren } = req.query;
+    
+    // Проверка доступа к организации
+    const organizations = await storage.getOrganizations();
+    const { assertOrgScope } = await import('../services/authz');
+    
+    try {
+      assertOrgScope(organizations, req.user.orgId || req.user.claims.sub, orgId);
+    } catch (error: any) {
+      return res.status(403).json({ ok: false, msg: 'forbidden' });
+    }
+
+    // Получение данных отчета
+    const reportData = await storage.getReportData({
+      orgId,
+      period,
+      form,
+      includeChildren: includeChildren === 'true'
+    });
+
+    // Создание Excel файла
+    const workbook = XLSX.utils.book_new();
+    
+    switch (form) {
+      case '1-osp':
+        addOSPSheet(workbook, reportData, period);
+        break;
+      case '2-ssg':
+        addSSGSheet(workbook, reportData, period);
+        break;
+      case '3-spvp':
+        addSPVPSheet(workbook, reportData, period);
+        break;
+      case '4-sovp':
+        addSOVPSheet(workbook, reportData, period);
+        break;
+      case '5-spzs':
+        addSPZSSheet(workbook, reportData, period);
+        break;
+      case '6-sspz':
+        addSSPZSheet(workbook, reportData, period);
+        break;
+      case 'co':
+        addCOSheet(workbook, reportData, period);
+        break;
+      default:
+        // Добавляем все формы
+        addOSPSheet(workbook, reportData, period);
+        addSSGSheet(workbook, reportData, period);
+        addSPVPSheet(workbook, reportData, period);
+        addSOVPSheet(workbook, reportData, period);
+        addSPZSSheet(workbook, reportData, period);
+        addSSPZSheet(workbook, reportData, period);
+        addCOSheet(workbook, reportData, period);
+    }
+
+    // Генерация Excel файла
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    const filename = `report_${form || 'all'}_${period}_${orgId}.xlsx`;
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(excelBuffer);
+
+  } catch (error) {
+    console.error('Error exporting report:', error);
+    res.status(500).json({ ok: false, msg: 'Export failed' });
+  }
+});
+
+// Функции для создания листов Excel
+function addOSPSheet(workbook: XLSX.WorkBook, data: any, period: string) {
+  const sheetData = [
+    ['Форма 1-ОСП: Общие сведения о пожарах и гибели людей'],
+    ['Период:', period],
+    [''],
+    ['Показатель', 'Всего', 'в том числе в городах', 'в сельской местности'],
+    ['Количество пожаров', data.osp?.totalFires || 0, data.osp?.cityFires || 0, data.osp?.ruralFires || 0],
+    ['Погибло людей, всего', data.osp?.totalDeaths || 0, data.osp?.cityDeaths || 0, data.osp?.ruralDeaths || 0],
+    ['из них детей до 17 лет', data.osp?.childDeaths || 0, data.osp?.cityChildDeaths || 0, data.osp?.ruralChildDeaths || 0],
+    ['Травмировано людей', data.osp?.totalInjured || 0, data.osp?.cityInjured || 0, data.osp?.ruralInjured || 0],
+    ['Материальный ущерб (тыс. тенге)', 
+     (data.osp?.totalDamage || 0).toFixed(1), 
+     (data.osp?.cityDamage || 0).toFixed(1), 
+     (data.osp?.ruralDamage || 0).toFixed(1)],
+  ];
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, '1-ОСП');
+}
+
+function addSSGSheet(workbook: XLSX.WorkBook, data: any, period: string) {
+  const sheetData = [
+    ['Форма 2-ССГ: Сведения о случаях горения'],
+    ['Период:', period],
+    [''],
+    ['№', 'Наименование', 'Количество'],
+    ['1', 'Загорание в жилом секторе', data.ssg?.residential || 0],
+    ['2', 'Загорание транспорта', data.ssg?.transport || 0],
+    ['3', 'Загорание мусора', data.ssg?.waste || 0],
+    // ... остальные пункты
+  ];
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, '2-ССГ');
+}
+
+function addSPVPSheet(workbook: XLSX.WorkBook, data: any, period: string) {
+  const sheetData = [
+    ['Форма 3-СПВП: Сведения о причинах возникновения пожаров'],
+    ['Период:', period],
+    [''],
+    ['Код', 'Причина', 'Всего', 'в т.ч. ОВСР'],
+  ];
+
+  // Добавляем данные по причинам
+  if (data.spvp?.causes) {
+    data.spvp.causes.forEach((cause: any) => {
+      sheetData.push([
+        cause.code,
+        cause.name,
+        cause.total || 0,
+        cause.ovsr || 0
+      ]);
+    });
+  }
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, '3-СПВП');
+}
+
+function addSOVPSheet(workbook: XLSX.WorkBook, data: any, period: string) {
+  const sheetData = [
+    ['Форма 4-СОВП: Сведения об объектах возникновения пожаров'],
+    ['Период:', period],
+    [''],
+    ['Код', 'Объект', 'Всего', 'в т.ч. ОВСР'],
+  ];
+
+  if (data.sovp?.objects) {
+    data.sovp.objects.forEach((obj: any) => {
+      sheetData.push([
+        obj.code,
+        obj.name,
+        obj.total || 0,
+        obj.ovsr || 0
+      ]);
+    });
+  }
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, '4-СОВП');
+}
+
+function addSPZSSheet(workbook: XLSX.WorkBook, data: any, period: string) {
+  const sheetData = [
+    ['Форма 5-СПЖС: Сведения о пожарах в жилом секторе'],
+    ['Период:', period],
+    [''],
+  ];
+
+  // Добавляем разделы формы 5-СПЖС
+  if (data.spzs) {
+    sheetData.push(['Раздел 1: По социальному положению погибших']);
+    sheetData.push(['Показатель', 'Количество']);
+    // ... данные по социальному положению
+  }
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, '5-СПЖС');
+}
+
+function addSSPZSheet(workbook: XLSX.WorkBook, data: any, period: string) {
+  const sheetData = [
+    ['Форма 6-ССПЗ: Сведения о степных пожарах'],
+    ['Период:', period],
+    [''],
+    ['Таблица 1: Пожары'],
+    ['Показатель', 'Количество'],
+    ['Всего пожаров', data.sspz?.totalFires || 0],
+    ['Площадь (га)', data.sspz?.totalArea || 0],
+    [''],
+    ['Таблица 2: Загорания'],
+    ['Всего загораний', data.sspz?.totalIgnitions || 0],
+  ];
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, '6-ССПЗ');
+}
+
+function addCOSheet(workbook: XLSX.WorkBook, data: any, period: string) {
+  const sheetData = [
+    ['Форма СО: Отравления угарным газом без пожара'],
+    ['Период:', period],
+    [''],
+    ['Показатель', 'Количество'],
+    ['Всего случаев', data.co?.totalCases || 0],
+    ['Погибло', data.co?.deaths || 0],
+    ['из них детей', data.co?.childDeaths || 0],
+    ['Травмировано', data.co?.injured || 0],
+    ['из них детей', data.co?.childInjured || 0],
+  ];
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'СО');
+}
+
+export default router;

@@ -1,0 +1,193 @@
+Файлы (готовые тексты)
+
+▶️ 1) Публичные стили: public/css/theme.css
+(добавь/замени; фон задаёт «портальный» вид)
+
+:root{
+  /* Палитра портала (деловой «МЧС» тёмный) */
+  --bg-0:#0B1220; /* почти чёрный с синим тоном */
+  --bg-1:#0F1830;
+  --bg-2:#11213B;
+  --card:#151F34;
+  --card-2:#1B2A46;
+  --text:#E9EEF7;
+  --muted:#A8B3C7;
+  --primary:#3BA2F9;   /* акцент (синий) */
+  --accent:#F3B34C;    /* акцент (золото/оранжевый) */
+  --ok:#2ECC71;
+  --warn:#F39C12;
+  --danger:#E74C3C;
+  --radius:14px;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+
+/* Портальный фон «как у инфо-портала» — слои градиентов + лёгкий паттерн */
+body.portal-bg{
+  color:var(--text);
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(59,162,249,.10), transparent 60%),
+    radial-gradient(900px 500px at 85% -5%, rgba(243,179,76,.08), transparent 55%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 60%, var(--bg-0) 100%);
+  min-height:100vh;
+}
+
+/* мягкая «сеточка»/шум */
+body.portal-bg::before{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; opacity:.08;
+  background-image:
+    radial-gradient(rgba(255,255,255,.25) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,.2) 1px, transparent 1px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 1px 1px;
+}
+
+/* Карточки плиток */
+.tile-grid{
+  display:grid; gap:22px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+.tile{
+  background:linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px; transition:.2s transform, .2s box-shadow;
+  border:1px solid rgba(255,255,255,.06);
+}
+.tile:hover{ transform:translateY(-2px); box-shadow:0 16px 40px rgba(0,0,0,.45); }
+.tile h3{ margin:6px 0 8px; font-size:20px; }
+.tile p{ color:var(--muted); margin:0 0 14px; min-height:48px; }
+.tile .actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 14px; border-radius:10px; text-decoration:none; font-weight:600;
+}
+.btn-primary{ color:#091522; background:var(--primary); }
+.btn-ghost{ color:var(--text); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
+
+.header-bar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 24px;
+}
+.brand{
+  display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.2px;
+}
+.brand .logo{
+  width:34px; height:34px; border-radius:12px;
+  background: radial-gradient(closest-side, #FFB84D, #FF7A29);
+  box-shadow:0 4px 16px rgba(243,179,76,.45), inset 0 2px 8px rgba(255,255,255,.35);
+}
+.brand small{ color:var(--muted); font-weight:600; }
+
+
+▶️ 2) Макет с портальным фоном: views/layout.ejs
+(если макет уже есть — просто добавь body class="portal-bg" и бренд; ниже — минимальный шаблон)
+
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title><%= title || "Государственный пожарный контроль" %></title>
+  <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body class="portal-bg">
+  <header class="header-bar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div>Государственный пожарный контроль</div>
+        <small>Портал МЧС Республики Казахстан</small>
+      </div>
+    </div>
+    <div>
+      <% if (USER) { %>
+        <span><%= USER.email %> • <%= USER.role %></span>
+      <% } %>
+    </div>
+  </header>
+
+  <main style="padding:16px 24px 40px;">
+    <%- body %>
+  </main>
+</body>
+</html>
+
+
+▶️ 3) Главная-портал: views/home.ejs
+(три плитки-модуля; «ГУП» ведёт в наш текущий модуль)
+
+<% layout('layout') %>
+<section class="page">
+  <h1 style="margin:6px 0 18px;">Выберите модуль</h1>
+  <div class="tile-grid">
+    <article class="tile">
+      <h3>Государственный учёт пожаров</h3>
+      <p>Журнал выездов, «единое окно» ввода, отчёты 1-ОСП, 2-ССГ, 3-СПВП, 4-СОВП, 5-СПЖС, 6-ССПЗ и CO, пакеты и диаграммы.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/gup">Открыть модуль</a>
+        <a class="btn btn-ghost" href="/gup/reports">Отчёты</a>
+        <a class="btn btn-ghost" href="/gup/incidents">Журнал</a>
+      </div>
+    </article>
+
+    <article class="tile">
+      <h3>Перечень подконтрольных объектов</h3>
+      <p>Реестр объектов надзора (ОВСР/иные), атрибуты, статусы проверок, привязка к территориям.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/ppo">В разработке</a>
+        <a class="btn btn-ghost" href="/docs/ppo">Документация</a>
+      </div>
+    </article>
+
+    <article class="tile">
+      <h3>Журналы: аудиты, НГПС, АПН</h3>
+      <p>Учет проверок НГПС, предписаний, административных правонарушений, протоколов, актов, возвратов.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/journals">В разработке</a>
+        <a class="btn btn-ghost" href="/docs/journals">Документация</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+
+▶️ 4) Маршруты (добавить в server.js)
+— портальная главная, заглушки модулей, и редирект из старого /dashboard в новый /gup.
+
+// ПОСЛЕ инициализации app и auth
+app.get('/', (req,res)=> res.render('home', { title: 'Государственный пожарный контроль', USER: req.user }));
+
+// старый дашборд → ГУП
+app.get('/dashboard', (req,res)=> res.redirect('/gup'));
+
+// корень модуля ГУП (используем существующую страницу дашборда модуля)
+app.get('/gup', (req,res)=> res.render('gup/dashboard', { title:'Государственный учёт пожаров', USER: req.user }));
+
+// временные заглушки (чтобы не было 404)
+app.get('/ppo', (req,res)=> res.send('<div style="padding:24px;color:#e9eef7">Модуль «Перечень подконтрольных объектов» — в разработке.</div>'));
+app.get('/journals', (req,res)=> res.send('<div style="padding:24px;color:#e9eef7">Модуль «Журналы (аудиты, НГПС, АПН)» — в разработке.</div>'));
+
+
+⚠️ В проекте у нас уже есть страницы модуля «ГУП» (дашборд/журнал/отчёты/пакеты/диаграммы/админка). Просто перемени ссылки на /gup/* (или оставь старые, но обязательно сделай редирект /dashboard → /gup).
+
+Что сказать агенту (короткий промпт)
+
+Обнови бренд и главную:
+
+Переименуй систему в «Государственный пожарный контроль».
+
+Главную / сделай портальной с тремя плитками-модулями (см. views/home.ejs):
+— «Государственный учёт пожаров» → /gup (существующий модуль, всё, что было на дашборде).
+— «Перечень подконтрольных объектов» → /ppo (пока заглушка).
+— «Журналы (аудиты, НГПС, АПН…)» → /journals (пока заглушка).
+
+Поменяй фон: подключи public/css/theme.css; к <body> добавь класс portal-bg.
+
+Вставь в server.js маршруты из блока, добавь редирект /dashboard → /gup.
+
+Внутри модуля «ГУП» оставить всё как есть (журнал/отчёты/пакеты/диаграммы/админка). Боковое меню показывать только внутри «ГУП», на главной — только шапка.
+
+Цвета и стили брать из theme.css, тёмная тема по умолчанию.
+
+Заголовки страниц обновить: «Государственный пожарный контроль», «Государственный учёт пожаров».
