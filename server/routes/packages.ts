@@ -40,8 +40,8 @@ router.post('/api/packages/consolidate', isAuthenticated, async (req: any, res) 
     await storage.createAuditLog({
       userId: req.user.claims.sub,
       action: 'PACKAGE_CONSOLIDATE',
-      objectType: 'package',
-      objectId: consolidatedPackage.id,
+      entityType: 'package',
+      entityId: consolidatedPackage.id,
       details: { 
         period, 
         orgId, 
@@ -70,16 +70,18 @@ router.post('/api/packages/:id/return', isAuthenticated, async (req: any, res) =
     const { reason, comment } = req.body;
 
     // Обновляем статус пакета
+    // Note: 'returned' status is not in current enum, mapping to 'rejected' for now
+    // until schema is updated to include 'returned'
     const returnedPackage = await storage.updatePackage(packageId, {
-      status: 'returned',
-      returnReason: reason,
-      returnComment: comment,
-      returnedBy: req.user.claims.sub,
-      returnedAt: new Date()
+      status: 'rejected',
+      rejectionReason: `${reason} (Returned with comment: ${comment})`,
+      reviewedBy: req.user.claims.sub,
+      reviewedAt: new Date()
     });
 
     // Отправляем уведомление
-    const packageOwner = await storage.getUser(returnedPackage.createdBy);
+    // 'submittedBy' is the closest we have to creator in Package schema
+    const packageOwner = await storage.getUser(returnedPackage.submittedBy || '');
     if (packageOwner?.email) {
       await emailService.sendPackageReturnNotification(
         packageOwner.email,
@@ -95,8 +97,8 @@ router.post('/api/packages/:id/return', isAuthenticated, async (req: any, res) =
     await storage.createAuditLog({
       userId: req.user.claims.sub,
       action: 'PACKAGE_RETURN',
-      objectType: 'package',
-      objectId: packageId,
+      entityType: 'package',
+      entityId: packageId,
       details: { reason, comment },
       ipAddress: req.ip
     });
@@ -123,19 +125,20 @@ router.post('/api/packages/:id/approve', isAuthenticated, async (req: any, res) 
     // Обновляем статус пакета
     const approvedPackage = await storage.updatePackage(packageId, {
       status: 'approved',
-      approvalComment: comment,
+      // approvalComment: comment, // Field not in schema
       approvedBy: req.user.claims.sub,
       approvedAt: new Date()
     });
 
     // Отправляем уведомление
-    const packageOwner = await storage.getUser(approvedPackage.createdBy);
+    // 'submittedBy' is the closest we have to creator in Package schema
+    const packageOwner = await storage.getUser(approvedPackage.submittedBy || '');
     if (packageOwner?.email) {
       await emailService.sendPackageApprovalNotification(
         packageOwner.email,
         {
           period: approvedPackage.period,
-          approverName: user?.firstName + ' ' + user?.lastName
+          approverName: user?.fullName
         }
       );
     }
@@ -144,8 +147,8 @@ router.post('/api/packages/:id/approve', isAuthenticated, async (req: any, res) 
     await storage.createAuditLog({
       userId: req.user.claims.sub,
       action: 'PACKAGE_APPROVE',
-      objectType: 'package',
-      objectId: packageId,
+      entityType: 'package',
+      entityId: packageId,
       details: { comment },
       ipAddress: req.ip
     });
