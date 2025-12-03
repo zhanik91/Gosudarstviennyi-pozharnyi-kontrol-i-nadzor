@@ -1,7 +1,24 @@
+# Node
 node_modules
 dist
+
+# OS
 .DS_Store
+
+# Build
 server/public
-vite.config.ts.*
 *.tar.gz
+
+# Replit backups
 .git.backup.*
+
+# Vite backup files
+vite.config.ts.*
+
+# ENV files (САМЫЙ ВАЖНЫЙ БЛОК)
+.env
+.env.local
+.env.*
+.env.development
+.env.production
+.env.test
