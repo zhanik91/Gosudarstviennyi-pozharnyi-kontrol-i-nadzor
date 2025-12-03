@@ -614,12 +614,29 @@ export function setupLocalAuth(app: Express) {
     });
   });
 
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
+  const handleLogout = (req: any, res: any, next: any) => {
+    req.logout((logoutError: any) => {
+      if (logoutError) return next(logoutError);
+
+      if (req.session) {
+        req.session.destroy((sessionError: any) => {
+          if (sessionError) return next(sessionError);
+
+          res.clearCookie("connect.sid");
+          if (req.method === "GET") {
+            res.redirect("/");
+          } else {
+            res.sendStatus(200);
+          }
+        });
+      } else {
+        res.sendStatus(200);
+      }
     });
-  });
+  };
+
+  app.post("/api/logout", handleLogout);
+  app.get("/api/logout", handleLogout);
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
