@@ -20,14 +20,23 @@ import ControlSupervision from "@/pages/control-supervision";
 import LoginPage from "@/pages/login";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isError } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Проверяем сессию...
+      </div>
+    );
+  }
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
+      {!isAuthenticated ? (
         <>
           <Route path="/login" component={LoginPage} />
           <Route path="/" component={LoginPage} />
+          <Route component={NotFound} />
         </>
       ) : (
         <>
@@ -47,7 +56,17 @@ function Router() {
           <Route path="/admin" component={AdminPanel} />
         </>
       )}
-      <Route component={NotFound} />
+      <Route
+        component={() =>
+          isError ? (
+            <div className="min-h-screen flex items-center justify-center text-red-600">
+              Не удалось проверить авторизацию. Попробуйте обновить страницу.
+            </div>
+          ) : (
+            <NotFound />
+          )
+        }
+      />
     </Switch>
   );
 }

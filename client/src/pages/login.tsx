@@ -9,6 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Shield, Lock, User } from "lucide-react";
+import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Логин обязателен"),
@@ -20,6 +22,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -34,14 +38,15 @@ export default function LoginPage() {
     try {
       const response = await apiRequest("POST", "/api/login", data);
       const user = await response.json();
-      
+
+      queryClient.setQueryData(["/api/user"], user);
+
       toast({
         title: "Успешная авторизация",
         description: `Добро пожаловать, ${user.fullName}!`
       });
-      
-      // Перенаправляем на главную страницу
-      window.location.href = "/";
+
+      navigate("/", { replace: true });
     } catch (error: any) {
       toast({
         title: "Ошибка авторизации",
