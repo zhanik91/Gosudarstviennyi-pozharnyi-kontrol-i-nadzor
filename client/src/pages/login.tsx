@@ -135,8 +135,8 @@ export default function LoginPage() {
                     <h4 className="text-sm font-medium mb-2">Тестовые учетные записи:</h4>
                     <div className="text-xs text-muted-foreground space-y-1">
                       <div><strong>Администратор:</strong> mchs_admin / uQ8i5gAe</div>
-                      <div><strong>МЧС РК:</strong> mchs / hj9fWbvu</div>
-                      <div><strong>Алматы:</strong> almaty_mchs / Al2025mcs</div>
+                      <div><strong>МЧС РК:</strong> mchs_rk / hj9fWbvu</div>
+                      <div><strong>Алматы (город):</strong> almaty_city_mchs / Al2025mcs</div>
                       <div><strong>Нур-Султан:</strong> astana_mchs / As2025mcs</div>
                       <div><strong>Шымкент:</strong> shymkent_mchs / Sh2025mcs</div>
                     </div>
