@@ -33,7 +33,7 @@ router.post('/api/packages/consolidate', isAuthenticated, async (req: any, res) 
       period,
       sourcePackages: approvedPackages.map(p => p.id),
       createdBy: req.user.claims.sub,
-      status: 'consolidated'
+      status: 'approved'
     });
 
     // Логируем действие
@@ -79,22 +79,6 @@ router.post('/api/packages/:id/return', isAuthenticated, async (req: any, res) =
       reviewedAt: new Date()
     });
 
-    // Отправляем уведомление
-    // 'submittedBy' is the closest we have to creator in Package schema
-fix-login-remove-email-column
-    // const packageOwner = await storage.getUser(returnedPackage.submittedBy || '');
-    // Email notification disabled as 'email' column is not in DB schema
-    // if (packageOwner?.email) {
-    //   await emailService.sendPackageReturnNotification(
-    //     packageOwner.email,
-    //     {
-    //       period: returnedPackage.period,
-    //       returnReason: reason,
-    //       comment: comment
-    //     }
-    //   );
-    // }
-
     const packageOwner = await storage.getUser(returnedPackage.submittedBy || '');
     if (packageOwner?.email) {
       await emailService.sendPackageReturnNotification(
@@ -106,7 +90,6 @@ fix-login-remove-email-column
         }
       );
     }
-main
 
     // Логируем действие
     await storage.createAuditLog({
@@ -145,21 +128,6 @@ router.post('/api/packages/:id/approve', isAuthenticated, async (req: any, res) 
       approvedAt: new Date()
     });
 
-    // Отправляем уведомление
-    // 'submittedBy' is the closest we have to creator in Package schema
-fix-login-remove-email-column
-    // const packageOwner = await storage.getUser(approvedPackage.submittedBy || '');
-    // Email notification disabled as 'email' column is not in DB schema
-    // if (packageOwner?.email) {
-    //   await emailService.sendPackageApprovalNotification(
-    //     packageOwner.email,
-    //     {
-    //       period: approvedPackage.period,
-    //       approverName: user?.fullName
-    //     }
-    //   );
-    // }
-
     const packageOwner = await storage.getUser(approvedPackage.submittedBy || '');
     if (packageOwner?.email) {
       await emailService.sendPackageApprovalNotification(
@@ -170,7 +138,6 @@ fix-login-remove-email-column
         }
       );
     }
- main
 
     // Логируем действие
     await storage.createAuditLog({

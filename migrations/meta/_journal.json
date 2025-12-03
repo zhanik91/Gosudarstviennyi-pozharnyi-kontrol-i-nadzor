@@ -1,0 +1,13 @@
+{
+  "version": "5",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1733265150000,
+      "tag": "0000_add_email_to_users",
+      "breakpoints": true
+    }
+  ]
+}

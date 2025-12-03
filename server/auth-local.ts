@@ -16,6 +16,10 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
+const defaultSeedPassword = process.env.DEFAULT_USER_PASSWORD || randomBytes(12).toString("hex");
+const defaultEmailDomain = process.env.DEFAULT_USER_EMAIL_DOMAIN;
+let seedPasswordLogged = false;
+
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -532,15 +536,23 @@ export function setupLocalAuth(app: Express) {
       try {
         const existingUser = await storage.getUserByUsername(userData.username);
         if (!existingUser) {
-          const hashedPassword = await hashPassword(userData.password);
+          const hashedPassword = await hashPassword(defaultSeedPassword);
+          const email = defaultEmailDomain
+            ? `${userData.username}@${defaultEmailDomain}`
+            : (userData as any).email || "";
           await storage.createUser({
             ...userData,
+            email,
             role: userData.role as "admin" | "editor" | "reviewer" | "approver",
             password: hashedPassword,
             district: userData.district || "",
             createdAt: new Date(),
             updatedAt: new Date()
           });
+          if (!process.env.DEFAULT_USER_PASSWORD && !seedPasswordLogged) {
+            console.log(`[Auth] Generated default seed password for initial users: ${defaultSeedPassword}`);
+            seedPasswordLogged = true;
+          }
           console.log(`Создан пользователь: ${userData.username} (${userData.region})`);
         }
       } catch (error) {
