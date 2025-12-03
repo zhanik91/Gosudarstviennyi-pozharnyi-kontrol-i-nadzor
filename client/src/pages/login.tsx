@@ -195,8 +195,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground">
-                  <p>Министерство по чрезвычайным ситуациям</p>
-                  <p>Республики Казахстан</p>
+                  <p>Комитет противопожарной службы МЧС РК</p>
                 </div>
               </div>
             </div>
