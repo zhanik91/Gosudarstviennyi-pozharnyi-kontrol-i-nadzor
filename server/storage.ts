@@ -3,7 +3,7 @@ import {
   organizations,
   incidents,
   packages,
-  auditLog,
+  auditLogs,
   type User,
   type InsertUser,
   type Organization,
@@ -14,9 +14,12 @@ import {
   type InsertPackage,
   type AuditLog,
   type InsertAuditLog,
+  documents,
+  insertAuditLogSchema,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
+import { z } from "zod";
 
 export interface IStorage {
   // User operations for local authentication
@@ -88,23 +91,6 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
-  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({ ...userData, updatedAt: new Date() })
-      .where(eq(users.id, id))
-      .returning();
-    return user;
-  }
-
-  async deleteUser(id: string): Promise<void> {
-    await db.delete(users).where(eq(users.id, id));
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
-  }
-
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
     return user;
@@ -113,7 +99,7 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: string, userData: Partial<InsertUser>): Promise<User> {
     const [user] = await db
       .update(users)
-      .set(userData)
+      .set({ ...userData, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return user;
@@ -182,7 +168,7 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
     
-    return await query.orderBy(desc(incidents.dateTime));
+    return await query.orderBy(desc(incidents.dateTime)) as Incident[];
   }
 
   async getIncident(id: string): Promise<Incident | undefined> {
@@ -233,7 +219,7 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
     
-    return await query.orderBy(desc(packages.createdAt));
+    return await query.orderBy(desc(packages.createdAt)) as Package[];
   }
 
   async getPackage(id: string): Promise<Package | undefined> {
@@ -257,7 +243,7 @@ export class DatabaseStorage implements IStorage {
 
   // Audit operations
   async createAuditLog(logData: InsertAuditLog): Promise<AuditLog> {
-    const [log] = await db.insert(auditLog).values(logData).returning();
+    const [log] = await db.insert(auditLogs).values(logData as any).returning();
     return log;
   }
 
@@ -267,30 +253,30 @@ export class DatabaseStorage implements IStorage {
     dateFrom?: Date;
     dateTo?: Date;
   }): Promise<AuditLog[]> {
-    let query = db.select().from(auditLog);
+    let query = db.select().from(auditLogs);
     const conditions = [];
     
     if (filters?.userId) {
-      conditions.push(eq(auditLog.userId, filters.userId));
+      conditions.push(eq(auditLogs.userId, filters.userId));
     }
     
     if (filters?.action) {
-      conditions.push(eq(auditLog.action, filters.action));
+      conditions.push(eq(auditLogs.action, filters.action));
     }
     
     if (filters?.dateFrom) {
-      conditions.push(gte(auditLog.createdAt, filters.dateFrom));
+      conditions.push(gte(auditLogs.createdAt, filters.dateFrom));
     }
     
     if (filters?.dateTo) {
-      conditions.push(lte(auditLog.createdAt, filters.dateTo));
+      conditions.push(lte(auditLogs.createdAt, filters.dateTo));
     }
     
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
     
-    return await query.orderBy(desc(auditLog.createdAt));
+    return await query.orderBy(desc(auditLogs.createdAt)) as AuditLog[];
   }
 
   // Statistics
@@ -441,15 +427,10 @@ export class DatabaseStorage implements IStorage {
     return { id: 'consolidated-' + Date.now(), ...data, createdAt: new Date() };
   }
 
-  async updatePackage(id: string, updates: any): Promise<any> {
-    return { id, ...updates, updatedAt: new Date() };
-  }
+  // updatePackage is already defined above
 
   // CRM Методы управления организациями
-  async createOrganization(data: any): Promise<any> {
-    const [org] = await db.insert(organizations).values(data).returning();
-    return org;
-  }
+  // createOrganization is already defined above
 
   async getOrganizationDetails(id: string): Promise<any> {
     const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
@@ -496,13 +477,13 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
 
-    return await query.orderBy(desc(documents.createdAt));
+    return await query.orderBy(desc(documents.createdAt)) as any[];
   }
 
   async updateDocumentStatus(id: string, status: string): Promise<any> {
     const [document] = await db
       .update(documents)
-      .set({ status, updatedAt: new Date() })
+      .set({ status: status as any, updatedAt: new Date() })
       .where(eq(documents.id, id))
       .returning();
     return document;
@@ -614,13 +595,11 @@ export class DatabaseStorage implements IStorage {
       searchQuery = searchQuery.where(and(...conditions));
     }
     
-    return await searchQuery.orderBy(desc(incidents.dateTime)).limit(100);
+    return await searchQuery.orderBy(desc(incidents.dateTime)).limit(100) as any[];
   }
 
   // Методы для получения всех пользователей и активности для CRM
-  async getAllUsers(): Promise<any[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
-  }
+  // getAllUsers is already defined above
 
   async getAllOrganizations(): Promise<any[]> {
     return await db.select().from(organizations).orderBy(organizations.name);
@@ -639,15 +618,11 @@ export class DatabaseStorage implements IStorage {
 export const storage = new DatabaseStorage();
 
 (storage as any).getDocument = async function(id: string) {
-  const { documents } = await import('@shared/schema');
-  const { eq } = await import('drizzle-orm');
   const [document] = await db.select().from(documents).where(eq(documents.id, id));
   return document;
 };
 
 (storage as any).updateDocument = async function(id: string, updates: any) {
-  const { documents } = await import('@shared/schema');
-  const { eq } = await import('drizzle-orm');
   const [document] = await db
     .update(documents)
     .set({ ...updates, updatedAt: new Date() })
@@ -657,8 +632,6 @@ export const storage = new DatabaseStorage();
 };
 
 (storage as any).deleteDocument = async function(id: string) {
-  const { documents } = await import('@shared/schema');
-  const { eq } = await import('drizzle-orm');
   await db.delete(documents).where(eq(documents.id, id));
   return true;
 };
