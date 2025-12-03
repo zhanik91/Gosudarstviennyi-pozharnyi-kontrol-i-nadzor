@@ -148,18 +148,6 @@ export const packages = pgTable("packages", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Audit log table
-export const auditLog = pgTable("audit_log", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  action: varchar("action").notNull(),
-  objectType: varchar("object_type").notNull(),
-  objectId: varchar("object_id"),
-  details: jsonb("details"),
-  ipAddress: varchar("ip_address"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, {
@@ -167,7 +155,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [organizations.id],
   }),
   incidents: many(incidents),
-  auditLogs: many(auditLog),
 }));
 
 export const organizationsRelations = relations(organizations, ({ one, many }) => ({
@@ -208,13 +195,6 @@ export const packagesRelations = relations(packages, ({ one, many }) => ({
   incidents: many(incidents),
 }));
 
-export const auditLogRelations = relations(auditLog, ({ one }) => ({
-  user: one(users, {
-    fields: [auditLog.userId],
-    references: [users.id],
-  }),
-}));
-
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -238,11 +218,6 @@ export const insertPackageSchema = createInsertSchema(packages).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
-
-export const insertAuditLogSchema = createInsertSchema(auditLog).omit({
-  id: true,
-  createdAt: true,
 });
 
 // Types
@@ -286,7 +261,11 @@ export const auditLogs = pgTable('audit_logs', {
 });
 
 export type AuditLog = typeof auditLogs.$inferSelect;
-export type InsertAuditLog = typeof auditLogs.$inferInsert;
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 // Схема для системы рабочих процессов
 export const workflows = pgTable('workflows', {

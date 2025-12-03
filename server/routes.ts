@@ -33,14 +33,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin', adminRoutes);
 
   // Helper function for audit logging
-  const auditLog = async (req: any, action: string, objectType: string, objectId?: string, details?: any) => {
+  const auditLog = async (req: any, action: string, entityType: string, entityId: string, details?: any) => {
     const userId = req.user?.id || req.user?.username;
     if (userId) {
       await storage.createAuditLog({
         userId: userId,
         action,
-        objectType,
-        objectId,
+        entityType,
+        entityId,
         details,
         ipAddress: req.ip,
       });
