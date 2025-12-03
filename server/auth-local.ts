@@ -536,23 +536,19 @@ export function setupLocalAuth(app: Express) {
       try {
         const existingUser = await storage.getUserByUsername(userData.username);
         if (!existingUser) {
-          const hashedPassword = await hashPassword(defaultSeedPassword);
-          const email = defaultEmailDomain
-            ? `${userData.username}@${defaultEmailDomain}`
-            : (userData as any).email || "";
+          // Use the password from the user data, not defaultSeedPassword
+          const hashedPassword = await hashPassword(userData.password);
           await storage.createUser({
-            ...userData,
-            email,
-            role: userData.role as "admin" | "editor" | "reviewer" | "approver",
+            id: userData.username,
+            username: userData.username,
             password: hashedPassword,
+            fullName: userData.fullName,
+            region: userData.region,
             district: userData.district || "",
-            createdAt: new Date(),
-            updatedAt: new Date()
+            role: userData.role as "admin" | "editor" | "reviewer" | "approver",
+            organizationId: userData.organizationId || null,
+            isActive: true
           });
-          if (!process.env.DEFAULT_USER_PASSWORD && !seedPasswordLogged) {
-            console.log(`[Auth] Generated default seed password for initial users: ${defaultSeedPassword}`);
-            seedPasswordLogged = true;
-          }
           console.log(`Создан пользователь: ${userData.username} (${userData.region})`);
         }
       } catch (error) {

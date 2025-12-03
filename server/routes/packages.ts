@@ -80,16 +80,8 @@ router.post('/api/packages/:id/return', isAuthenticated, async (req: any, res) =
     });
 
     const packageOwner = await storage.getUser(returnedPackage.submittedBy || '');
-    if (packageOwner?.email) {
-      await emailService.sendPackageReturnNotification(
-        packageOwner.email,
-        {
-          period: returnedPackage.period,
-          returnReason: reason,
-          comment: comment
-        }
-      );
-    }
+    // Email notifications disabled - users table doesn't have email field
+    // TODO: Add email field to users table if email notifications are needed
 
     // Логируем действие
     await storage.createAuditLog({
@@ -129,15 +121,8 @@ router.post('/api/packages/:id/approve', isAuthenticated, async (req: any, res) 
     });
 
     const packageOwner = await storage.getUser(approvedPackage.submittedBy || '');
-    if (packageOwner?.email) {
-      await emailService.sendPackageApprovalNotification(
-        packageOwner.email,
-        {
-          period: approvedPackage.period,
-          approverName: user?.fullName
-        }
-      );
-    }
+    // Email notifications disabled - users table doesn't have email field
+    // TODO: Add email field to users table if email notifications are needed
 
     // Логируем действие
     await storage.createAuditLog({
