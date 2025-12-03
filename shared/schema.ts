@@ -50,7 +50,7 @@ export const users = pgTable("users", {
   fullName: varchar("full_name").notNull(),
   region: varchar("region").notNull(),
   district: varchar("district").default(""),
-  email: varchar("email"),
+  email: text("email").notNull().default(""),
   role: userRoleEnum("role").notNull().default('editor'),
   organizationId: varchar("organization_id"),
   isActive: boolean("is_active").notNull().default(true),
