@@ -327,8 +327,5 @@ export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type Package = typeof packages.$inferSelect;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
 
-export type AuditLog = typeof auditLog.$inferSelect;
-export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
-
 // Export document schemas
 export * from './document-schema';
