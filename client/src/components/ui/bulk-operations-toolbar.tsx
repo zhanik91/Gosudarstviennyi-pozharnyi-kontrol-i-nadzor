@@ -11,7 +11,7 @@ import {
   Mail,
   FileText
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 interface BulkOperationsToolbarProps {
   selectedCount: number;

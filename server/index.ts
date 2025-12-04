@@ -1,3 +1,4 @@
+import "./config/env";
 import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { registerRoutes } from "./routes";
@@ -7,8 +8,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+const staticDir = path.resolve(import.meta.dirname, "../public");
+
 // Статические файлы
-app.use(express.static(path.join(process.cwd(), 'public')));
+app.use(express.static(staticDir));
 
 app.use((req, res, next) => {
   const start = Date.now();
