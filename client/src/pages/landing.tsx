@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Building, FileText } from "lucide-react";
+import GovTopBanner from "@/components/layout/top-banner";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
+      <GovTopBanner />
       <div className="container mx-auto px-6 py-16">
         <div className="text-center space-y-6 mb-16">
           <div className="flex items-center justify-center gap-3 mb-8">
