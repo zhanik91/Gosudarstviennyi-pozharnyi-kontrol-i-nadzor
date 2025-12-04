@@ -140,18 +140,18 @@ export default function Home() {
             />
 
             <ModuleCard
-              icon={Smartphone}
-              iconBg="bg-orange-500/20"
-              iconColor="text-orange-400"
-              title="Мобильный полевой режим"
-              description="Создание отчетов с места события, фото документирование, offline режим, GPS координаты"
+              icon={FileCheck}
+              iconBg="bg-indigo-500/20"
+              iconColor="text-indigo-400"
+              title="Журнал заключений аудитов"
+              description="Ведение журнала заключений по результатам проверок объектов государственного контроля и надзора"
               primaryAction={{
-                label: "Полевой режим",
-                href: "/mobile-field"
+                label: "Открыть журнал",
+                href: "/audit-conclusions-journal"
               }}
               secondaryActions={[
-                { label: "Новый отчет", href: "/mobile-field" },
-                { label: "Offline", href: "/mobile-field" }
+                { label: "Новое заключение", href: "/audit-conclusions-journal" },
+                { label: "Архив", href: "/audit-conclusions-journal" }
               ]}
             />
           </div>
