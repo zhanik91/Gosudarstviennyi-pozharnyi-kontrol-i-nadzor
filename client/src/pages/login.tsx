@@ -63,18 +63,18 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background text-foreground portal-bg">
       <GovTopBanner />
       <div className="container mx-auto px-6 py-8">
-        <div className="flex min-h-screen items-center justify-center">
+        <div className="flex min-h-[calc(100vh-200px)] items-center justify-center">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
             {/* Left side - Login Form */}
             <div className="flex items-center justify-center">
-              <Card className="w-full max-w-md">
+              <Card className="w-full max-w-md" data-testid="login-card">
                 <CardHeader className="text-center">
                   <div className="flex justify-center mb-4">
                     <div className="p-3 bg-primary/20 rounded-full">
                       <Shield className="h-8 w-8 text-primary" />
                     </div>
                   </div>
-                  <CardTitle className="text-2xl">Вход в систему</CardTitle>
+                  <CardTitle className="text-2xl" data-testid="login-title">Вход в систему</CardTitle>
                   <CardDescription>
                     Информационная система государственного пожарного контроля Комитета
                     противопожарной службы МЧС РК
@@ -82,7 +82,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="login-form">
                       <FormField
                         control={form.control}
                         name="username"
@@ -97,6 +97,7 @@ export default function LoginPage() {
                                   placeholder="Введите логин"
                                   className="pl-10"
                                   disabled={isLoading}
+                                  data-testid="input-username"
                                 />
                               </div>
                             </FormControl>
@@ -120,6 +121,7 @@ export default function LoginPage() {
                                   placeholder="Введите пароль"
                                   className="pl-10"
                                   disabled={isLoading}
+                                  data-testid="input-password"
                                 />
                               </div>
                             </FormControl>
@@ -132,6 +134,7 @@ export default function LoginPage() {
                         type="submit" 
                         className="w-full" 
                         disabled={isLoading}
+                        data-testid="button-login"
                       >
                         {isLoading ? "Вход..." : "Войти"}
                       </Button>
@@ -139,7 +142,7 @@ export default function LoginPage() {
                   </Form>
                   
                   {/* Тестовые учетные записи */}
-                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <div className="mt-6 p-4 bg-muted/50 rounded-lg" data-testid="test-credentials">
                     <h4 className="text-sm font-medium mb-2">Тестовые учетные записи:</h4>
                     <div className="text-xs text-muted-foreground space-y-1">
                       <div><strong>Администратор:</strong> mchs_admin / uQ8i5gAe</div>
@@ -157,26 +160,11 @@ export default function LoginPage() {
             <div className="flex items-center justify-center">
               <div className="max-w-md space-y-6">
                 <div className="text-center">
-                  <h1 className="text-4xl font-bold mb-4">
- codex/add-header-logo-and-update-footer-text-qiocp8
-
- codex/add-header-logo-and-update-footer-text-izsg6v
- main
-                    Информационная система государственного пожарного контроля
-                    Комитета противопожарной службы МЧС РК
-                  </h1>
-                  <p className="text-xl text-muted-foreground mb-8">
-                    Информационная система государственного пожарного контроля
-                    Комитета противопожарной службы МЧС РК
- codex/add-header-logo-and-update-footer-text-qiocp8
-
-
+                  <h1 className="text-3xl font-bold mb-4" data-testid="system-title">
                     Информационная система государственного пожарного контроля и надзора
                   </h1>
-                  <p className="text-center text-sm text-muted-foreground">
-                    Министерство по чрезвычайным ситуациям Республики Казахстан
- main
- main
+                  <p className="text-lg text-muted-foreground" data-testid="system-subtitle">
+                    Комитет противопожарной службы МЧС РК
                   </p>
                 </div>
 
@@ -213,7 +201,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground">
-                  <p>Комитет противопожарной службы МЧС РК</p>
+                  <p>Министерство по чрезвычайным ситуациям Республики Казахстан</p>
                 </div>
               </div>
             </div>

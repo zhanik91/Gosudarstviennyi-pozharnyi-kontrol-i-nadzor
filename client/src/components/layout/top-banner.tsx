@@ -1,32 +1,24 @@
-import { emblemDataUrl } from "@/assets/emblem";
+import mchsLogo from "@assets/_gluster_2024_11_7_416b29f7e40227e3786f083711ee1c4d_original.8_1764809618216.png";
 
 export function GovTopBanner() {
-  const hasEmblem = Boolean(emblemDataUrl);
-
   return (
-    <div className="gov-top-banner">
+    <div className="gov-top-banner" data-testid="gov-top-banner">
       <div className="gov-top-banner__content">
         <span className="gov-top-banner__text">
- codex/add-header-logo-and-update-footer-text-qiocp8
-          ҚАЗАҚСТАН РЕСПУБЛИКАСЫНЫҢ ТЖМ ӨРТКЕ ҚАРСЫ ҚЫЗМЕТ КОМИТЕТІ
-
-codex/add-header-logo-and-update-footer-text-izsg6v
-          ҚАЗАҚСТАН РЕСПУБЛИКАСЫНЫҢ ТЖМ ӨРТКЕ ҚАРСЫ ҚЫЗМЕТ КОМИТЕТІ
-          ҚР ТЖМ ӨРТКЕ ҚАРСЫ ҚЫЗМЕТ КОМИТЕТІ
-main
- main
+          ҚАЗАҚСТАН РЕСПУБЛИКАСЫ
+          <br />
+          ТӨТЕНШЕ ЖАҒДАЙЛАР МИНИСТРЛІГІ
         </span>
-        {hasEmblem ? (
-          <img
-            src={emblemDataUrl}
-            alt="Эмблема МЧС РК"
-            className="gov-top-banner__emblem"
-          />
-        ) : (
-          <div className="gov-top-banner__emblem gov-top-banner__emblem--placeholder" aria-hidden="true" />
-        )}
+        <img
+          src={mchsLogo}
+          alt="Эмблема МЧС РК"
+          className="gov-top-banner__emblem"
+          data-testid="mchs-logo"
+        />
         <span className="gov-top-banner__text">
-          КОМИТЕТ ПРОТИВОПОЖАРНОЙ СЛУЖБЫ МЧС РК
+          МИНИСТЕРСТВО ПО ЧРЕЗВЫЧАЙНЫМ
+          <br />
+          СИТУАЦИЯМ РЕСПУБЛИКИ КАЗАХСТАН
         </span>
       </div>
     </div>
