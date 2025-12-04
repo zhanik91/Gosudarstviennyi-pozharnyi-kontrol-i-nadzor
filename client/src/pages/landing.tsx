@@ -1,12 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Building, FileText } from "lucide-react";
-import GovTopBanner from "@/components/layout/top-banner";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
-      <GovTopBanner />
       <div className="container mx-auto px-6 py-16">
         <div className="text-center space-y-6 mb-16">
           <div className="flex items-center justify-center gap-3 mb-8">
@@ -14,13 +12,8 @@ export default function Landing() {
               <Shield className="w-8 h-8 text-accent-foreground" />
             </div>
             <div className="text-left">
-              <h1 className="text-3xl font-bold text-foreground">
-                Информационная система государственного пожарного контроля Комитета
-                противопожарной службы МЧС РК
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Единая цифровая платформа Комитета противопожарной службы МЧС РК
-              </p>
+              <h1 className="text-3xl font-bold text-foreground">Государственный пожарный контроль</h1>
+              <p className="text-lg text-muted-foreground">Портал МЧС Республики Казахстан</p>
             </div>
           </div>
           

@@ -3,7 +3,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Header from "@/components/layout/header";
-import GovTopBanner from "@/components/layout/top-banner";
 import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
@@ -44,7 +43,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
-      <GovTopBanner />
       <Header />
       
       <div className="container mx-auto px-6 py-8 space-y-8">
