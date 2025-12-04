@@ -1,85 +1,88 @@
-import { Router } from 'express';
+import type { Request, Response } from "express";
+import { storage } from "../storage";
 import XLSX from 'xlsx';
-import { isAuthenticated } from '../auth-local';
-import { storage } from '../storage';
 
-const router = Router();
+export class ExportController {
 
-// Экспорт отчетов в XLSX
-router.get('/api/export/report', isAuthenticated, async (req: any, res) => {
-  try {
-    const { form, period, orgId, includeChildren } = req.query;
-    
-    // Проверка доступа к организации
-    const organizations = await storage.getOrganizations();
-    const { assertOrgScope } = await import('../services/authz');
-    
+  // Экспорт отчетов в XLSX
+  async exportReport(req: Request, res: Response) {
     try {
-      assertOrgScope(organizations, req.user.orgId || req.user.claims.sub, orgId);
-    } catch (error: any) {
-      return res.status(403).json({ ok: false, msg: 'forbidden' });
+      const { form, period, orgId, includeChildren } = req.query;
+
+      // Проверка доступа к организации
+      const organizations = await storage.getOrganizations();
+      const { assertOrgScope } = await import('../services/authz');
+
+      try {
+        assertOrgScope(organizations, req.user?.organizationId || 'mcs-rk', orgId as string);
+      } catch (error: any) {
+        return res.status(403).json({ ok: false, msg: 'forbidden' });
+      }
+
+      // Получение данных отчета
+      const reportData = await storage.getReportData({
+        orgId: orgId as string,
+        period: period as string,
+        form: form as string,
+        includeChildren: includeChildren === 'true'
+      });
+
+      // Создание Excel файла
+      const workbook = XLSX.utils.book_new();
+
+      const formStr = form as string;
+      const periodStr = period as string;
+
+      switch (formStr) {
+        case '1-osp':
+          addOSPSheet(workbook, reportData, periodStr);
+          break;
+        case '2-ssg':
+          addSSGSheet(workbook, reportData, periodStr);
+          break;
+        case '3-spvp':
+          addSPVPSheet(workbook, reportData, periodStr);
+          break;
+        case '4-sovp':
+          addSOVPSheet(workbook, reportData, periodStr);
+          break;
+        case '5-spzs':
+          addSPZSSheet(workbook, reportData, periodStr);
+          break;
+        case '6-sspz':
+          addSSPZSheet(workbook, reportData, periodStr);
+          break;
+        case 'co':
+          addCOSheet(workbook, reportData, periodStr);
+          break;
+        default:
+          // Добавляем все формы
+          addOSPSheet(workbook, reportData, periodStr);
+          addSSGSheet(workbook, reportData, periodStr);
+          addSPVPSheet(workbook, reportData, periodStr);
+          addSOVPSheet(workbook, reportData, periodStr);
+          addSPZSSheet(workbook, reportData, periodStr);
+          addSSPZSheet(workbook, reportData, periodStr);
+          addCOSheet(workbook, reportData, periodStr);
+      }
+
+      // Генерация Excel файла
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      const filename = `report_${form || 'all'}_${period}_${orgId}.xlsx`;
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(excelBuffer);
+
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      res.status(500).json({ ok: false, msg: 'Export failed' });
     }
-
-    // Получение данных отчета
-    const reportData = await storage.getReportData({
-      orgId,
-      period,
-      form,
-      includeChildren: includeChildren === 'true'
-    });
-
-    // Создание Excel файла
-    const workbook = XLSX.utils.book_new();
-    
-    switch (form) {
-      case '1-osp':
-        addOSPSheet(workbook, reportData, period);
-        break;
-      case '2-ssg':
-        addSSGSheet(workbook, reportData, period);
-        break;
-      case '3-spvp':
-        addSPVPSheet(workbook, reportData, period);
-        break;
-      case '4-sovp':
-        addSOVPSheet(workbook, reportData, period);
-        break;
-      case '5-spzs':
-        addSPZSSheet(workbook, reportData, period);
-        break;
-      case '6-sspz':
-        addSSPZSheet(workbook, reportData, period);
-        break;
-      case 'co':
-        addCOSheet(workbook, reportData, period);
-        break;
-      default:
-        // Добавляем все формы
-        addOSPSheet(workbook, reportData, period);
-        addSSGSheet(workbook, reportData, period);
-        addSPVPSheet(workbook, reportData, period);
-        addSOVPSheet(workbook, reportData, period);
-        addSPZSSheet(workbook, reportData, period);
-        addSSPZSheet(workbook, reportData, period);
-        addCOSheet(workbook, reportData, period);
-    }
-
-    // Генерация Excel файла
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    
-    const filename = `report_${form || 'all'}_${period}_${orgId}.xlsx`;
-    
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(excelBuffer);
-
-  } catch (error) {
-    console.error('Error exporting report:', error);
-    res.status(500).json({ ok: false, msg: 'Export failed' });
   }
-});
+}
 
-// Функции для создания листов Excel
+// Helper functions (moved from original route file)
 function addOSPSheet(workbook: XLSX.WorkBook, data: any, period: string) {
   const sheetData = [
     ['Форма 1-ОСП: Общие сведения о пожарах и гибели людей'],
@@ -109,7 +112,6 @@ function addSSGSheet(workbook: XLSX.WorkBook, data: any, period: string) {
     ['1', 'Загорание в жилом секторе', data.ssg?.residential || 0],
     ['2', 'Загорание транспорта', data.ssg?.transport || 0],
     ['3', 'Загорание мусора', data.ssg?.waste || 0],
-    // ... остальные пункты
   ];
 
   const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
@@ -117,14 +119,13 @@ function addSSGSheet(workbook: XLSX.WorkBook, data: any, period: string) {
 }
 
 function addSPVPSheet(workbook: XLSX.WorkBook, data: any, period: string) {
-  const sheetData = [
+  const sheetData: any[][] = [
     ['Форма 3-СПВП: Сведения о причинах возникновения пожаров'],
     ['Период:', period],
     [''],
     ['Код', 'Причина', 'Всего', 'в т.ч. ОВСР'],
   ];
 
-  // Добавляем данные по причинам
   if (data.spvp?.causes) {
     data.spvp.causes.forEach((cause: any) => {
       sheetData.push([
@@ -141,7 +142,7 @@ function addSPVPSheet(workbook: XLSX.WorkBook, data: any, period: string) {
 }
 
 function addSOVPSheet(workbook: XLSX.WorkBook, data: any, period: string) {
-  const sheetData = [
+  const sheetData: any[][] = [
     ['Форма 4-СОВП: Сведения об объектах возникновения пожаров'],
     ['Период:', period],
     [''],
@@ -170,11 +171,9 @@ function addSPZSSheet(workbook: XLSX.WorkBook, data: any, period: string) {
     [''],
   ];
 
-  // Добавляем разделы формы 5-СПЖС
   if (data.spzs) {
     sheetData.push(['Раздел 1: По социальному положению погибших']);
     sheetData.push(['Показатель', 'Количество']);
-    // ... данные по социальному положению
   }
 
   const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
@@ -216,4 +215,4 @@ function addCOSheet(workbook: XLSX.WorkBook, data: any, period: string) {
   XLSX.utils.book_append_sheet(workbook, worksheet, 'СО');
 }
 
-export default router;
+export const exportController = new ExportController();

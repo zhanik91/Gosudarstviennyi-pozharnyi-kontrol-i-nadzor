@@ -2,24 +2,19 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
-import adminRoutes from "./routes/admin";
 import { incidentController } from "./controllers/incident.controller";
 import { organizationController } from "./controllers/organization.controller";
 import { packageController } from "./controllers/package.controller";
 import { documentController } from "./controllers/document.controller";
+import { reportController } from "./controllers/report.controller";
+import { exportController } from "./controllers/export.controller";
+import { adminController } from "./controllers/admin.controller";
+import { statsController } from "./controllers/stats.controller";
+import { auditController } from "./controllers/audit.controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   setupLocalAuth(app);
-
-  // Подключение модульных маршрутов (которые ещё не перенесены)
-  const reportsRouter = await import('./routes/reports');
-  const exportRouter = await import('./routes/export');
-  
-  app.use(reportsRouter.default);
-  // app.use(packagesRouter.default); // Removed: Logic moved to PackageController
-  app.use(exportRouter.default);
-  app.use('/api/admin', adminRoutes);
 
   // === Организации ===
   app.get('/api/organizations', isAuthenticated, organizationController.getOrganizations);
@@ -37,9 +32,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/packages', isAuthenticated, packageController.createPackage);
   app.put('/api/packages/:id/submit', isAuthenticated, packageController.submitPackage);
   app.put('/api/packages/:id/approve', isAuthenticated, packageController.approvePackage);
-  app.post('/api/packages/:id/approve', isAuthenticated, packageController.approvePackage); // Alias for legacy support
+  app.post('/api/packages/:id/approve', isAuthenticated, packageController.approvePackage);
   app.put('/api/packages/:id/reject', isAuthenticated, packageController.rejectPackage);
-  app.post('/api/packages/:id/return', isAuthenticated, packageController.rejectPackage); // Alias for legacy support
+  app.post('/api/packages/:id/return', isAuthenticated, packageController.rejectPackage);
   app.post('/api/packages/consolidate', isAuthenticated, packageController.consolidatePackage);
 
   // === Документы ===
@@ -47,64 +42,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/documents', isAuthenticated, documentController.createDocument);
   app.get('/api/documents', isAuthenticated, documentController.getDocuments);
   app.get('/documents/:documentPath(*)', isAuthenticated, documentController.downloadDocument);
-  app.post('/api/documents/upload', isAuthenticated, documentController.createDocument); // Alias/Dup check needed?
+  app.post('/api/documents/upload', isAuthenticated, documentController.createDocument);
   app.put('/api/documents/:id/status', isAuthenticated, documentController.updateStatus);
   app.delete('/api/documents/:id', isAuthenticated, documentController.deleteDocument);
   app.get("/public-objects/:filePath(*)", documentController.getPublicObject);
 
-  // === Статистика (нужен отдельный контроллер в будущем) ===
-  app.get('/api/stats', isAuthenticated, async (req: any, res) => {
-    try {
-      const user = await storage.getUser(req.user.claims.sub);
-      if (!user?.organizationId) {
-        return res.status(400).json({ message: "User must be assigned to an organization" });
-      }
-      const period = req.query.period as string;
-      const stats = await storage.getIncidentStats(user.organizationId, period);
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-      res.status(500).json({ message: "Failed to fetch statistics" });
-    }
-  });
+  // === Отчеты ===
+  app.get('/api/reports', isAuthenticated, reportController.getReports);
+  app.get('/api/stats/dashboard', reportController.getDashboardStats);
+  app.get('/api/reports/validate', isAuthenticated, reportController.validateReports);
+
+  // === Экспорт ===
+  app.get('/api/export/report', isAuthenticated, exportController.exportReport);
+
+  // === Администрирование (Users) ===
+  const adminRouter = require('express').Router();
+  adminRouter.use(adminController.requireAdmin);
+  adminRouter.get('/users', adminController.getUsers);
+  adminRouter.post('/users', adminController.createUser);
+  adminRouter.put('/users/:id', adminController.updateUser);
+  adminRouter.delete('/users/:id', adminController.deleteUser);
+  app.use('/api/admin', adminRouter);
+
+  // === Статистика ===
+  app.get('/api/stats', isAuthenticated, statsController.getStats);
 
   // === Audit Logs (Admin) ===
-  app.get('/api/audit-logs', isAuthenticated, async (req: any, res) => {
-    try {
-      const user = await storage.getUser(req.user.claims.sub);
-      if (user?.role !== 'admin') {
-        return res.status(403).json({ message: "Insufficient permissions" });
-      }
-      const filters: any = {};
-      if (req.query.userId) filters.userId = req.query.userId as string;
-      if (req.query.action) filters.action = req.query.action as string;
-      if (req.query.dateFrom) filters.dateFrom = new Date(req.query.dateFrom as string);
-      if (req.query.dateTo) filters.dateTo = new Date(req.query.dateTo as string);
-      
-      const logs = await storage.getAuditLogs(filters);
-      res.json(logs);
-    } catch (error) {
-      console.error("Error fetching audit logs:", error);
-      res.status(500).json({ message: "Failed to fetch audit logs" });
-    }
-  });
+  app.get('/api/audit-logs', isAuthenticated, auditController.getLogs);
 
-  // === Users (Admin) ===
-  app.get('/api/admin/users', isAuthenticated, async (req: any, res) => {
-    try {
-      const user = await storage.getUser(req.user.claims.sub);
-      if (user?.role !== 'admin') {
-        return res.status(403).json({ message: "Admin access required" });
-      }
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
-
-  // === Регистрируем bulk операции (пока оставляем как есть) ===
+  // === Регистрируем bulk операции ===
   const { registerBulkIncidentRoutes } = await import('./routes/incidents-bulk');
   registerBulkIncidentRoutes(app);
 
