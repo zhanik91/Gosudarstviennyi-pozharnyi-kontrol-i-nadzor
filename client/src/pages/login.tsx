@@ -178,7 +178,7 @@ export default function LoginPage() {
               >
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4 drop-shadow-sm">
-                    Государственный пожарный контроль и надзор
+                    Информационная система государственного пожарного контроля и надзора КПС МЧС РК
                   </h1>
                   <p className="text-xl text-slate-600 dark:text-slate-300 mb-8 font-light">
                     Единый доступ к модулям, аналитике и отчетности
