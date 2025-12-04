@@ -8,7 +8,8 @@ import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
 import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Smartphone, Map } from "lucide-react";
-import { Link } from "wouter";
+import { Link, navigate } from "wouter";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { toast } = useToast();
@@ -44,7 +45,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
       <Header />
-      
+
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Простые действия */}
         <SimpleActions />
@@ -173,7 +174,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );
