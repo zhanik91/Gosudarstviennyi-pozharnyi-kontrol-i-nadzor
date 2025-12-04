@@ -6,7 +6,6 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { nanoid } from "nanoid";
 
 const scryptAsync = promisify(scrypt);
 
@@ -97,13 +96,11 @@ export function setupLocalAuth(app: Express) {
 
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
-        id: nanoid(),
         username,
         password: hashedPassword,
         fullName,
         region,
         district: "",
-        email: "",
         role,
         organizationId: `${region}-mchs`,
         isActive: true,
