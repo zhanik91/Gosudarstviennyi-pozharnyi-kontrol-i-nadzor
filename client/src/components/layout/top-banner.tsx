@@ -7,7 +7,7 @@ export function GovTopBanner() {
     <div className="gov-top-banner">
       <div className="gov-top-banner__content">
         <span className="gov-top-banner__text">
-          ҚАЗАҚСТАН РЕСПУБЛИКАСЫНЫҢ ТЖМ ӨРТКЕ ҚАРСЫ ҚЫЗМЕТ КОМИТЕТІ
+          ҚР ТЖМ ӨРТКЕ ҚАРСЫ ҚЫЗМЕТ КОМИТЕТІ
         </span>
         {hasEmblem ? (
           <img
