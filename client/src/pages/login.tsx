@@ -158,12 +158,25 @@ export default function LoginPage() {
               <div className="max-w-md space-y-6">
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4">
+ codex/add-header-logo-and-update-footer-text-qiocp8
+
+ codex/add-header-logo-and-update-footer-text-izsg6v
+ main
                     Информационная система государственного пожарного контроля
                     Комитета противопожарной службы МЧС РК
                   </h1>
                   <p className="text-xl text-muted-foreground mb-8">
                     Информационная система государственного пожарного контроля
                     Комитета противопожарной службы МЧС РК
+ codex/add-header-logo-and-update-footer-text-qiocp8
+
+
+                    Информационная система государственного пожарного контроля и надзора
+                  </h1>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Министерство по чрезвычайным ситуациям Республики Казахстан
+ main
+ main
                   </p>
                 </div>
 
