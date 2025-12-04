@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { ComponentType, useEffect } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,8 +20,19 @@ import FireModule from "@/pages/fire-module";
 import ControlSupervision from "@/pages/control-supervision";
 import LoginPage from "@/pages/login";
 
-function Router() {
+type ProtectedRouteProps = {
+  component: ComponentType;
+};
+
+function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, isError } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isError) {
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, isError, navigate]);
 
   if (isLoading) {
     return (
@@ -30,43 +42,44 @@ function Router() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        Не удалось проверить авторизацию. Попробуйте обновить страницу.
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <Component />;
+}
+
+function Router() {
+  const protectedRoute = (component: ComponentType) => () => (
+    <ProtectedRoute component={component} />
+  );
+
   return (
     <Switch>
-      {!isAuthenticated ? (
-        <>
-          <Route path="/login" component={LoginPage} />
-          <Route path="/" component={LoginPage} />
-          <Route component={NotFound} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/fire-module" component={FireModule} />
-          <Route path="/audit-conclusions" component={AuditConclusionsJournal} />
-          <Route path="/controlled-objects" component={ControlSupervision} />
-          <Route path="/incidents/new" component={FireModule} />
-          <Route path="/reports" component={FireModule} />
-          <Route path="/documents" component={DocumentsPage} />
-          <Route path="/document-management" component={DocumentManagement} />
-          <Route path="/notifications" component={NotificationsSystem} />
-          <Route path="/maps" component={InteractiveMaps} />
-          <Route path="/mobile-field" component={MobileField} />
-          <Route path="/crm" component={CRMDashboard} />
-          <Route path="/analytics" component={AdvancedAnalytics} />
-          <Route path="/admin" component={AdminPanel} />
-        </>
-      )}
-      <Route
-        component={() =>
-          isError ? (
-            <div className="min-h-screen flex items-center justify-center text-red-600">
-              Не удалось проверить авторизацию. Попробуйте обновить страницу.
-            </div>
-          ) : (
-            <NotFound />
-          )
-        }
-      />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/" component={protectedRoute(Home)} />
+      <Route path="/fire-module" component={protectedRoute(FireModule)} />
+      <Route path="/audit-conclusions" component={protectedRoute(AuditConclusionsJournal)} />
+      <Route path="/controlled-objects" component={protectedRoute(ControlSupervision)} />
+      <Route path="/incidents/new" component={protectedRoute(FireModule)} />
+      <Route path="/reports" component={protectedRoute(FireModule)} />
+      <Route path="/documents" component={protectedRoute(DocumentsPage)} />
+      <Route path="/document-management" component={protectedRoute(DocumentManagement)} />
+      <Route path="/notifications" component={protectedRoute(NotificationsSystem)} />
+      <Route path="/maps" component={protectedRoute(InteractiveMaps)} />
+      <Route path="/mobile-field" component={protectedRoute(MobileField)} />
+      <Route path="/crm" component={protectedRoute(CRMDashboard)} />
+      <Route path="/analytics" component={protectedRoute(AdvancedAnalytics)} />
+      <Route path="/admin" component={protectedRoute(AdminPanel)} />
+      <Route component={protectedRoute(NotFound)} />
     </Switch>
   );
 }

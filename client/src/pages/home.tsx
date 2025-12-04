@@ -1,11 +1,15 @@
+ codex/add-usedashboardmetrics-hook-and-update-home-page
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+
+ main
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
+ codex/add-usedashboardmetrics-hook-and-update-home-page
 import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Map } from "lucide-react";
 import { Link, navigate } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -63,6 +67,11 @@ export default function Home() {
     return value.toLocaleString("ru-RU");
   };
 
+
+import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Smartphone, Map } from "lucide-react";
+
+export default function Home() {
+ main
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
       <Header />
