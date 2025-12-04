@@ -74,7 +74,7 @@ export default function LoginPage() {
                   </div>
                   <CardTitle className="text-2xl">Вход в систему</CardTitle>
                   <CardDescription>
-                    Авторизация в портале МЧС РК
+                    ИИ "Государственного пожарного контроля и надзора КПС МЧС РК"
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -155,10 +155,10 @@ export default function LoginPage() {
               <div className="max-w-md space-y-6">
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4">
-                    Государственный пожарный контроль
+                    Государственный пожарный контроль и надзор
                   </h1>
                   <p className="text-xl text-muted-foreground mb-8">
-                    Информационная система МЧС Республики Казахстан
+                    Информационная система КПС МЧС РК
                   </p>
                 </div>
 
@@ -168,7 +168,7 @@ export default function LoginPage() {
                     <div>
                       <h3 className="font-semibold mb-1">Государственный учёт пожаров</h3>
                       <p className="text-sm text-muted-foreground">
-                        Журналы выездов, отчетные формы 1-ОСП, 2-ССГ, 3-СПВП, 4-СОВП, 5-СПЖС, 6-ССПЗ
+                        Журналы выездов, отчетные формы, диаграммы
                       </p>
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export default function LoginPage() {
                     <div>
                       <h3 className="font-semibold mb-1">Контроль и надзор</h3>
                       <p className="text-sm text-muted-foreground">
-                        Реестр подконтрольных объектов, проверки, нарушения, предписания
+                        Реестр подконтрольных объектов, учёт проверок, контроль предписаний
                       </p>
                     </div>
                   </div>
@@ -186,17 +186,16 @@ export default function LoginPage() {
                   <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
                     <User className="h-6 w-6 text-green-400 mt-1" />
                     <div>
-                      <h3 className="font-semibold mb-1">Аудит и журналы</h3>
+                      <h3 className="font-semibold mb-1">Журналы, сведения</h3>
                       <p className="text-sm text-muted-foreground">
-                        Учёт проверок, протоколы, административные правонарушения
+                        аудитов, профессиональных пожарных формирований
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground">
-                  <p>Министерство по чрезвычайным ситуациям</p>
-                  <p>Республики Казахстан</p>
+                  <p>© 2025 Комитет противопожарной службы МЧС РК</p>
                 </div>
               </div>
             </div>

@@ -12,8 +12,8 @@ export default function Landing() {
               <Shield className="w-8 h-8 text-accent-foreground" />
             </div>
             <div className="text-left">
-              <h1 className="text-3xl font-bold text-foreground">Государственный пожарный контроль</h1>
-              <p className="text-lg text-muted-foreground">Портал МЧС Республики Казахстан</p>
+              <h1 className="text-3xl font-bold text-foreground">Государственный пожарный контроль и надзор</h1>
+              <p className="text-lg text-muted-foreground">Портал КПС МЧС РК</p>
             </div>
           </div>
           

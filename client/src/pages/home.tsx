@@ -53,8 +53,7 @@ export default function Home() {
           <div className="text-center space-y-4">
             <h2 className="text-3xl font-bold text-foreground">Добро пожаловать в портал</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Комплексная система управления пожарной безопасностью с модульной архитектурой 
-              для эффективного контроля и отчетности МЧС РК
+              Единая цифровая платформа пожарной безопасности для мониторинга, государственного контроля и формирование отчетности МЧС РК
             </p>
           </div>
 
@@ -88,7 +87,7 @@ export default function Home() {
               }}
               secondaryActions={[
                 { label: "Документация", href: "#" },
-                { label: "Планы", href: "#" }
+                { label: "Графики проверок", href: "#" }
               ]}
             />
 
