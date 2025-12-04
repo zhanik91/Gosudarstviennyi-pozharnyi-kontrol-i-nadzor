@@ -147,7 +147,11 @@ export default function Header() {
   if (!user) return null;
 
   return (
+ codex/expand-header-component-and-update-layout-3po8wi
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/85 text-slate-100 backdrop-blur supports-[backdrop-filter]:bg-slate-950/75 shadow-lg">
+
+    <header className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+ main
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-6">
           <Link href="/">
@@ -157,7 +161,11 @@ export default function Header() {
                 <p className="text-xs uppercase tracking-[0.08em] text-primary">
                   МЧС Республики Казахстан
                 </p>
+ codex/expand-header-component-and-update-layout-3po8wi
                 <p className="text-sm font-semibold text-white">
+
+                <p className="text-sm font-semibold text-foreground">
+ main
                   Гос. пожарный контроль и надзор
                 </p>
               </div>
@@ -168,7 +176,11 @@ export default function Header() {
             <NavigationMenuList className="ml-4 gap-1">
               {navGroups.map((group) => (
                 <NavigationMenuItem key={group.label}>
+ codex/expand-header-component-and-update-layout-3po8wi
                   <NavigationMenuTrigger className="bg-transparent text-sm font-medium text-slate-100 transition-colors duration-200 hover:bg-primary/20 focus:bg-primary/25">
+
+                  <NavigationMenuTrigger className="bg-transparent text-sm font-medium text-foreground transition-colors duration-200 hover:bg-primary/10 focus:bg-primary/15">
+ main
                     {group.label}
                   </NavigationMenuTrigger>
                   <NavigationMenuContent className="rounded-xl border bg-white/95 shadow-xl transition-[opacity,transform] duration-200">
@@ -177,7 +189,11 @@ export default function Header() {
                         <Link key={item.title} href={item.href}>
                           <NavigationMenuLink asChild>
                             <a className="flex h-full gap-3 rounded-lg border border-transparent bg-muted/60 px-3 py-3 text-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+ codex/expand-header-component-and-update-layout-3po8wi
                               <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary">
+
+                              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+ main
                                 <item.icon className="h-5 w-5" />
                               </div>
                               <div className="space-y-1">
@@ -198,13 +214,21 @@ export default function Header() {
           </NavigationMenu>
 
           <div className="flex flex-1 justify-center lg:hidden">
+ codex/expand-header-component-and-update-layout-3po8wi
             <div className="flex w-full items-center gap-2 overflow-x-auto rounded-lg border border-slate-700/60 bg-slate-800/70 px-2 py-1 text-sm text-slate-100 shadow-sm">
+
+            <div className="flex w-full items-center gap-2 overflow-x-auto rounded-lg border bg-white/70 px-2 py-1 text-sm text-foreground shadow-sm">
+ main
               {navGroups
                 .flatMap((group) => group.items)
                 .slice(0, 4)
                 .map((item) => (
                   <Link key={item.title} href={item.href}>
+ codex/expand-header-component-and-update-layout-3po8wi
                     <a className="flex min-w-fit items-center gap-1 rounded-md px-3 py-1.5 font-medium transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+
+                    <a className="flex min-w-fit items-center gap-1 rounded-md px-3 py-1.5 font-medium transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+ main
                       <item.icon className="h-4 w-4" />
                       <span className="whitespace-nowrap">{item.title}</span>
                     </a>
@@ -218,7 +242,11 @@ export default function Header() {
               variant="ghost"
               size="icon"
               aria-label="Уведомления"
+ codex/expand-header-component-and-update-layout-3po8wi
               className="relative hidden sm:inline-flex text-slate-100 transition duration-200 hover:bg-primary/20 hover:text-white"
+
+              className="relative hidden sm:inline-flex transition duration-200 hover:bg-primary/10"
+ main
             >
               <Bell className="h-5 w-5" />
               <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
@@ -230,7 +258,11 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
+ codex/expand-header-component-and-update-layout-3po8wi
                   className="group flex items-center gap-2 rounded-full px-2 pr-3 text-slate-100 transition duration-200 hover:bg-primary/20 hover:text-white"
+
+                  className="group flex items-center gap-2 rounded-full px-2 pr-3 transition duration-200 hover:bg-primary/10"
+ main
                   aria-label="Меню профиля"
                 >
                   <Avatar className="h-9 w-9 border">
