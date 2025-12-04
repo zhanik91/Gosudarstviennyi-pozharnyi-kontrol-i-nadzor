@@ -138,22 +138,6 @@ export default function Home() {
                 { label: "Прогнозы", href: "/maps" }
               ]}
             />
-
-            <ModuleCard
-              icon={FileCheck}
-              iconBg="bg-indigo-500/20"
-              iconColor="text-indigo-400"
-              title="Журнал заключений аудитов"
-              description="Ведение журнала заключений по результатам проверок объектов государственного контроля и надзора"
-              primaryAction={{
-                label: "Открыть журнал",
-                href: "/audit-conclusions-journal"
-              }}
-              secondaryActions={[
-                { label: "Новое заключение", href: "/audit-conclusions-journal" },
-                { label: "Архив", href: "/audit-conclusions-journal" }
-              ]}
-            />
           </div>
 
           {/* Quick Stats */}
