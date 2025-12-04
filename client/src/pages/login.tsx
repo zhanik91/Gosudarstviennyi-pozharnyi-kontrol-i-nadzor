@@ -87,7 +87,7 @@ export default function LoginPage() {
                     </div>
                     <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">Вход в систему</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-300">
-                      ИИ "Государственного пожарного контроля и надзора КПС МЧС РК"
+                      Информационная система государственного пожарного контроля и надзора МЧС РК
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -105,7 +105,7 @@ export default function LoginPage() {
                                   <Input
                                     {...field}
                                     placeholder="Введите логин"
-                                    className="pl-10 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 focus:bg-white/70 dark:focus:bg-black/40 transition-all duration-300"
+                                    className="pl-10 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 focus:bg-white/70 dark:focus:bg-black/40 transition-all duration-300 text-slate-900 dark:text-white placeholder:text-slate-500"
                                     disabled={isLoading}
                                   />
                                 </div>
@@ -128,7 +128,7 @@ export default function LoginPage() {
                                     {...field}
                                     type="password"
                                     placeholder="Введите пароль"
-                                    className="pl-10 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 focus:bg-white/70 dark:focus:bg-black/40 transition-all duration-300"
+                                    className="pl-10 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 focus:bg-white/70 dark:focus:bg-black/40 transition-all duration-300 text-slate-900 dark:text-white placeholder:text-slate-500"
                                     disabled={isLoading}
                                   />
                                 </div>
@@ -178,10 +178,10 @@ export default function LoginPage() {
               >
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4 drop-shadow-sm">
-                    Государственный пожарный контроль и надзор
+                    Информационная система государственного пожарного контроля и надзора КПС МЧС РК
                   </h1>
                   <p className="text-xl text-slate-600 dark:text-slate-300 mb-8 font-light">
-                    Информационная система КПС МЧС РК
+                    Единый доступ к модулям, аналитике и отчетности
                   </p>
                 </div>
 
@@ -190,26 +190,26 @@ export default function LoginPage() {
                     {
                       icon: Shield,
                       title: "Государственный учёт пожаров",
-                      desc: "Журналы выездов, отчетные формы, диаграммы",
+                      desc: "Журналы выездов, отчётные формы, диаграммы и аналитика",
                       color: "text-blue-500",
                     },
                     {
                       icon: Lock,
-                      title: "Контроль и надзор",
-                      desc: "Реестр подконтрольных объектов, учёт проверок, контроль предписаний",
+                      title: "Государственный контроль и надзор",
+                      desc: "Реестр объектов контроля, учёт проверок, предписаний и сроков их исполнения",
                       color: "text-orange-500",
                     },
                     {
                       icon: User,
-                      title: "Журналы, сведения",
-                      desc: "аудитов, профессиональных пожарных формирований",
+                      title: "Перечни, списки, журналы",
+                      desc: "аудитов, ППС, СРО",
                       color: "text-green-500",
                     }
                   ].map((item, index) => (
                     <motion.div
                       key={index}
                       whileHover={{ scale: 1.02, x: 5 }}
-                      className="flex items-start gap-3 p-4 bg-white/30 dark:bg-black/20 backdrop-blur-md rounded-xl border border-white/20 shadow-sm transition-all cursor-default"
+                      className="flex items-start gap-3 p-4 bg-white/30 dark:bg-black/20 backdrop-blur-md rounded-xl border border-white/20 shadow-sm transition-all cursor-pointer hover:bg-white/50 dark:hover:bg-black/30 hover:shadow-md hover:border-white/40"
                     >
                       <item.icon className={`h-6 w-6 ${item.color} mt-1`} />
                       <div>
