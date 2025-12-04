@@ -17,22 +17,35 @@ export const AuroraBackground = ({
     <main>
       <div
         className={cn(
-          "relative flex flex-col h-[100vh] items-center justify-center bg-zinc-50 dark:bg-zinc-900 text-slate-950 transition-bg",
+          "relative flex flex-col  h-[100vh] items-center justify-center bg-zinc-50 dark:bg-zinc-900  text-slate-950 transition-bg",
           className
         )}
         {...props}
       >
         <div className="absolute inset-0 overflow-hidden">
           <div
+            //   I'm sorry but this is what peak performance looks like
             className={cn(
-              "absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950",
+              `
+            [--white-gradient:repeating-linear-gradient(100deg,var(--white)_0%,var(--white)_7%,var(--transparent)_10%,var(--transparent)_12%,var(--white)_16%)]
+            [--dark-gradient:repeating-linear-gradient(100deg,var(--black)_0%,var(--black)_7%,var(--transparent)_10%,var(--transparent)_12%,var(--black)_16%)]
+            [--aurora:repeating-linear-gradient(100deg,var(--blue-500)_10%,var(--indigo-300)_15%,var(--blue-300)_20%,var(--violet-200)_25%,var(--blue-400)_30%)]
+            [background-image:var(--white-gradient),var(--aurora)]
+            dark:[background-image:var(--dark-gradient),var(--aurora)]
+            [background-size:300%,_200%]
+            [background-position:50%_50%,50%_50%]
+            filter blur-[10px] invert dark:invert-0
+            after:content-[""] after:absolute after:inset-0 after:[background-image:var(--white-gradient),var(--aurora)]
+            after:dark:[background-image:var(--dark-gradient),var(--aurora)]
+            after:[background-size:200%,_100%]
+            after:animate-aurora after:[background-attachment:fixed] after:mix-blend-difference
+            pointer-events-none
+            absolute -inset-[10px] opacity-50 will-change-transform`,
+
               showRadialGradient &&
-                "[mask-image:radial-gradient(ellipse_at_80%_0%,rgba(0,0,0,0.2)_10%,transparent_65%)]"
+                `[mask-image:radial-gradient(ellipse_at_100%_0%,black_10%,var(--transparent)_70%)]`
             )}
-          />
-          <div
-            className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_80%_10%,rgba(14,165,233,0.15),transparent_30%),radial-gradient(circle_at_40%_80%,rgba(59,130,246,0.1),transparent_28%)]"
-          />
+          ></div>
         </div>
         {children}
       </div>
