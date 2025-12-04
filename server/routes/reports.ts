@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { isAuthenticated } from '../auth-local';
+import { isAuthenticated } from '../replitAuth';
 import { storage } from '../storage';
 import { orgScopeMiddleware } from '../services/authz';
 
