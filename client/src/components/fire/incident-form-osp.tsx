@@ -106,13 +106,29 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
     }
   }, [user, form]);
 
+  const normalizeCurrency = (value?: string | number) => {
+    if (value === undefined || value === null || value === "") {
+      return "0";
+    }
+
+    const numericValue = typeof value === "number"
+      ? value
+      : parseFloat(value.toString().replace(",", "."));
+
+    if (Number.isNaN(numericValue)) {
+      return "0";
+    }
+
+    return numericValue.toString();
+  };
+
   const createIncidentMutation = useMutation({
     mutationFn: async (data: OSPIncidentFormData) => {
       const formattedData = {
         ...data,
         dateTime: new Date(data.dateTime).toISOString(),
-        damage: data.damage ? parseFloat(data.damage) : 0,
-        savedProperty: data.savedProperty ? parseFloat(data.savedProperty) : 0,
+        damage: normalizeCurrency(data.damage),
+        savedProperty: normalizeCurrency(data.savedProperty),
       };
       
       console.log("🔄 Отправляем данные на сервер:", formattedData);
