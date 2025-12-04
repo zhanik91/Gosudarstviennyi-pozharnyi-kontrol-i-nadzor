@@ -17,7 +17,6 @@ import {
   TrendingUp, TrendingDown, Activity, AlertTriangle,
   MapPin, Calendar, FileBarChart, Download
 } from 'lucide-react';
-import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
@@ -34,8 +33,7 @@ export default function AdvancedAnalytics() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <LoadingIndicator message="Загрузка расширенной аналитики..." />
         </div>
         <Footer />
@@ -46,8 +44,7 @@ export default function AdvancedAnalytics() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <ErrorDisplay
             message="Ошибка загрузки аналитики"
             onRetry={() => window.location.reload()}
@@ -62,9 +59,7 @@ export default function AdvancedAnalytics() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
-      <div className="container mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         {/* Заголовок и фильтры */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
