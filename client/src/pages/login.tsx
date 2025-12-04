@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Shield, Lock, User } from "lucide-react";
+import { Lock, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -68,9 +68,11 @@ export default function LoginPage() {
               <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                   <div className="flex justify-center mb-4">
-                    <div className="p-3 bg-primary/20 rounded-full">
-                      <Shield className="h-8 w-8 text-primary" />
-                    </div>
+                    <img 
+                      src="/mchs-emblem.png" 
+                      alt="Эмблема МЧС РК" 
+                      className="h-20 w-20 object-contain"
+                    />
                   </div>
                   <CardTitle className="text-2xl">Вход в систему</CardTitle>
                   <CardDescription>
