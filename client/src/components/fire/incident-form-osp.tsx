@@ -17,14 +17,24 @@ import { z } from "zod";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 
 // Схема формы согласно 1-ОСП МЧС РК (Приказ № 928 от 16.11.2015)
-const ospIncidentSchema = insertIncidentSchema.extend({
-  dateTime: z.string().min(1, "Дата и время обязательны"),
-  locality: z.string().min(1, "Местность обязательна"),
-  incidentType: z.string().min(1, "Тип события обязателен"),
-  address: z.string().min(1, "Адрес обязателен"),
-  region: z.string().optional(),
-  city: z.string().optional(),
-});
+// Убираем поля, которые заполняются на сервере (organizationId, createdBy, packageId),
+// чтобы клиентская валидация не блокировала отправку формы
+const ospIncidentSchema = insertIncidentSchema
+  .omit({
+    organizationId: true,
+    createdBy: true,
+    packageId: true,
+  })
+  .extend({
+    dateTime: z.string().min(1, "Дата и время обязательны"),
+    locality: z.string().min(1, "Местность обязательна"),
+    incidentType: z.string().min(1, "Тип события обязателен"),
+    address: z.string().min(1, "Адрес обязателен"),
+    region: z.string().optional(),
+    city: z.string().optional(),
+    damage: z.union([z.number(), z.string()]).optional(),
+    savedProperty: z.union([z.number(), z.string()]).optional(),
+  });
 
 type OSPIncidentFormData = z.infer<typeof ospIncidentSchema>;
 
@@ -96,13 +106,29 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
     }
   }, [user, form]);
 
+  const normalizeCurrency = (value?: string | number) => {
+    if (value === undefined || value === null || value === "") {
+      return "0";
+    }
+
+    const numericValue = typeof value === "number"
+      ? value
+      : parseFloat(value.toString().replace(",", "."));
+
+    if (Number.isNaN(numericValue)) {
+      return "0";
+    }
+
+    return numericValue.toString();
+  };
+
   const createIncidentMutation = useMutation({
     mutationFn: async (data: OSPIncidentFormData) => {
       const formattedData = {
         ...data,
         dateTime: new Date(data.dateTime).toISOString(),
-        damage: data.damage ? parseFloat(data.damage) : 0,
-        savedProperty: data.savedProperty ? parseFloat(data.savedProperty) : 0,
+        damage: normalizeCurrency(data.damage),
+        savedProperty: normalizeCurrency(data.savedProperty),
       };
       
       console.log("🔄 Отправляем данные на сервер:", formattedData);
