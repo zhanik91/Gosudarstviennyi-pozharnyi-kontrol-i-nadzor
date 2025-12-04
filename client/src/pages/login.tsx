@@ -12,6 +12,7 @@ import { Lock, User, Shield } from "lucide-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { MchsEmblem } from "@/components/mchs-emblem";
 import { motion } from "framer-motion";
 
 const loginSchema = z.object({
@@ -81,11 +82,7 @@ export default function LoginPage() {
                   <CardHeader className="text-center">
                     <div className="flex justify-center mb-4">
                       <div className="w-20 h-20 rounded-full bg-white/50 backdrop-blur-sm flex items-center justify-center shadow-lg overflow-hidden border border-white/40 p-2">
-                        <img
-                          src="/mchs-emblem.png"
-                          alt="Эмблема МЧС"
-                          className="w-full h-full object-contain"
-                        />
+                        <MchsEmblem className="h-full w-full" />
                       </div>
                     </div>
                     <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">Вход в систему</CardTitle>

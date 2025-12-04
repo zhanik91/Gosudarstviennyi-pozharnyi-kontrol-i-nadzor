@@ -1,9 +1,10 @@
-import { ComponentType, useEffect } from "react";
+import { ComponentType, ReactNode, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Header from "@/components/layout/header";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import AdminPanel from "@/pages/admin-panel";
@@ -23,6 +24,15 @@ import LoginPage from "@/pages/login";
 type ProtectedRouteProps = {
   component: ComponentType;
 };
+
+function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+      <main className="min-h-[calc(100vh-4rem)] pb-10">{children}</main>
+    </div>
+  );
+}
 
 function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, isError } = useAuth();
@@ -54,7 +64,11 @@ function ProtectedRoute({ component: Component }: ProtectedRouteProps) {
     return null;
   }
 
-  return <Component />;
+  return (
+    <AppShell>
+      <Component />
+    </AppShell>
+  );
 }
 
 function Router() {
