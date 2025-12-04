@@ -21,6 +21,9 @@ export function GovTopBanner() {
           СИТУАЦИЯМ РЕСПУБЛИКИ КАЗАХСТАН
         </span>
       </div>
+      <div className="gov-top-banner__subtitle">
+        Комитет противопожарной службы МЧС РК
+      </div>
     </div>
   );
 }
