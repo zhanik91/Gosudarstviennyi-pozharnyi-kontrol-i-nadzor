@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
@@ -62,9 +61,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
-      <Header />
-
-      <div className="container mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         {/* Простые действия */}
         <SimpleActions />
         <div className="space-y-8 fade-in">
