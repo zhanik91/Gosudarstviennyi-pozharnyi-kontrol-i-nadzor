@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import XLSX from 'xlsx';
-import { isAuthenticated } from '../replitAuth';
+import { isAuthenticated } from '../auth-local';
 import { storage } from '../storage';
 
 const router = Router();

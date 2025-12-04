@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { isAuthenticated } from '../replitAuth';
+import { isAuthenticated } from '../auth-local';
 import { storage } from '../storage';
 import { emailService } from '../services/email';
 
