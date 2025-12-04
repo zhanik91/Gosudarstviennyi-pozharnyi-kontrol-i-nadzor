@@ -155,10 +155,7 @@ export default function Header() {
               <MchsEmblem className="h-10 w-10 rounded-md shadow-sm" />
               <div className="leading-tight">
                 <p className="text-xs uppercase tracking-[0.08em] text-primary">
-                  МЧС Республики Казахстан
-                </p>
-                <p className="text-sm font-semibold text-foreground">
-                  Гос. пожарный контроль и надзор
+                  КПС МЧС РК
                 </p>
               </div>
             </a>
