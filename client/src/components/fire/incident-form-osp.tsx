@@ -17,14 +17,24 @@ import { z } from "zod";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 
 // Схема формы согласно 1-ОСП МЧС РК (Приказ № 928 от 16.11.2015)
-const ospIncidentSchema = insertIncidentSchema.extend({
-  dateTime: z.string().min(1, "Дата и время обязательны"),
-  locality: z.string().min(1, "Местность обязательна"),
-  incidentType: z.string().min(1, "Тип события обязателен"),
-  address: z.string().min(1, "Адрес обязателен"),
-  region: z.string().optional(),
-  city: z.string().optional(),
-});
+// Убираем поля, которые заполняются на сервере (organizationId, createdBy, packageId),
+// чтобы клиентская валидация не блокировала отправку формы
+const ospIncidentSchema = insertIncidentSchema
+  .omit({
+    organizationId: true,
+    createdBy: true,
+    packageId: true,
+  })
+  .extend({
+    dateTime: z.string().min(1, "Дата и время обязательны"),
+    locality: z.string().min(1, "Местность обязательна"),
+    incidentType: z.string().min(1, "Тип события обязателен"),
+    address: z.string().min(1, "Адрес обязателен"),
+    region: z.string().optional(),
+    city: z.string().optional(),
+    damage: z.union([z.number(), z.string()]).optional(),
+    savedProperty: z.union([z.number(), z.string()]).optional(),
+  });
 
 type OSPIncidentFormData = z.infer<typeof ospIncidentSchema>;
 
