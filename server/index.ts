@@ -7,10 +7,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Настройка EJS для портальных страниц
-app.set('view engine', 'ejs');
-app.set('views', path.join(process.cwd(), 'views'));
-
 // Статические файлы
 app.use(express.static(path.join(process.cwd(), 'public')));
 
