@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Shield, Lock, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
+import GovTopBanner from "@/components/layout/top-banner";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Логин обязателен"),
@@ -60,6 +61,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
+      <GovTopBanner />
       <div className="container mx-auto px-6 py-8">
         <div className="flex min-h-screen items-center justify-center">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
@@ -74,7 +76,8 @@ export default function LoginPage() {
                   </div>
                   <CardTitle className="text-2xl">Вход в систему</CardTitle>
                   <CardDescription>
-                    Авторизация в портале МЧС РК
+                    Информационная система государственного пожарного контроля Комитета
+                    противопожарной службы МЧС РК
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -155,10 +158,12 @@ export default function LoginPage() {
               <div className="max-w-md space-y-6">
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4">
-                    Государственный пожарный контроль
+                    Информационная система государственного пожарного контроля
+                    Комитета противопожарной службы МЧС РК
                   </h1>
                   <p className="text-xl text-muted-foreground mb-8">
-                    Информационная система МЧС Республики Казахстан
+                    Информационная система государственного пожарного контроля
+                    Комитета противопожарной службы МЧС РК
                   </p>
                 </div>
 
@@ -195,8 +200,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground">
-                  <p>Министерство по чрезвычайным ситуациям</p>
-                  <p>Республики Казахстан</p>
+                  <p>Комитет противопожарной службы МЧС РК</p>
                 </div>
               </div>
             </div>
