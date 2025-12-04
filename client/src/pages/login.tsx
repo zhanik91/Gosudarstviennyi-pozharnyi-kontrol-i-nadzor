@@ -155,10 +155,12 @@ export default function LoginPage() {
               <div className="max-w-md space-y-6">
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4">
-                    Государственный пожарный контроль
+                    Информационная система государственного пожарного контроля
+                    Комитета противопожарной службы МЧС РК
                   </h1>
                   <p className="text-xl text-muted-foreground mb-8">
-                    Информационная система МЧС Республики Казахстан
+                    Информационная система государственного пожарного контроля
+                    Комитета противопожарной службы МЧС РК
                   </p>
                 </div>
 
@@ -195,8 +197,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground">
-                  <p>Министерство по чрезвычайным ситуациям</p>
-                  <p>Республики Казахстан</p>
+                  <p>Комитет противопожарной службы МЧС РК</p>
                 </div>
               </div>
             </div>

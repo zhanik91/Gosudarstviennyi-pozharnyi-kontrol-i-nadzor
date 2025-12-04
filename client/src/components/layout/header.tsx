@@ -17,7 +17,10 @@ export default function Header() {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="gov-title">Государственный пожарный контроль</h1>
+              <h1 className="gov-title">
+                Информационная система государственного пожарного контроля Комитета
+                противопожарной службы МЧС РК
+              </h1>
               <p className="gov-subtitle">Комитет противопожарной службы МЧС РК</p>
             </div>
           </div>

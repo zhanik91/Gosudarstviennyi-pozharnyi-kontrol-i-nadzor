@@ -189,6 +189,64 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
+
+  .gov-top-banner {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+    color: #e2e8f0;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    border-bottom: 3px solid #fbbf24;
+  }
+
+  .gov-top-banner__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .gov-top-banner__text {
+    flex: 1;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .gov-top-banner__emblem {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+    padding: 6px;
+  }
+
+  .gov-top-banner__emblem--placeholder {
+    border: 2px dashed rgba(255, 255, 255, 0.35);
+    filter: none;
+  }
+
+  @media (max-width: 900px) {
+    .gov-top-banner__content {
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    .gov-top-banner__text {
+      font-size: 0.8rem;
+      line-height: 1.2;
+    }
+  }
+
   /* Стили для государственного портала */
   .gov-header {
     background: linear-gradient(90deg, #1e40af 0%, #3b82f6 100%);
