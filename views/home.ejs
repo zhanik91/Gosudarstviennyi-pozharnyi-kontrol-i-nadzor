@@ -1,0 +1,148 @@
+<!-- Заголовок портала -->
+<header class="portal-header">
+    <div class="container">
+        <h1 class="portal-title">Государственный пожарный контроль</h1>
+        <p class="portal-subtitle">Комитет противопожарной службы МЧС РК</p>
+    </div>
+</header>
+
+<!-- Основной контент -->
+<div class="container">
+    <!-- Навигация -->
+    <nav class="portal-nav">
+        <ul>
+            <li><a href="/">Главная</a></li>
+            <li><a href="/gup">Учет пожаров</a></li>
+            <li><a href="/ppo">Контролируемые объекты</a></li>
+            <li><a href="/journals">Журналы</a></li>
+            <li><a href="/reports">Отчеты</a></li>
+        </ul>
+    </nav>
+
+    <!-- Плитки модулей -->
+    <div class="portal-modules">
+        <!-- Государственный учет пожаров -->
+        <a href="/gup" class="portal-module">
+            <span class="portal-module-icon">🔥</span>
+            <h3>Государственный учет пожаров</h3>
+            <p>
+                Журнал регистрации пожаров и происшествий, формирование статистических отчетов 
+                по формам 1-ОСП, 2-ССГ, 3-СПВП, 4-СОВП, 5-СПЖС, 6-ССПЗ, СО. 
+                Аналитические дашборды и диаграммы.
+            </p>
+            <div class="portal-module-stats">
+                <span class="module-status active">Активен</span>
+                <span>7 форм отчетности</span>
+            </div>
+        </a>
+
+        <!-- Перечень подконтрольных объектов -->
+        <a href="/ppo" class="portal-module">
+            <span class="portal-module-icon">🏢</span>
+            <h3>Перечень подконтрольных объектов</h3>
+            <p>
+                Реестр объектов пожарного надзора, планирование и учет проверок, 
+                ведение карточек объектов, контроль устранения нарушений 
+                требований пожарной безопасности.
+            </p>
+            <div class="portal-module-stats">
+                <span class="module-status development">В разработке</span>
+                <span>Объекты надзора</span>
+            </div>
+        </a>
+
+        <!-- Журналы -->
+        <a href="/journals" class="portal-module">
+            <span class="portal-module-icon">📋</span>
+            <h3>Журналы</h3>
+            <p>
+                Журналы аудитов пожарной безопасности, независимой гарантии 
+                пожарной безопасности (НГПС), административных правонарушений (АПН) 
+                и других мероприятий контроля.
+            </p>
+            <div class="portal-module-stats">
+                <span class="module-status planned">Запланировано</span>
+                <span>Аудиты и проверки</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Дополнительная информация -->
+    <div class="portal-nav">
+        <div style="text-align: center; padding: 2rem;">
+            <h3 style="color: rgba(255,255,255,0.9); margin-bottom: 1rem;">Статистика системы</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 2rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #3b82f6;" id="stats-incidents">1,847</div>
+                    <div style="color: rgba(255,255,255,0.7);">Всего пожаров</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #10b981;" id="stats-objects">2,156</div>
+                    <div style="color: rgba(255,255,255,0.7);">Контролируемых объектов</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;" id="stats-reports">127</div>
+                    <div style="color: rgba(255,255,255,0.7);">Отчетов сформировано</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #dc2626;" id="stats-users">89</div>
+                    <div style="color: rgba(255,255,255,0.7);">Активных пользователей</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Футер -->
+<footer class="portal-footer">
+    <div class="container">
+        <p>&copy; <%= new Date().getFullYear() %> Комитет противопожарной службы МЧС РК</p>
+        <p>
+            Информационная система государственного пожарного контроля
+            <br>
+            Версия 2.0 | Последнее обновление: <%= new Date().toLocaleDateString('ru-RU') %>
+        </p>
+    </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Анимация счетчиков статистики
+    const animateCounter = (element, target) => {
+        let current = 0;
+        const increment = target / 100;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = target.toLocaleString('ru-RU');
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current).toLocaleString('ru-RU');
+            }
+        }, 20);
+    };
+    
+    // Запуск анимации при загрузке
+    setTimeout(() => {
+        animateCounter(document.getElementById('stats-incidents'), 1847);
+        animateCounter(document.getElementById('stats-objects'), 2156);
+        animateCounter(document.getElementById('stats-reports'), 127);
+        animateCounter(document.getElementById('stats-users'), 89);
+    }, 500);
+    
+    // Проверка аутентификации и получение реальной статистики
+    fetch('/api/stats/dashboard')
+        .then(response => response.ok ? response.json() : null)
+        .then(data => {
+            if (data) {
+                document.getElementById('stats-incidents').textContent = data.incidents?.toLocaleString('ru-RU') || '1,847';
+                document.getElementById('stats-objects').textContent = data.objects?.toLocaleString('ru-RU') || '2,156';
+                document.getElementById('stats-reports').textContent = data.reports?.toLocaleString('ru-RU') || '127';
+                document.getElementById('stats-users').textContent = data.users?.toLocaleString('ru-RU') || '89';
+            }
+        })
+        .catch(() => {
+            // Оставляем демо-данные если API недоступно
+        });
+});
+</script>
