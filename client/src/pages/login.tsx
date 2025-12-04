@@ -70,9 +70,10 @@ export default function LoginPage() {
                   <div className="flex justify-center mb-4">
                     <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden">
                       <img
-                        src="/mchs-emblem.png"
-                        alt="Эмблема МЧС"
+                        src="/-mchs-emblem.png"
+                        alt="Эмблема МЧС РК"
                         className="w-full h-full object-contain"
+                        loading="lazy"
                       />
                     </div>
                   </div>
