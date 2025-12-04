@@ -1,5 +1,4 @@
 import type { Express } from "express";
-import { Router } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
@@ -57,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/export/report', isAuthenticated, exportController.exportReport);
 
   // === Администрирование (Users) ===
-  const adminRouter = Router();
+  const adminRouter = require('express').Router();
   adminRouter.use(adminController.requireAdmin);
   adminRouter.get('/users', adminController.getUsers);
   adminRouter.post('/users', adminController.createUser);

@@ -1,22 +1,19 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
-import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Map } from "lucide-react";
-import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Smartphone, Map } from "lucide-react";
+import { Link, navigate } from "wouter";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const {
-    data: metrics,
-    isLoading: metricsLoading,
-    isError: metricsError,
-  } = useDashboardMetrics();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -28,6 +25,7 @@ export default function Home() {
       setTimeout(() => {
         window.location.href = "/api/login";
       }, 500);
+      return;
     }
   }, [isAuthenticated, isLoading, toast]);
 
@@ -43,22 +41,6 @@ export default function Home() {
       </div>
     );
   }
-
-  const renderMetricValue = (value?: number) => {
-    if (metricsLoading) {
-      return <div className="h-7 w-16 rounded bg-muted animate-pulse" />;
-    }
-
-    if (metricsError) {
-      return "Нет данных";
-    }
-
-    if (value === undefined || value === null) {
-      return "—";
-    }
-
-    return value.toLocaleString("ru-RU");
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
@@ -128,7 +110,7 @@ export default function Home() {
 
             <ModuleCard
               icon={Bell}
-              iconBg="bg-purple-500/20"
+              iconBg="bg-purple-500/20" 
               iconColor="text-purple-400"
               title="Уведомления и Workflow"
               description="Email уведомления, система многоуровневых согласований, календарь событий, автоматические оповещения"
@@ -165,28 +147,28 @@ export default function Home() {
               icon={Activity}
               iconColor="text-primary"
               label="Инциденты за месяц"
-              value={renderMetricValue(metrics?.incidents)}
+              value="—"
               dataTestId="stat-incidents"
             />
             <StatsCard
               icon={Package}
               iconColor="text-accent"
               label="Активные пакеты"
-              value={renderMetricValue(metrics?.packages)}
+              value="—"
               dataTestId="stat-packages"
             />
             <StatsCard
               icon={Users}
               iconColor="text-green-400"
               label="Пользователи онлайн"
-              value={renderMetricValue(metrics?.usersOnline)}
+              value="—"
               dataTestId="stat-users"
             />
             <StatsCard
               icon={FileCheck}
               iconColor="text-blue-400"
               label="Отчёты готовы"
-              value={renderMetricValue(metrics?.reportsReady)}
+              value="—"
               dataTestId="stat-reports"
             />
           </div>
