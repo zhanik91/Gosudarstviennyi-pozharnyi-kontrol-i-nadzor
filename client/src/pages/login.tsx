@@ -68,11 +68,9 @@ export default function LoginPage() {
               <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                   <div className="flex justify-center mb-4">
-                    <img 
-                      src="/mchs-emblem.png" 
-                      alt="Эмблема МЧС РК" 
-                      className="h-20 w-20 object-contain"
-                    />
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg">
+                      <Shield className="w-12 h-12 text-white" />
+                    </div>
                   </div>
                   <CardTitle className="text-2xl">Вход в систему</CardTitle>
                   <CardDescription>
