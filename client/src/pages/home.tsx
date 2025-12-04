@@ -1,11 +1,77 @@
+ codex/add-usedashboardmetrics-hook-and-update-home-page
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+
+ main
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
+ codex/add-usedashboardmetrics-hook-and-update-home-page
+import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Map } from "lucide-react";
+import { Link, navigate } from "wouter";
+import { Button } from "@/components/ui/button";
+import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+
+export default function Home() {
+  const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+  const {
+    data: metrics,
+    isLoading: metricsLoading,
+    isError: metricsError,
+  } = useDashboardMetrics();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground portal-bg">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Загрузка портала...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const renderMetricValue = (value?: number) => {
+    if (metricsLoading) {
+      return <div className="h-7 w-16 rounded bg-muted animate-pulse" />;
+    }
+
+    if (metricsError) {
+      return "Нет данных";
+    }
+
+    if (value === undefined || value === null) {
+      return "—";
+    }
+
+    return value.toLocaleString("ru-RU");
+  };
+
+
 import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Smartphone, Map } from "lucide-react";
 
 export default function Home() {
+ main
   return (
     <div className="min-h-screen bg-background text-foreground portal-bg">
       <Header />
@@ -111,28 +177,28 @@ export default function Home() {
               icon={Activity}
               iconColor="text-primary"
               label="Инциденты за месяц"
-              value="—"
+              value={renderMetricValue(metrics?.incidents)}
               dataTestId="stat-incidents"
             />
             <StatsCard
               icon={Package}
               iconColor="text-accent"
               label="Активные пакеты"
-              value="—"
+              value={renderMetricValue(metrics?.packages)}
               dataTestId="stat-packages"
             />
             <StatsCard
               icon={Users}
               iconColor="text-green-400"
               label="Пользователи онлайн"
-              value="—"
+              value={renderMetricValue(metrics?.usersOnline)}
               dataTestId="stat-users"
             />
             <StatsCard
               icon={FileCheck}
               iconColor="text-blue-400"
               label="Отчёты готовы"
-              value="—"
+              value={renderMetricValue(metrics?.reportsReady)}
               dataTestId="stat-reports"
             />
           </div>
