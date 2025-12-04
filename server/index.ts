@@ -12,7 +12,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(process.cwd(), 'views'));
 
 // Статические файлы
-app.use('/css', express.static(path.join(process.cwd(), 'public/css')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 app.use((req, res, next) => {
   const start = Date.now();

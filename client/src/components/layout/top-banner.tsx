@@ -8,7 +8,7 @@ export function GovTopBanner() {
           ТӨТЕНШЕ ЖАҒДАЙЛАР МИНИСТРЛІГІ
         </span>
         <img
-          src="/css/mchs-emblem.png"
+          src="/mchs-emblem.png"
           alt="Эмблема МЧС РК"
           className="gov-top-banner__emblem"
           data-testid="mchs-logo"
