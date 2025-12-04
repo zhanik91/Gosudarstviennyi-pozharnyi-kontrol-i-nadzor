@@ -15,7 +15,6 @@ import {
   TrendingUp, AlertTriangle, CheckCircle, Clock,
   Search, Filter, Plus, Mail, Phone, MapPin
 } from 'lucide-react';
-import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 
 export default function CRMDashboard() {
@@ -48,8 +47,7 @@ export default function CRMDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <LoadingIndicator message="Загрузка CRM системы..." />
         </div>
         <Footer />
@@ -60,9 +58,8 @@ export default function CRMDashboard() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-6 py-8">
-          <ErrorDisplay 
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <ErrorDisplay
             message="Ошибка загрузки CRM"
             onRetry={() => window.location.reload()}
           />
@@ -81,9 +78,7 @@ export default function CRMDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
-      <div className="container mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         {/* Заголовок */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
