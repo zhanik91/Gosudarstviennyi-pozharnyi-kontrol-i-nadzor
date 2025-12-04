@@ -22,3 +22,5 @@ vite.config.ts.*
 .env.development
 .env.production
 .env.test
+client/.env*
+server/.env*

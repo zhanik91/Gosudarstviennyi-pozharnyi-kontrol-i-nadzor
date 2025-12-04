@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.base.json",
+  "include": ["./**/*", "../shared/**/*"],
+  "compilerOptions": {
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "typeRoots": ["./types", "../types"],
+    "outDir": "./dist"
+  }
+}
