@@ -66,7 +66,7 @@ export default function LoginPage() {
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
             {/* Left side - Login Form */}
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center"> feature-login-page-animation
               <motion.div
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -87,6 +87,18 @@ export default function LoginPage() {
                           className="w-full h-full object-contain"
                         />
                       </div>
+
+              <Card className="w-full max-w-md">
+                <CardHeader className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden">
+                      <img
+                        src="/-mchs-emblem.png"
+                        alt="Эмблема МЧС РК"
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                      />
+ main
                     </div>
                     <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">Вход в систему</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-300">
