@@ -131,14 +131,11 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
         savedProperty: normalizeCurrency(data.savedProperty),
       };
       
-      console.log("🔄 Отправляем данные на сервер:", formattedData);
-      
       try {
         const response = await apiRequest("POST", "/api/incidents", formattedData);
-        console.log("✅ Ответ сервера получен:", response.status);
         return response.json();
       } catch (error) {
-        console.error("❌ Ошибка при отправке:", error);
+        console.error("Error submitting incident:", error);
         throw error;
       }
     },
@@ -182,7 +179,6 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
   });
 
   const onSubmit = (data: OSPIncidentFormData) => {
-    console.log("📝 Отправка формы:", data);
     createIncidentMutation.mutate(data);
   };
 
@@ -833,9 +829,6 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                 disabled={createIncidentMutation.isPending}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                 data-testid="button-submit"
-                onClick={(e) => {
-                  console.log("🔘 Кнопка отправки нажата");
-                }}
               >
                 {createIncidentMutation.isPending ? "Добавление..." : "🔥 Добавить в журнал"}
               </Button>
