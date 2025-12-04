@@ -1,9 +1,4 @@
- codex/expand-header-component-and-update-layout-bdgn3s
 import React from "react";
-
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
- main
 import { Link } from "wouter";
 import {
   NavigationMenu,
@@ -152,7 +147,6 @@ export default function Header() {
   if (!user) return null;
 
   return (
- codex/expand-header-component-and-update-layout-bdgn3s
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-gradient-to-r from-slate-950/90 via-slate-900/85 to-sky-950/80 text-slate-100 backdrop-blur supports-[backdrop-filter]:bg-slate-950/75 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-6">
@@ -166,42 +160,6 @@ export default function Header() {
                 <p className="text-sm font-semibold text-white">
                   Гос. пожарный контроль и надзор
                 </p>
-
-    <header className="gov-header" data-testid="main-header">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div>
-              <Link href="/">
-                <h1 className="gov-title cursor-pointer hover:opacity-90" data-testid="header-title">
-                  Информационная система государственного пожарного контроля Комитета
-                  противопожарной службы МЧС РК
-                </h1>
-              </Link>
-              <p className="gov-subtitle">Комитет противопожарной службы МЧС РК</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-6">
-            <Link href="/audit-conclusions">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:text-white hover:bg-white/10 font-medium"
-                data-testid="link-audit-conclusions"
-              >
-                Журнал заключений аудитов
-              </Button>
-            </Link>
-
-            <div className="text-right text-sm border-l border-white/20 pl-6">
-              <div className="text-white font-medium" data-testid="user-fullname">
-                {(user as any)?.fullName || "Пользователь"}
-              </div>
-              <div className="text-white/70 text-xs" data-testid="user-region">
-                {(user as any)?.region}
-                {(user as any)?.district && ` / ${(user as any)?.district}`}
- main
               </div>
             </a>
           </Link>
@@ -258,16 +216,9 @@ export default function Header() {
           <div className="flex flex-none items-center gap-2">
             <Button
               variant="ghost"
- codex/expand-header-component-and-update-layout-bdgn3s
               size="icon"
               aria-label="Уведомления"
               className="relative hidden sm:inline-flex text-slate-100 transition duration-200 hover:bg-primary/20 hover:text-white"
-
-              size="sm"
-              onClick={() => (window.location.href = "/api/logout")}
-              className="text-white hover:text-white hover:bg-white/10 font-medium"
-              data-testid="button-logout"
- main
             >
               <Bell className="h-5 w-5" />
               <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
