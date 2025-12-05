@@ -66,8 +66,8 @@ export default function FireModule() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground portal-bg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+    <AuroraBackground>
+      <div className="min-h-screen text-foreground bg-white/80 backdrop-blur-md shadow-xl rounded-xl max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
         <BreadcrumbNavigation />
         {/* Module Header */}
         <div className="flex items-center justify-between">
@@ -124,15 +124,13 @@ export default function FireModule() {
               <IncidentsJournal />
             </div>
           )}
-          
           {activeTab === 'forms' && <FormsOverview />}
           {activeTab === 'reports' && <ReportsPanel />}
           {activeTab === 'charts' && <SimpleAnalytics />}
           {activeTab === 'packages' && <PackagesPanel />}
         </div>
+        <Footer />
       </div>
-      
-      <Footer />
-    </div>
+    </AuroraBackground>
   );
 }
