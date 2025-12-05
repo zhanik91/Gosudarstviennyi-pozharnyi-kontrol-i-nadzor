@@ -69,7 +69,7 @@ export default function Home() {
           <div className="text-center space-y-4">
             <h2 className="text-3xl font-bold text-foreground">Добро пожаловать в портал</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Единая цифровая платформа пожарной безопасности для мониторинга, государственного контроля и формирование отчетности КПС МЧС РК
+              Единая цифровая платформа пожарной безопасности для мониторинга, государственного контроля и контроля, формирование отчетности КПС МЧС РК
             </p>
           </div>
 
@@ -80,7 +80,7 @@ export default function Home() {
               iconBg="bg-primary/20"
               iconColor="text-primary"
               title="Государственный учёт пожаров"
-              description="Журнал выездов, единое окно ввода, отчёты 1-ОСП, 2-ССГ, 3-СПВП, 4-СОВП, 5-СПЖС, 6-ССПЗ и CO, пакеты и диаграммы"
+              description="Журнал выездов, отчёты, еженедельные сведения и диаграммы"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/fire-module"
@@ -96,7 +96,7 @@ export default function Home() {
               iconBg="bg-accent/20"
               iconColor="text-accent"
               title="Государственный контроль и надзор"
-              description="Реестр подконтрольных объектов (ОВСР/иные), атрибуты, статусы проверок, привязка к территориям"
+              description="Реестр объектов контроля, учёт проверок, предписаний и сроков их исполнения"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/controlled-objects"

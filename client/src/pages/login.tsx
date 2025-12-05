@@ -87,7 +87,7 @@ export default function LoginPage() {
                     </div>
                     <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">Вход в систему</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-300">
-                      Информационная система государственного пожарного контроля и надзора МЧС РК
+                      Информационная система государственного пожарного контроля и надзора КПС МЧС РК
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -178,7 +178,7 @@ export default function LoginPage() {
               >
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4 drop-shadow-sm">
-                    Информационная система государственного пожарного контроля и надзора КПС МЧС РК
+                    Государственный пожарный контроль и надзор
                   </h1>
                   <p className="text-xl text-slate-600 dark:text-slate-300 mb-8 font-light">
                     Единый доступ к модулям, аналитике и отчетности
