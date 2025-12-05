@@ -46,8 +46,9 @@ export class IncidentController {
         organizationId,
         createdBy,
         dateTime: req.body.dateTime ? new Date(req.body.dateTime) : new Date(),
-        damage: req.body.damage ? parseFloat(req.body.damage) : 0,
-        savedProperty: req.body.savedProperty ? parseFloat(req.body.savedProperty) : 0,
+        // Конвертируем числовые поля в строки для соответствия схеме
+        damage: req.body.damage !== undefined ? String(req.body.damage) : "0",
+        savedProperty: req.body.savedProperty !== undefined ? String(req.body.savedProperty) : "0",
         deathsTotal: req.body.deathsTotal || 0,
         injuredTotal: req.body.injuredTotal || 0,
         savedPeopleTotal: req.body.savedPeopleTotal || 0,
