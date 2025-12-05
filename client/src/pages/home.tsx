@@ -154,6 +154,22 @@ export default function Home() {
                 { label: "Прогнозы", href: "/maps" }
               ]}
             />
+
+            <ModuleCard
+              icon={FileCheck}
+              iconBg="bg-orange-500/20"
+              iconColor="text-orange-400"
+              title="Журнал заключений аудитов"
+              description="Учёт заключений аудитов в области пожарной безопасности, импорт/экспорт данных, период освобождения от проверок"
+              primaryAction={{
+                label: "Открыть журнал",
+                href: "/audit-conclusions"
+              }}
+              secondaryActions={[
+                { label: "Импорт", href: "/audit-conclusions" },
+                { label: "Экспорт", href: "/audit-conclusions" }
+              ]}
+            />
           </div>
 
           {/* Quick Stats */}
