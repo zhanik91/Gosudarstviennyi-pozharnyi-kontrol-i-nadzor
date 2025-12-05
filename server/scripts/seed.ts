@@ -1,4 +1,5 @@
-import { db } from "../server/storage/db";
+import "../config/env";
+import { db } from "../storage/db";
 import { users } from "@shared/schema";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/utils/queryClient";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
 import { Users, Shield, Edit, Trash2, Plus } from "lucide-react";

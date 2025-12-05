@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { FileText, Upload, Search, Download, Eye, Trash2, Edit, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/utils/queryClient';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { ErrorDisplay } from '@/components/ui/error-display';
 
