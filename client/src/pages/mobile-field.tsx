@@ -25,7 +25,7 @@ import {
   Home
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { apiRequest, queryClient } from '@/utils/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 
 interface FieldReport {

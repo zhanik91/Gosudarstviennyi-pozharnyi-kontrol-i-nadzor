@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Bell, Send, User, Calendar, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
-import { apiRequest, queryClient } from '@/utils/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { ErrorDisplay } from '@/components/ui/error-display';
 import { useAuth } from '@/hooks/useAuth';

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/utils/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { Mail, Send, X, Users } from "lucide-react";
 
 interface EmailNotificationModalProps {

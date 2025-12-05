@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/utils/queryClient";
+import { getQueryFn } from "@/lib/queryClient";
 
 export function useAuth() {
   const {
