@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { getQueryFn } from "@/utils/queryClient";
-import type { DashboardMetrics } from "@/types/dashboard";
+import { getQueryFn } from "@/lib/queryClient";
+
+export type DashboardMetrics = {
+  incidents: number;
+  packages: number;
+  usersOnline: number;
+  reportsReady: number;
+};
 
 export function useDashboardMetrics() {
   return useQuery<DashboardMetrics>({

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/utils/auth";
+import { isUnauthorizedError } from "@/lib/authUtils";
 import Footer from "@/components/layout/footer";
 import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
 import IncidentFormOSP from "@/components/fire/incident-form-osp";
