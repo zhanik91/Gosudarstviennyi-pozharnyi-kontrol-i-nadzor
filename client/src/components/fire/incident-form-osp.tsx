@@ -183,6 +183,14 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
 
   const onSubmit = (data: OSPIncidentFormData) => {
     console.log("📝 Отправка формы:", data);
+    console.log("📍 Регион и город:", data.region, data.city);
+    
+    // Убедимся, что город/район передается корректно
+    if (!data.city && selectedRegion && (user as any)?.district) {
+      data.city = (user as any).district;
+      console.log("⚠️ Город не был выбран, используем район пользователя:", data.city);
+    }
+    
     createIncidentMutation.mutate(data);
   };
 

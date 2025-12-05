@@ -4,7 +4,11 @@ import { eq, and, desc, gte, lte } from "drizzle-orm";
 
 export class AuditStorage {
   async createAuditLog(logData: InsertAuditLog): Promise<AuditLog> {
-    const [log] = await db.insert(auditLogs).values(logData as any).returning();
+    const logWithId = {
+      ...logData,
+      id: crypto.randomUUID(), // Генерируем UUID для записи
+    };
+    const [log] = await db.insert(auditLogs).values(logWithId as any).returning();
     return log;
   }
 

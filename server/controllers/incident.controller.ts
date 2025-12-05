@@ -34,7 +34,8 @@ export class IncidentController {
     try {
       const userId = req.user?.id || req.user?.username;
       const user = await storage.getUser(userId);
-      console.log("Creating incident for user:", user);
+      console.log("📝 Creating incident for user:", user);
+      console.log("📍 Request body region/city:", req.body.region, req.body.city);
 
       // Для админа используем значения по умолчанию, если организация не задана
       const organizationId = user?.organizationId || 'mcs-rk';
@@ -59,6 +60,8 @@ export class IncidentController {
         cause: req.body.cause || '01',
         locality: req.body.locality || 'cities'
       };
+
+      console.log("✅ Prepared incident data:", incidentData);
 
       const validatedData = insertIncidentSchema.parse(incidentData);
       const incident = await storage.createIncident(validatedData);

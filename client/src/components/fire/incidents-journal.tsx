@@ -402,6 +402,8 @@ export default function IncidentsJournal() {
                   <th className="text-left p-2 border-r border-border font-medium min-w-[40px]">№</th>
                   <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Дата и время</th>
                   <th className="text-left p-2 border-r border-border font-medium min-w-[100px]">Местность</th>
+                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Регион</th>
+                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Город/Район</th>
                   <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Тип события</th>
                   <th className="text-left p-2 border-r border-border font-medium min-w-[200px]">Адрес</th>
                   <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Причина</th>
@@ -418,8 +420,8 @@ export default function IncidentsJournal() {
               <tbody>
                 {incidents.length === 0 ? (
                   <tr>
-                    <td colSpan={15} className="p-8 text-center text-muted-foreground border-b">
-                      {isLoading ? "Загрузка журнала..." : "Журнал пуст. Нажмите 'Загрузить' для получения данных."}
+                    <td colSpan={17} className="p-8 text-center text-muted-foreground border-b">
+                      {isLoading ? "Загрузка журнала..." : "Журнал пуст. Нажмите 'Обновить' для получения данных."}
                     </td>
                   </tr>
                 ) : (
@@ -451,6 +453,12 @@ export default function IncidentsJournal() {
                         </td>
                         <td className="p-2 border-r border-border text-foreground">
                           {formatLocality(incident.locality)}
+                        </td>
+                        <td className="p-2 border-r border-border text-muted-foreground">
+                          {incident.region || "—"}
+                        </td>
+                        <td className="p-2 border-r border-border text-muted-foreground">
+                          {incident.city || "—"}
                         </td>
                         <td className="p-2 border-r border-border text-foreground">
                           {formatIncidentType(incident.incidentType)}
