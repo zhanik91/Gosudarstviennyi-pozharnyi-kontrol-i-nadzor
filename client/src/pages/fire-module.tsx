@@ -13,6 +13,7 @@ import PackagesPanel from "@/components/fire/packages-panel";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Upload } from "lucide-react";
 import { Link } from "wouter";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 
 type TabType = 'journal' | 'reports' | 'charts' | 'packages' | 'forms';
 
@@ -66,8 +67,8 @@ export default function FireModule() {
   }
 
   return (
-    <AuroraBackground>
-      <div className="min-h-screen text-foreground bg-white/80 backdrop-blur-md shadow-xl rounded-xl max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+    <div className="min-h-screen bg-background text-foreground portal-bg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
         <BreadcrumbNavigation />
         {/* Module Header */}
         <div className="flex items-center justify-between">
@@ -131,6 +132,6 @@ export default function FireModule() {
         </div>
         <Footer />
       </div>
-    </AuroraBackground>
+    </div>
   );
 }
