@@ -12,11 +12,7 @@
     "db:seed": "tsx ../scripts/seed.ts"
   },
   "dependencies": {
- codex/setup-workspace-and-restructure-projects-db1cvh
     "@gpkn/shared": "workspace:*",
-
-    "@gpkn/shared": "1.0.0",
- main
     "@google-cloud/storage": "^7.17.0",
     "@neondatabase/serverless": "^0.10.4",
     "@notionhq/client": "^4.0.2",
