@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,25 +10,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { ErrorDisplay } from '@/components/ui/error-display';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Area, AreaChart
-} from 'recharts';
-import {
   TrendingUp, TrendingDown, Activity, AlertTriangle,
   MapPin, Calendar, FileBarChart, Download
 } from 'lucide-react';
 import Footer from '@/components/layout/footer';
+
+type RechartsModule = typeof import('recharts');
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
 
 export default function AdvancedAnalytics() {
   const [period, setPeriod] = useState('2024');
   const [organizationId, setOrganizationId] = useState('');
+  const [recharts, setRecharts] = useState<RechartsModule | null>(null);
 
   const { data: analytics, isLoading, error } = useQuery({
     queryKey: ['/api/analytics/advanced', { period, organizationId }],
     retry: 2
   });
+
+  useEffect(() => {
+    let mounted = true;
+
+    import('recharts').then((module) => {
+      if (mounted) {
+        setRecharts(module);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -54,6 +67,34 @@ export default function AdvancedAnalytics() {
       </div>
     );
   }
+
+  if (!recharts) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <LoadingIndicator message="Загрузка модулей визуализации..." />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const {
+    ResponsiveContainer,
+    AreaChart,
+    CartesianGrid,
+    XAxis,
+    YAxis,
+    Tooltip,
+    Area,
+    LineChart,
+    Line,
+    PieChart,
+    Pie,
+    Cell,
+    BarChart,
+    Bar
+  } = recharts;
 
   const { incidentTypes = [], regionStats = [], monthlyStats = [], summary = {} } = analytics || {};
 
