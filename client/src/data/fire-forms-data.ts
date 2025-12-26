@@ -1,5 +1,9 @@
 // Данные для форм отчетности согласно Приказу № 928 МЧС РК
 
+// Re-export FIRE_CAUSES from kazakhstan-data for backwards compatibility
+export { FIRE_CAUSES } from "./kazakhstan-data";
+import { FIRE_CAUSES } from "./kazakhstan-data";
+
 // Форма 2-ССГ: Случаи горения, не подлежащие учету как пожары
 export const NON_FIRE_CASES = [
   {

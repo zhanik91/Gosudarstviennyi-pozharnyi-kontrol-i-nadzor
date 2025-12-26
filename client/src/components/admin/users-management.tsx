@@ -12,13 +12,12 @@ import { ErrorDisplay } from "@/components/ui/error-boundary";
 import { Users, Shield, Edit, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function AdminPanel() {
+export default function UsersManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [showUserForm, setShowUserForm] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
 
-  // Проверка прав администратора
   if ((user as any)?.role !== 'admin') {
     return (
       <div className="p-8">
@@ -33,7 +32,7 @@ export default function AdminPanel() {
   const { data: users = [], isLoading, error } = useQuery<any[]>({
     queryKey: ["/api/admin/users"],
     retry: 1,
-    enabled: false, // Загружаем по запросу для админов
+    enabled: false,
   });
 
   const deleteUserMutation = useMutation({
@@ -84,10 +83,9 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Заголовок */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Административная панель</h2>
+          <h2 className="text-2xl font-bold text-foreground">Управление пользователями</h2>
           <p className="text-muted-foreground">Управление пользователями системы МЧС РК</p>
         </div>
         <Button 
@@ -100,7 +98,6 @@ export default function AdminPanel() {
         </Button>
       </div>
 
-      {/* Статистика */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -140,7 +137,6 @@ export default function AdminPanel() {
         </Card>
       </div>
 
-      {/* Список пользователей */}
       <Card>
         <CardHeader>
           <CardTitle>Пользователи системы</CardTitle>
@@ -217,7 +213,6 @@ export default function AdminPanel() {
         </CardContent>
       </Card>
 
-      {/* Форма пользователя (модальное окно) */}
       {showUserForm && (
         <UserFormModal
           user={editingUser}
