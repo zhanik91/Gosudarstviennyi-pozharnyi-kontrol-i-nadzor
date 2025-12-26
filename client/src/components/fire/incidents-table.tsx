@@ -10,7 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { type Incident } from "@gpkn/shared";
+import { type Incident } from "@shared/schema";
 
 export default function IncidentsTable() {
   const [period, setPeriod] = useState("");

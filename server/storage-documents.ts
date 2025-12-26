@@ -1,8 +1,8 @@
 // Расширение storage для работы с документами
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from './db';
-import { documents, documentTags, documentComments } from '@gpkn/shared';
-import type { InsertDocument, Document, InsertDocumentTag, InsertDocumentComment } from '@gpkn/shared';
+import { documents, documentTags, documentComments } from '@shared/schema';
+import type { InsertDocument, Document, InsertDocumentTag, InsertDocumentComment } from '@shared/schema';
 
 export interface DocumentStorage {
   // Документы

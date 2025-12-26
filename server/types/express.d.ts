@@ -1,4 +1,4 @@
-import { User } from "@gpkn/shared";
+import { User } from "@shared/schema";
 
 declare global {
   namespace Express {

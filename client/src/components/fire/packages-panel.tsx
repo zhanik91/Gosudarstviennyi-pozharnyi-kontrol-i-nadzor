@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Download, Check, X } from "lucide-react";
 import { format } from "date-fns";
-import { type Package } from "@gpkn/shared";
+import { type Package } from "@shared/schema";
 
 export default function PackagesPanel() {
   const [outgoingPeriod, setOutgoingPeriod] = useState("");

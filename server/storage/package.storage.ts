@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { packages, type Package, type InsertPackage } from "@gpkn/shared";
+import { packages, type Package, type InsertPackage } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 export class PackageStorage {

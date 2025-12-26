@@ -1,4 +1,4 @@
-import { ComponentType, ReactNode, Suspense, lazy, useEffect } from "react";
+import { ComponentType, ReactNode, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -6,21 +6,20 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/layout/header";
 import { useAuth } from "@/hooks/useAuth";
-
-const LoginPage = lazy(() => import("@/pages/login"));
-const Home = lazy(() => import("@/pages/home"));
-const FireModule = lazy(() => import("@/pages/fire-module"));
-const AuditConclusionsJournal = lazy(() => import("@/pages/audit-conclusions-journal"));
-const ControlSupervision = lazy(() => import("@/pages/control-supervision"));
-const DocumentsPage = lazy(() => import("@/pages/documents-page"));
-const DocumentManagement = lazy(() => import("@/pages/document-management"));
-const NotificationsSystem = lazy(() => import("@/pages/notifications-system"));
-const InteractiveMaps = lazy(() => import("@/pages/interactive-maps"));
-const MobileField = lazy(() => import("@/pages/mobile-field"));
-const CRMDashboard = lazy(() => import("@/pages/crm-dashboard"));
-const AdvancedAnalytics = lazy(() => import("@/pages/advanced-analytics"));
-const AdminPanel = lazy(() => import("@/pages/admin-panel"));
-const NotFound = lazy(() => import("@/pages/not-found"));
+import NotFound from "@/pages/not-found";
+import AdminPanel from "@/pages/admin-panel";
+import DocumentsPage from "@/pages/documents-page";
+import CRMDashboard from "@/pages/crm-dashboard";
+import AdvancedAnalytics from "@/pages/advanced-analytics";
+import DocumentManagement from "@/pages/document-management";
+import NotificationsSystem from "@/pages/notifications-system";
+import InteractiveMaps from "@/pages/interactive-maps";
+import AuditConclusionsJournal from "@/pages/audit-conclusions-journal";
+import MobileField from "@/pages/mobile-field";
+import Home from "@/pages/home";
+import FireModule from "@/pages/fire-module";
+import ControlSupervision from "@/pages/control-supervision";
+import LoginPage from "@/pages/login";
 
 type ProtectedRouteProps = {
   component: ComponentType;
@@ -83,7 +82,7 @@ function Router() {
       <Route path="/" component={protectedRoute(Home)} />
       <Route path="/fire-module" component={protectedRoute(FireModule)} />
       <Route path="/audit-conclusions" component={protectedRoute(AuditConclusionsJournal)} />
-      <Route path="/control-supervision" component={protectedRoute(ControlSupervision)} />
+      <Route path="/controlled-objects" component={protectedRoute(ControlSupervision)} />
       <Route path="/incidents/new" component={protectedRoute(FireModule)} />
       <Route path="/reports" component={protectedRoute(FireModule)} />
       <Route path="/documents" component={protectedRoute(DocumentsPage)} />
@@ -104,15 +103,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-              Загрузка интерфейса...
-            </div>
-          }
-        >
-          <Router />
-        </Suspense>
+        <Router />
       </TooltipProvider>
     </QueryClientProvider>
   );

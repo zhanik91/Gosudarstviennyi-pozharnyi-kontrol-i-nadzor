@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { organizations, type Organization, type InsertOrganization, incidents } from "@gpkn/shared";
+import { organizations, type Organization, type InsertOrganization, incidents } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 export class OrganizationStorage {

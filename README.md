@@ -11,28 +11,6 @@
 - PostgreSQL (Neon) + Drizzle ORM
 - Развёртывание и разработка в Replit
 
-## Установка и запуск (workspaces)
-
-1. Установите зависимости и свяжите пакеты `client/`, `server/`, `shared/`:
-   ```bash
-   npm install
-   ```
-2. Разработка:
-   - полный стек (API + Vite middleware): `npm run dev`
-   - только клиент с Vite: `npm run dev --workspace client`
-   - только сервер (с подключением Vite middleware для клиентских страниц): `npm run dev --workspace server`
-3. Сборка продакшена (клиент собирается в `server/dist/public`, сервер — в `server/dist`):
-   ```bash
-   npm run build
-   ```
-4. Запуск после сборки:
-   ```bash
-   npm run start
-   ```
-5. Команды базы данных (из workspace `server`):
-   - миграции: `npm run db:push --workspace server`
-   - сидирование: `npm run db:seed --workspace server`
-
 ## Назначение
 
 Внутренняя система для:

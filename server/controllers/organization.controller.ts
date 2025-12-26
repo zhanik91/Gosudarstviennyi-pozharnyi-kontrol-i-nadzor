@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
-import { insertOrganizationSchema } from "@gpkn/shared";
+import { insertOrganizationSchema } from "@shared/schema";
 
 export class OrganizationController {
 
