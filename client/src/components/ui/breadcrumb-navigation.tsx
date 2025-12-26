@@ -18,7 +18,7 @@ interface BreadcrumbNavigationProps {
 const pathToTitle: Record<string, string> = {
   "/": "Главная",
   "/fire-module": "Государственный учет пожаров",
-  "/controlled-objects": "Государственный контроль и надзор",
+  "/control-supervision": "Государственный контроль и надзор",
   "/login": "Вход в систему",
 };
 

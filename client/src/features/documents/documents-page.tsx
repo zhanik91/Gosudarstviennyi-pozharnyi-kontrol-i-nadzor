@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DocumentUpload } from "@/components/documents/document-upload";
+import { DocumentUpload } from "./components";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { 
