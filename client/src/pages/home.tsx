@@ -99,7 +99,7 @@ export default function Home() {
               description="Реестр объектов контроля, учёт проверок, предписаний и сроков их исполнения"
               primaryAction={{
                 label: "Открыть модуль",
-                href: "/controlled-objects"
+                href: "/control-supervision"
               }}
               secondaryActions={[
                 { label: "Документация", href: "#" },
