@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, type User, type InsertUser } from "@shared/schema";
+import { users, type User, type InsertUser } from "@gpkn/shared";
 import { eq, desc } from "drizzle-orm";
 
 export class UserStorage {

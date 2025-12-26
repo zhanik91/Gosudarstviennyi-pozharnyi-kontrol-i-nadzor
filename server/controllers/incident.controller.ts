@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
-import { insertIncidentSchema } from "@shared/schema";
+import { insertIncidentSchema } from "@gpkn/shared";
 
 export class IncidentController {
 

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
-import { insertPackageSchema } from "@shared/schema";
+import { insertPackageSchema } from "@gpkn/shared";
 
 export class PackageController {
 
