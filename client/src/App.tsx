@@ -83,7 +83,7 @@ function Router() {
       <Route path="/" component={protectedRoute(Home)} />
       <Route path="/fire-module" component={protectedRoute(FireModule)} />
       <Route path="/audit-conclusions" component={protectedRoute(AuditConclusionsJournal)} />
-      <Route path="/controlled-objects" component={protectedRoute(ControlSupervision)} />
+      <Route path="/control-supervision" component={protectedRoute(ControlSupervision)} />
       <Route path="/incidents/new" component={protectedRoute(FireModule)} />
       <Route path="/reports" component={protectedRoute(FireModule)} />
       <Route path="/documents" component={protectedRoute(DocumentsPage)} />
