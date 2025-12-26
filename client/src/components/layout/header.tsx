@@ -55,7 +55,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       {
         title: "Контроль и надзор",
         description: "Реестр подконтрольных объектов и график проверок",
-        href: "/controlled-objects",
+        href: "/control-supervision",
         icon: Layers,
       },
       {
