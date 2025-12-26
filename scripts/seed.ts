@@ -1,5 +1,5 @@
 import { db } from "../server/storage/db";
-import { users } from "@shared/schema";
+import { users } from "@gpkn/shared";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { eq } from "drizzle-orm";
