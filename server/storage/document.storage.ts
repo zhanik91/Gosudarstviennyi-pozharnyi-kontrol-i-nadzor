@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { documents } from "@shared/schema";
+import { documents } from "@gpkn/shared";
 import { eq, and, desc } from "drizzle-orm";
 
 export class DocumentStorage {

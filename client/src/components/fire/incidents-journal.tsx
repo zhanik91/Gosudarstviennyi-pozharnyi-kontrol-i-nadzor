@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, Search, FileDown, Filter, Plus } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
-import type { Incident } from "@shared/schema";
+import type { Incident } from "@gpkn/shared";
 import IncidentFormOSP from "./incident-form-osp";
 import BulkEditModal from "./bulk-edit-modal";
 import EmailNotificationModal from "./email-notification-modal";
