@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "paths": {
+      "@gpkn/shared": ["../shared/src/index.ts"],
+      "@gpkn/shared/*": ["../shared/src/*"]
+    }
+  },
+  "include": ["./**/*", "../shared/src"],
+  "exclude": ["dist", "node_modules"]
+}
