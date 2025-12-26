@@ -65,7 +65,7 @@ export default function AdminPanel() {
   if (isLoading) {
     return (
       <div className="p-8">
-        <LoadingIndicator message="Загрузка списка пользователей..." />
+        <LoadingIndicator text="Загрузка списка пользователей..." />
       </div>
     );
   }

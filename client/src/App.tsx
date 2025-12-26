@@ -8,17 +8,18 @@ import Header from "@/components/layout/header";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import AdminPanel from "@/pages/admin-panel";
+import DocumentsPage from "@/pages/documents-page";
 import CRMDashboard from "@/pages/crm-dashboard";
 import AdvancedAnalytics from "@/pages/advanced-analytics";
+import DocumentManagement from "@/pages/document-management";
 import NotificationsSystem from "@/pages/notifications-system";
 import InteractiveMaps from "@/pages/interactive-maps";
 import AuditConclusionsJournal from "@/pages/audit-conclusions-journal";
 import MobileField from "@/pages/mobile-field";
 import Home from "@/pages/home";
+import FireModule from "@/pages/fire-module";
+import ControlSupervision from "@/pages/control-supervision";
 import LoginPage from "@/pages/login";
-import { ControlSupervisionPage } from "@/features/control-supervision";
-import { FireModule } from "@/features/fire";
-import { DocumentManagementPage, DocumentsPage } from "@/features/documents";
 
 type ProtectedRouteProps = {
   component: ComponentType;
@@ -81,11 +82,11 @@ function Router() {
       <Route path="/" component={protectedRoute(Home)} />
       <Route path="/fire-module" component={protectedRoute(FireModule)} />
       <Route path="/audit-conclusions" component={protectedRoute(AuditConclusionsJournal)} />
-      <Route path="/control-supervision" component={protectedRoute(ControlSupervisionPage)} />
+      <Route path="/controlled-objects" component={protectedRoute(ControlSupervision)} />
       <Route path="/incidents/new" component={protectedRoute(FireModule)} />
       <Route path="/reports" component={protectedRoute(FireModule)} />
       <Route path="/documents" component={protectedRoute(DocumentsPage)} />
-      <Route path="/document-management" component={protectedRoute(DocumentManagementPage)} />
+      <Route path="/document-management" component={protectedRoute(DocumentManagement)} />
       <Route path="/notifications" component={protectedRoute(NotificationsSystem)} />
       <Route path="/maps" component={protectedRoute(InteractiveMaps)} />
       <Route path="/mobile-field" component={protectedRoute(MobileField)} />

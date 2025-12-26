@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
 import Footer from "@/components/layout/footer";
 import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
-import { AuroraBackground } from "@/components/ui/aurora-background";
-import { IncidentFormOSP, IncidentsJournal, PackagesPanel, ReportsPanel } from "./components";
-import { ReportsFormsOverview as FormsOverview, ReportsSimpleAnalytics as SimpleAnalytics } from "@/features/reports";
+import IncidentFormOSP from "@/components/fire/incident-form-osp";
+import IncidentsJournal from "@/components/fire/incidents-journal";
+import FormsOverview from "@/components/reports/forms-overview";
+import ReportsPanel from "@/components/fire/reports-panel";
+import SimpleAnalytics from "@/components/reports/simple-analytics";
+import PackagesPanel from "@/components/fire/packages-panel";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Upload } from "lucide-react";
 import { Link } from "wouter";
@@ -15,7 +19,7 @@ type TabType = 'journal' | 'reports' | 'charts' | 'packages' | 'forms';
 export default function FireModule() {
   const [activeTab, setActiveTab] = useState<TabType>('journal');
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

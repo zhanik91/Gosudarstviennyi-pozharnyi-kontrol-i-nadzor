@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Save, Plus, Trash2, Copy, ClipboardPaste } from "lucide-react";
+import { Save, Plus, Trash2, Copy, Paste } from "lucide-react";
 
 interface ExcelCell {
   value: string;
@@ -202,7 +202,7 @@ export default function ExcelStyleTable({
               Копировать
             </Button>
             <Button size="sm" variant="outline" data-testid="button-paste">
-              <ClipboardPaste className="w-4 h-4 mr-1" />
+              <Paste className="w-4 h-4 mr-1" />
               Вставить
             </Button>
             <Button size="sm" data-testid="button-save">
