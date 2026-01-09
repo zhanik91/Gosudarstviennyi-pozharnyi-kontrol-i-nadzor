@@ -34,7 +34,19 @@ export default function IncidentsJournal() {
   const [showEmailModal, setShowEmailModal] = useState(false);
 
   const { data: incidents = [], isLoading, error, refetch } = useQuery<Incident[]>({
-    queryKey: ["/api/incidents"],
+    queryKey: ["/api/incidents", filters.period, filters.includeSubOrgs],
+    queryFn: async ({ queryKey }) => {
+      const [, period, includeSubOrgs] = queryKey as [string, string, boolean];
+      const params = new URLSearchParams();
+      if (period) {
+        params.set("period", period);
+      }
+      params.set("includeSubOrgs", String(includeSubOrgs));
+      const queryString = params.toString();
+      const url = queryString ? `/api/incidents?${queryString}` : "/api/incidents";
+      const response = await apiRequest("GET", url);
+      return response.json();
+    },
     enabled: true,
     retry: 2,
     retryDelay: 1000,
