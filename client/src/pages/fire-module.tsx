@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Footer from "@/components/layout/footer";
 import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
-import IncidentFormOSP from "@/components/fire/incident-form-osp";
 import IncidentsJournal from "@/components/fire/incidents-journal";
 import FormsOverview from "@/components/reports/forms-overview";
 import ReportsPanel from "@/components/fire/reports-panel";
@@ -121,7 +120,6 @@ export default function FireModule() {
         <div className="fade-in">
           {activeTab === 'journal' && (
             <div className="space-y-6">
-              <IncidentFormOSP />
               <IncidentsJournal />
             </div>
           )}
