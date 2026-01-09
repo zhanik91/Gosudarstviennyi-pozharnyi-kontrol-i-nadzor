@@ -421,7 +421,9 @@ export default function IncidentsJournal() {
                 {incidents.length === 0 ? (
                   <tr>
                     <td colSpan={17} className="p-8 text-center text-muted-foreground border-b">
-                      {isLoading ? "Загрузка журнала..." : "Журнал пуст. Нажмите 'Обновить' для получения данных."}
+                      {isLoading
+                        ? "Загрузка журнала..."
+                        : "Журнал пуст. Для создания записи нажмите кнопку «Добавить»."}
                     </td>
                   </tr>
                 ) : (
