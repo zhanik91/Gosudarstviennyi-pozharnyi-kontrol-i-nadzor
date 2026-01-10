@@ -10,7 +10,7 @@ import ReportsPanel from "@/components/fire/reports-panel";
 import SimpleAnalytics from "@/components/reports/simple-analytics";
 import PackagesPanel from "@/components/fire/packages-panel";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Upload } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 
@@ -70,7 +70,7 @@ export default function FireModule() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
         <BreadcrumbNavigation />
         {/* Module Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center">
           <div className="flex items-center gap-3">
             <Link href="/">
               <Button variant="outline" size="sm" data-testid="button-back">
@@ -78,16 +78,6 @@ export default function FireModule() {
               </Button>
             </Link>
             <h2 className="text-2xl font-bold text-foreground">Государственный учёт пожаров</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" data-testid="button-export">
-              <Download className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Экспорт</span>
-            </Button>
-            <Button variant="outline" size="sm" data-testid="button-import">
-              <Upload className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Импорт</span>
-            </Button>
           </div>
         </div>
 
