@@ -5,7 +5,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import Footer from "@/components/layout/footer";
 import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
 import IncidentsJournal from "@/components/fire/incidents-journal";
-import FormsOverview from "@/components/reports/forms-overview";
+import ReportsDashboard from "@/components/reports/reports-dashboard";
 import ReportsPanel from "@/components/fire/reports-panel";
 import SimpleAnalytics from "@/components/reports/simple-analytics";
 import PackagesPanel from "@/components/fire/packages-panel";
@@ -113,7 +113,7 @@ export default function FireModule() {
               <IncidentsJournal />
             </div>
           )}
-          {activeTab === 'forms' && <FormsOverview />}
+          {activeTab === 'forms' && <ReportsDashboard />}
           {activeTab === 'reports' && <ReportsPanel />}
           {activeTab === 'charts' && <SimpleAnalytics />}
           {activeTab === 'packages' && <PackagesPanel />}
