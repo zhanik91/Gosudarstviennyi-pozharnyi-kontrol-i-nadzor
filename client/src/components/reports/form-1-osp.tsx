@@ -365,12 +365,10 @@ export default function Form1OSP() {
                 </tr>
               </thead>
               <tbody>
-                {FORM_1_OSP_ROWS.map(row => (
-                  <>
-                    {renderRow(row)}
-                    {row.children?.map(child => renderRow(child, true))}
-                  </>
-                ))}
+                {FORM_1_OSP_ROWS.flatMap(row => [
+                  renderRow(row),
+                  ...(row.children?.map(child => renderRow(child, true)) || [])
+                ])}
               </tbody>
             </table>
           </div>

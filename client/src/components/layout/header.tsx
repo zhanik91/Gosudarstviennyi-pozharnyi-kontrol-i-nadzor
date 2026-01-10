@@ -150,18 +150,16 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/85 text-slate-100 backdrop-blur supports-[backdrop-filter]:bg-slate-950/75 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-6">
-          <Link href="/">
-            <a className="flex flex-none items-center gap-3 rounded-md px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-              <MchsEmblem className="h-10 w-10 rounded-md shadow-sm" />
-              <div className="leading-tight">
-                <p className="text-xs uppercase tracking-[0.08em] text-primary">
-                  ҚР ТЖМ ӨҚҚК 
-                </p>
-                <p className="text-sm font-semibold text-white">
-                  КПС МЧС РК
-                </p>
-              </div>
-            </a>
+          <Link href="/" className="flex flex-none items-center gap-3 rounded-md px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <MchsEmblem className="h-10 w-10 rounded-md shadow-sm" />
+            <div className="leading-tight">
+              <p className="text-xs uppercase tracking-[0.08em] text-primary">
+                ҚР ТЖМ ӨҚҚК 
+              </p>
+              <p className="text-sm font-semibold text-white">
+                КПС МЧС РК
+              </p>
+            </div>
           </Link>
 
           <NavigationMenu className="hidden flex-1 lg:flex">
@@ -174,21 +172,19 @@ export default function Header() {
                   <NavigationMenuContent className="rounded-xl border bg-white/95 shadow-xl transition-[opacity,transform] duration-200">
                     <div className="grid gap-3 p-4 md:w-[600px] lg:w-[720px] md:grid-cols-2">
                       {group.items.map((item) => (
-                        <Link key={item.title} href={item.href}>
-                          <NavigationMenuLink asChild>
-                            <a className="flex h-full gap-3 rounded-lg border border-transparent bg-muted/60 px-3 py-3 text-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary">
-                                <item.icon className="h-5 w-5" />
-                              </div>
-                              <div className="space-y-1">
-                                <p className="font-semibold leading-tight text-foreground">{item.title}</p>
-                                <p className="text-xs text-muted-foreground leading-snug">
-                                  {item.description}
-                                </p>
-                              </div>
-                            </a>
-                          </NavigationMenuLink>
-                        </Link>
+                        <NavigationMenuLink key={item.title} asChild>
+                          <Link href={item.href} className="flex h-full gap-3 rounded-lg border border-transparent bg-muted/60 px-3 py-3 text-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary">
+                              <item.icon className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="font-semibold leading-tight text-foreground">{item.title}</p>
+                              <p className="text-xs text-muted-foreground leading-snug">
+                                {item.description}
+                              </p>
+                            </div>
+                          </Link>
+                        </NavigationMenuLink>
                       ))}
                     </div>
                   </NavigationMenuContent>
@@ -203,11 +199,9 @@ export default function Header() {
                 .flatMap((group) => group.items)
                 .slice(0, 4)
                 .map((item) => (
-                  <Link key={item.title} href={item.href}>
-                    <a className="flex min-w-fit items-center gap-1 rounded-md px-3 py-1.5 font-medium transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <item.icon className="h-4 w-4" />
-                      <span className="whitespace-nowrap">{item.title}</span>
-                    </a>
+                  <Link key={item.title} href={item.href} className="flex min-w-fit items-center gap-1 rounded-md px-3 py-1.5 font-medium transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                    <item.icon className="h-4 w-4" />
+                    <span className="whitespace-nowrap">{item.title}</span>
                   </Link>
                 ))}
             </div>
