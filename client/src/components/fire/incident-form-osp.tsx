@@ -50,6 +50,7 @@ const INCIDENT_TYPES = [
   { value: "fire", label: "Пожар" },
   { value: "nonfire", label: "Случай горения (не пожар)" },
   { value: "steppe_fire", label: "Степной пожар" },
+  { value: "steppe_smolder", label: "Степное загорание" },
   { value: "co_nofire", label: "Отравление угарным газом без пожара" },
 ];
 
