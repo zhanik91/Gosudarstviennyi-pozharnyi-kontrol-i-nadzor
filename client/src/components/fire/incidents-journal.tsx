@@ -462,6 +462,7 @@ export default function IncidentsJournal() {
       fire: "Пожар",
       nonfire: "Случай горения",
       steppe_fire: "Степной пожар",
+      steppe_smolder: "Степное загорание",
       co_nofire: "Отравление CO",
     };
     return types[type] || type;
@@ -558,6 +559,7 @@ export default function IncidentsJournal() {
                   <option value="fire">Пожар</option>
                   <option value="nonfire">Случай горения</option>
                   <option value="steppe_fire">Степной пожар</option>
+                  <option value="steppe_smolder">Степное загорание</option>
                   <option value="co_nofire">Отравление CO</option>
                 </select>
               </div>
