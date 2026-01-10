@@ -17,7 +17,7 @@ interface BreadcrumbNavigationProps {
 // Маппинг путей к заголовкам
 const pathToTitle: Record<string, string> = {
   "/": "Главная",
-  "/fire-module": "Государственный учет пожаров",
+  "/fire-module": "Государственный учёт пожаров",
   "/controlled-objects": "Государственный контроль и надзор",
   "/login": "Вход в систему",
 };
