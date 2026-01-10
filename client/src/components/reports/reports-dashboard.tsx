@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 // Импорт компонентов форм
+import Form1OSP from "./form-1-osp";
 import Form2SSG from "./form-2-ssg";
 import Form3SPVP from "./form-3-spvp";
 import Form4SOVP from "./form-4-sovp";
@@ -139,6 +140,7 @@ export default function ReportsDashboard() {
 
   const renderReportForm = (reportId: string) => {
     switch (reportId) {
+      case '1-osp': return <Form1OSP />;
       case '2-ssg': return <Form2SSG />;
       case '3-spvp': return <Form3SPVP />;
       case '4-sovp': return <Form4SOVP />;
@@ -162,7 +164,7 @@ export default function ReportsDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Формы отчетности МЧС РК</h1>
           <p className="text-muted-foreground">
-            Ежемесячные формы согласно Приказу № 928 от 16.11.2015
+            Ежемесячные формы согласно Приказу № 377 от 28.08.2025
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -172,8 +174,9 @@ export default function ReportsDashboard() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="dashboard">Дашборд</TabsTrigger>
+          <TabsTrigger value="1-osp">1-ОСП</TabsTrigger>
           <TabsTrigger value="2-ssg">2-ССГ</TabsTrigger>
           <TabsTrigger value="3-spvp">3-СПВП</TabsTrigger>
           <TabsTrigger value="4-sovp">4-СОВП</TabsTrigger>
@@ -293,6 +296,7 @@ export default function ReportsDashboard() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="1-osp">{renderReportForm('1-osp')}</TabsContent>
         <TabsContent value="2-ssg">{renderReportForm('2-ssg')}</TabsContent>
         <TabsContent value="3-spvp">{renderReportForm('3-spvp')}</TabsContent>
         <TabsContent value="4-sovp">{renderReportForm('4-sovp')}</TabsContent>

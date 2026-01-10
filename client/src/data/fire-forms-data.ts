@@ -242,6 +242,55 @@ export const FIRE_OBJECTS = [
   { code: '9.3', name: 'Заброшенные здания', category: 'other', subcategory: 'abandoned' }
 ];
 
+// Форма 5-СПЖС: Жилищный фонд (сведения о пожарах в жилом секторе)
+export interface ResidentialSectorRow {
+  id: string;
+  number: string;
+  label: string;
+  children?: ResidentialSectorRow[];
+}
+
+export const RESIDENTIAL_SECTOR_ROWS: ResidentialSectorRow[] = [
+  {
+    id: '1', number: '1', label: 'Жилищный фонд, всего',
+    children: [
+      { id: '1.1', number: '1)', label: 'Многоэтажное государственное жилье' },
+      { id: '1.2', number: '2)', label: 'Многоэтажное жилье собственников квартир' },
+      { id: '1.3', number: '3)', label: 'Жилые здания высотой 10 и более этажей' },
+      { id: '1.4', number: '4)', label: 'Частный сектор' },
+      { id: '1.5', number: '5)', label: 'Общежития' },
+      { id: '1.6', number: '6)', label: 'Временное жилище' },
+      { id: '1.7', number: '7)', label: 'Другой жилищный фонд' }
+    ]
+  },
+  { id: '2', number: '2', label: 'Пожары в квартирах' },
+  { id: '3', number: '3', label: 'Пожары в индивидуальных жилых домах' },
+  { id: '4', number: '4', label: 'Пожары в хозяйственных постройках жилого сектора' },
+  { id: '5', number: '5', label: 'Пожары в подвалах, чердаках и на лестничных клетках жилых домов' }
+];
+
+// Форма 5-СПЖС: Колонки
+export const FORM_5_COLUMNS = [
+  { key: 'urban', label: 'В городах и поселках городского типа' },
+  { key: 'rural', label: 'В сельской местности' }
+];
+
+// Форма 5-СПЖС: Показатели
+export const FORM_5_INDICATORS = [
+  { id: '1', number: '1', label: 'Количество пожаров, произошедших в жилом секторе' },
+  { id: '1.1', number: '1)', label: 'Ущерб (тысяч тенге)', isDecimal: true },
+  { id: '2', number: '2)', label: 'Погибло людей, всего' },
+  { id: '2.1', number: '', label: 'в том числе мужчин' },
+  { id: '2.2', number: '', label: 'в том числе женщин' },
+  { id: '2.3', number: '', label: 'в том числе детей' },
+  { id: '3', number: '3)', label: 'Травмировано людей, всего' },
+  { id: '3.1', number: '', label: 'в том числе мужчин' },
+  { id: '3.2', number: '', label: 'в том числе женщин' },
+  { id: '3.3', number: '', label: 'в том числе детей' },
+  { id: '4', number: '4)', label: 'Спасено людей, всего' },
+  { id: '4.1', number: '', label: 'в том числе детей' }
+];
+
 // Форма 6-ССПЗ: Типы степных пожаров и загораний
 export const STEPPE_FIRE_TYPES = [
   { code: '1', name: 'Степные пожары (травяные)', area_type: 'steppe' },
