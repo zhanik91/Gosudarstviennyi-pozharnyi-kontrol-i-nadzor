@@ -1,7 +1,7 @@
-import { User } from "@shared/schema";
+import { User as SchemaUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User extends SchemaUser {}
   }
 }
