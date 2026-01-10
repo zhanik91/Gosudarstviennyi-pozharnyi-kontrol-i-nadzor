@@ -29,6 +29,57 @@ export class IncidentController {
     }
   }
 
+  // Поиск инцидентов
+  async searchIncidents(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id || req.user?.username;
+      const user = await storage.getUser(userId);
+      const filters: any = {};
+
+      const { q, dateFrom, dateTo, incidentType, region } = req.query;
+
+      if (dateFrom) {
+        filters.dateFrom = dateFrom as string;
+      }
+      if (dateTo) {
+        filters.dateTo = dateTo as string;
+      }
+      if (incidentType) {
+        filters.incidentType = incidentType as string;
+      }
+      if (region) {
+        filters.region = region as string;
+      }
+
+      if (user?.role !== "admin" && user?.organizationId) {
+        filters.organizationId = user.organizationId;
+      } else if (req.query.organizationId) {
+        filters.organizationId = req.query.organizationId as string;
+      }
+
+      const hasSearchParams =
+        Boolean(q) ||
+        Boolean(dateFrom) ||
+        Boolean(dateTo) ||
+        Boolean(incidentType) ||
+        Boolean(region);
+
+      if (!hasSearchParams) {
+        const incidents = await storage.getIncidents({
+          organizationId: filters.organizationId,
+        });
+        res.json(incidents);
+        return;
+      }
+
+      const incidents = await storage.searchIncidents((q as string) || "", filters);
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error searching incidents:", error);
+      res.status(500).json({ message: "Failed to search incidents" });
+    }
+  }
+
   // Создать инцидент
   async createIncident(req: Request, res: Response) {
     try {

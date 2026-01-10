@@ -116,10 +116,31 @@ export class IncidentStorage {
       );
     }
 
+    if (filters.organizationId) {
+      if (filters.includeSubOrgs) {
+        const hierarchy = await orgStorage.getOrganizationHierarchy(filters.organizationId);
+        const orgIds = hierarchy.map(o => o.id);
+        conditions.push(inArray(incidents.organizationId, orgIds));
+      } else {
+        conditions.push(eq(incidents.organizationId, filters.organizationId));
+      }
+    }
+
     if (filters.region) conditions.push(eq(incidents.region, filters.region));
     if (filters.incidentType) conditions.push(eq(incidents.incidentType, filters.incidentType));
-    if (filters.dateFrom) conditions.push(gte(incidents.dateTime, new Date(filters.dateFrom)));
-    if (filters.dateTo) conditions.push(lte(incidents.dateTime, new Date(filters.dateTo)));
+    if (filters.dateFrom) {
+      const startDate = new Date(filters.dateFrom);
+      if (!Number.isNaN(startDate.getTime())) {
+        conditions.push(gte(incidents.dateTime, startDate));
+      }
+    }
+    if (filters.dateTo) {
+      const endDate = new Date(filters.dateTo);
+      if (!Number.isNaN(endDate.getTime())) {
+        endDate.setHours(23, 59, 59, 999);
+        conditions.push(lte(incidents.dateTime, endDate));
+      }
+    }
 
     let searchQuery = db.select().from(incidents);
 
