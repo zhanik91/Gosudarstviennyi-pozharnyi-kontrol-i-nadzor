@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { FIRE_CAUSES, flattenFormRows } from "@/data/fire-forms-data";
+import { FIRE_CAUSES } from "@/data/fire-forms-data";
 import { Download, FileText, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,9 +17,7 @@ interface CauseData {
 export default function Form3SPVP() {
   const [reportData, setReportData] = useState<Record<string, CauseData>>({});
   const [reportPeriod, setReportPeriod] = useState("");
-  const [additionalNotes, setAdditionalNotes] = useState<Record<string, string>>({});
   const { toast } = useToast();
-  const flattenedRows = flattenFormRows(FIRE_CAUSES);
 
   const handleInputChange = (causeCode: string, field: keyof CauseData, value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -63,21 +60,15 @@ export default function Form3SPVP() {
   const handleExport = () => {
     const csvHeader = "Причины возникновения пожаров,Количество пожаров всего,в том числе на объектах высокой степени риска,Ущерб всего (тыс. тенге),в том числе на объектах высокой степени риска\n";
     
-    const csvData = flattenedRows.map((cause) => {
-      const data = getCauseData(cause.id);
-      return `"${cause.label}",${data.fires_total},${data.fires_high_risk},${data.damage_total.toFixed(1)},${data.damage_high_risk.toFixed(1)}`;
+    const csvData = FIRE_CAUSES.map(cause => {
+      const data = getCauseData(cause.code);
+      return `"${cause.name}",${data.fires_total},${data.fires_high_risk},${data.damage_total.toFixed(1)},${data.damage_high_risk.toFixed(1)}`;
     }).join('\n');
     
     const totals = getTotals();
     const totalRow = `\nИТОГО:,${totals.fires_total},${totals.fires_high_risk},${totals.damage_total.toFixed(1)},${totals.damage_high_risk.toFixed(1)}`;
     
-    const notesSection = [
-      "",
-      "Дополнительные сведения по пунктам 16-17",
-      `16,"${additionalNotes["16"] || ""}"`,
-      `17,"${additionalNotes["17"] || ""}"`,
-    ].join("\n");
-    const csvContent = csvHeader + csvData + totalRow + notesSection;
+    const csvContent = csvHeader + csvData + totalRow;
     
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -159,25 +150,19 @@ export default function Form3SPVP() {
                 </tr>
               </thead>
               <tbody>
-                {flattenedRows.map((cause) => {
-                  const data = getCauseData(cause.id);
+                {FIRE_CAUSES.map((cause) => {
+                  const data = getCauseData(cause.code);
                   return (
-                    <tr key={cause.id} className="hover:bg-secondary/30">
+                    <tr key={cause.code} className="hover:bg-secondary/30">
                       <td className="border border-border p-2 font-medium">
-                        <div
-                          className="flex items-start gap-2"
-                          style={{ paddingLeft: `${cause.depth * 16}px` }}
-                        >
-                          <span className="text-xs text-muted-foreground">{cause.number}</span>
-                          <span>{cause.label}</span>
-                        </div>
+                        {cause.code}. {cause.name}
                       </td>
                       <td className="border border-border p-2">
                         <Input
                           type="number"
                           min="0"
                           value={data.fires_total || ''}
-                          onChange={(e) => handleInputChange(cause.id, 'fires_total', e.target.value)}
+                          onChange={(e) => handleInputChange(cause.code, 'fires_total', e.target.value)}
                           className="text-center"
                           placeholder="0"
                         />
@@ -187,7 +172,7 @@ export default function Form3SPVP() {
                           type="number"
                           min="0"
                           value={data.fires_high_risk || ''}
-                          onChange={(e) => handleInputChange(cause.id, 'fires_high_risk', e.target.value)}
+                          onChange={(e) => handleInputChange(cause.code, 'fires_high_risk', e.target.value)}
                           className="text-center"
                           placeholder="0"
                         />
@@ -198,7 +183,7 @@ export default function Form3SPVP() {
                           min="0"
                           step="0.1"
                           value={data.damage_total || ''}
-                          onChange={(e) => handleInputChange(cause.id, 'damage_total', e.target.value)}
+                          onChange={(e) => handleInputChange(cause.code, 'damage_total', e.target.value)}
                           className="text-center"
                           placeholder="0.0"
                         />
@@ -209,7 +194,7 @@ export default function Form3SPVP() {
                           min="0"
                           step="0.1"
                           value={data.damage_high_risk || ''}
-                          onChange={(e) => handleInputChange(cause.id, 'damage_high_risk', e.target.value)}
+                          onChange={(e) => handleInputChange(cause.code, 'damage_high_risk', e.target.value)}
                           className="text-center"
                           placeholder="0.0"
                         />
@@ -227,34 +212,6 @@ export default function Form3SPVP() {
               </tbody>
             </table>
           </div>
-
-          <Card className="bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-base">Пояснения по пунктам 16–17</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="note-16">16. Неустановленные причины (расписать каждый пожар)</Label>
-                <Textarea
-                  id="note-16"
-                  value={additionalNotes["16"] || ""}
-                  onChange={(e) => setAdditionalNotes((prev) => ({ ...prev, ["16"]: e.target.value }))}
-                  placeholder="Опишите каждый случай с неустановленной причиной"
-                  className="mt-2 min-h-[90px]"
-                />
-              </div>
-              <div>
-                <Label htmlFor="note-17">17. Другие причины возникновения пожаров (расписать)</Label>
-                <Textarea
-                  id="note-17"
-                  value={additionalNotes["17"] || ""}
-                  onChange={(e) => setAdditionalNotes((prev) => ({ ...prev, ["17"]: e.target.value }))}
-                  placeholder="Опишите каждую прочую причину"
-                  className="mt-2 min-h-[90px]"
-                />
-              </div>
-            </CardContent>
-          </Card>
 
           <div className="flex gap-4 pt-6">
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">

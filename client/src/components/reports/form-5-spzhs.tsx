@@ -5,79 +5,85 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Download, FileText, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { FORM_5_SPZHS_ROWS, flattenFormRows } from "@/data/fire-forms-data";
 
-interface ResidentialRowData {
+interface ResidentialData {
   fires_total: number;
-  killed_total: number;
-  injured_total: number;
-  rescued_total: number;
+  fires_city: number;
+  fires_rural: number;
   damage_total: number;
+  damage_city: number;
+  damage_rural: number;
+  deaths_total: number;
+  deaths_city: number;
+  deaths_rural: number;
+  deaths_children: number;
+  injuries_total: number;
+  injuries_city: number;
+  injuries_rural: number;
+  injuries_children: number;
+  saved_people: number;
+  saved_children: number;
+  saved_property: number;
 }
 
 export default function Form5SPZHS() {
-  const [reportData, setReportData] = useState<Record<string, ResidentialRowData>>({});
+  const [reportData, setReportData] = useState<ResidentialData>({
+    fires_total: 0,
+    fires_city: 0,
+    fires_rural: 0,
+    damage_total: 0,
+    damage_city: 0,
+    damage_rural: 0,
+    deaths_total: 0,
+    deaths_city: 0,
+    deaths_rural: 0,
+    deaths_children: 0,
+    injuries_total: 0,
+    injuries_city: 0,
+    injuries_rural: 0,
+    injuries_children: 0,
+    saved_people: 0,
+    saved_children: 0,
+    saved_property: 0
+  });
   const [reportPeriod, setReportPeriod] = useState("");
   const { toast } = useToast();
 
-  const handleInputChange = (rowId: string, field: keyof ResidentialRowData, value: string) => {
+  const handleInputChange = (field: keyof ResidentialData, value: string) => {
     const numValue = parseFloat(value) || 0;
-    setReportData((prev) => ({
+    setReportData(prev => ({
       ...prev,
-      [rowId]: {
-        ...prev[rowId],
-        [field]: numValue,
-      },
+      [field]: numValue
     }));
   };
 
-  const getRowData = (rowId: string): ResidentialRowData =>
-    reportData[rowId] || {
-      fires_total: 0,
-      killed_total: 0,
-      injured_total: 0,
-      rescued_total: 0,
-      damage_total: 0,
-    };
-
-  const getTotals = () => {
-    return Object.values(reportData).reduce(
-      (acc, row) => ({
-        fires_total: acc.fires_total + row.fires_total,
-        killed_total: acc.killed_total + row.killed_total,
-        injured_total: acc.injured_total + row.injured_total,
-        rescued_total: acc.rescued_total + row.rescued_total,
-        damage_total: acc.damage_total + row.damage_total,
-      }),
-      { fires_total: 0, killed_total: 0, injured_total: 0, rescued_total: 0, damage_total: 0 }
-    );
-  };
-
   const handleExport = () => {
-    const csvHeader = "Показатель,Количество пожаров,Погибло людей,Травмировано людей,Спасено людей,Ущерб (тыс. тенге)\n";
-    const csvData = flattenFormRows(FORM_5_SPZHS_ROWS)
-      .map((row) => {
-        const data = getRowData(row.id);
-        return `"${row.label}",${data.fires_total},${data.killed_total},${data.injured_total},${data.rescued_total},${data.damage_total.toFixed(1)}`;
-      })
-      .join("\n");
-
-    const totals = getTotals();
-    const totalRow = `\nИТОГО:,${totals.fires_total},${totals.killed_total},${totals.injured_total},${totals.rescued_total},${totals.damage_total.toFixed(1)}`;
-
-    const csvContent = csvHeader + csvData + totalRow;
-
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv; charset=utf-8" });
+    const csvHeader = "Показатель,Всего,В городах,В сельской местности\n";
+    const csvData = [
+      `Количество пожаров,${reportData.fires_total},${reportData.fires_city},${reportData.fires_rural}`,
+      `Сумма ущерба (тыс. тенге),${reportData.damage_total.toFixed(1)},${reportData.damage_city.toFixed(1)},${reportData.damage_rural.toFixed(1)}`,
+      `Погибло людей всего,${reportData.deaths_total},${reportData.deaths_city},${reportData.deaths_rural}`,
+      `из них детей,${reportData.deaths_children},,`,
+      `Травмировано людей всего,${reportData.injuries_total},${reportData.injuries_city},${reportData.injuries_rural}`,
+      `из них детей,${reportData.injuries_children},,`,
+      `Спасено людей всего,${reportData.saved_people},,`,
+      `из них детей,${reportData.saved_children},,`,
+      `Спасено материальных ценностей (тыс. тенге),${reportData.saved_property.toFixed(1)},,`
+    ].join('\n');
+    
+    const csvContent = csvHeader + csvData;
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `form_5_spzhs_${reportPeriod || "report"}.csv`;
+    link.download = `form_5_spzhs_${reportPeriod || 'report'}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-
+    
     toast({
       title: "Экспорт завершен",
-      description: "Форма 5-СПЖС экспортирована в CSV",
+      description: "Форма 5-СПЖС экспортирована в CSV"
     });
   };
 
@@ -86,20 +92,18 @@ export default function Form5SPZHS() {
       toast({
         title: "Ошибка",
         description: "Укажите отчетный период",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
     console.log("Отправка формы 5-СПЖС:", { reportPeriod, data: reportData });
-
+    
     toast({
       title: "Форма отправлена",
-      description: "Форма 5-СПЖС успешно отправлена в КПС МЧС РК",
+      description: "Форма 5-СПЖС успешно отправлена в КПС МЧС РК"
     });
   };
-
-  const totals = getTotals();
 
   return (
     <div className="space-y-6">
@@ -127,7 +131,7 @@ export default function Form5SPZHS() {
             </div>
             <div className="flex items-end">
               <div className="text-sm text-muted-foreground">
-                Всего пожаров в жилом секторе: <span className="font-bold text-foreground">{totals.fires_total}</span>
+                Всего пожаров в жилом секторе: <span className="font-bold text-foreground">{reportData.fires_total}</span>
               </div>
             </div>
           </div>
@@ -137,88 +141,230 @@ export default function Form5SPZHS() {
               <thead>
                 <tr className="bg-secondary">
                   <th className="border border-border p-2 text-left">Наименование показателей</th>
-                  <th className="border border-border p-2 text-center">Количество пожаров</th>
-                  <th className="border border-border p-2 text-center">Погибло людей</th>
-                  <th className="border border-border p-2 text-center">Травмировано людей</th>
-                  <th className="border border-border p-2 text-center">Спасено людей</th>
-                  <th className="border border-border p-2 text-center">Ущерб (тыс. тенге)</th>
+                  <th className="border border-border p-2 text-center">всего</th>
+                  <th className="border border-border p-2 text-center">в городах</th>
+                  <th className="border border-border p-2 text-center">в сельской местности</th>
                 </tr>
               </thead>
               <tbody>
-                {flattenFormRows(FORM_5_SPZHS_ROWS).map((row) => {
-                  const data = getRowData(row.id);
-                  return (
-                    <tr key={row.id} className="hover:bg-secondary/30">
-                      <td className="border border-border p-2 font-medium">
-                        <div
-                          className="flex items-start gap-2"
-                          style={{ paddingLeft: `${row.depth * 16}px` }}
-                        >
-                          <span className="text-xs text-muted-foreground">{row.number}</span>
-                          <span>{row.label}</span>
-                        </div>
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={data.fires_total || ""}
-                          onChange={(e) => handleInputChange(row.id, "fires_total", e.target.value)}
-                          className="text-center"
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={data.killed_total || ""}
-                          onChange={(e) => handleInputChange(row.id, "killed_total", e.target.value)}
-                          className="text-center"
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={data.injured_total || ""}
-                          onChange={(e) => handleInputChange(row.id, "injured_total", e.target.value)}
-                          className="text-center"
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={data.rescued_total || ""}
-                          onChange={(e) => handleInputChange(row.id, "rescued_total", e.target.value)}
-                          className="text-center"
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={data.damage_total || ""}
-                          onChange={(e) => handleInputChange(row.id, "damage_total", e.target.value)}
-                          className="text-center"
-                          placeholder="0.0"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-                <tr className="bg-yellow-100 dark:bg-yellow-900/20 font-bold">
-                  <td className="border border-border p-2">ИТОГО:</td>
-                  <td className="border border-border p-2 text-center">{totals.fires_total}</td>
-                  <td className="border border-border p-2 text-center">{totals.killed_total}</td>
-                  <td className="border border-border p-2 text-center">{totals.injured_total}</td>
-                  <td className="border border-border p-2 text-center">{totals.rescued_total}</td>
-                  <td className="border border-border p-2 text-center">{totals.damage_total.toFixed(1)}</td>
+                <tr className="hover:bg-secondary/30">
+                  <td className="border border-border p-2 font-medium">1. Количество пожаров</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.fires_total || ''}
+                      onChange={(e) => handleInputChange('fires_total', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.fires_city || ''}
+                      onChange={(e) => handleInputChange('fires_city', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.fires_rural || ''}
+                      onChange={(e) => handleInputChange('fires_rural', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                </tr>
+                
+                <tr className="hover:bg-secondary/30">
+                  <td className="border border-border p-2 font-medium">2. Сумма ущерба (тысяч тенге)</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={reportData.damage_total || ''}
+                      onChange={(e) => handleInputChange('damage_total', e.target.value)}
+                      className="text-center"
+                      placeholder="0.0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={reportData.damage_city || ''}
+                      onChange={(e) => handleInputChange('damage_city', e.target.value)}
+                      className="text-center"
+                      placeholder="0.0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={reportData.damage_rural || ''}
+                      onChange={(e) => handleInputChange('damage_rural', e.target.value)}
+                      className="text-center"
+                      placeholder="0.0"
+                    />
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-secondary/30 bg-red-50 dark:bg-red-900/20">
+                  <td className="border border-border p-2 font-medium">3. Погибло людей на пожарах (всего)</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.deaths_total || ''}
+                      onChange={(e) => handleInputChange('deaths_total', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.deaths_city || ''}
+                      onChange={(e) => handleInputChange('deaths_city', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.deaths_rural || ''}
+                      onChange={(e) => handleInputChange('deaths_rural', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-secondary/30 bg-red-50 dark:bg-red-900/20">
+                  <td className="border border-border p-2 font-medium pl-8">1) детей</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.deaths_children || ''}
+                      onChange={(e) => handleInputChange('deaths_children', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                </tr>
+
+                <tr className="hover:bg-secondary/30 bg-orange-50 dark:bg-orange-900/20">
+                  <td className="border border-border p-2 font-medium">4. Травмировано людей на пожарах (всего)</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.injuries_total || ''}
+                      onChange={(e) => handleInputChange('injuries_total', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.injuries_city || ''}
+                      onChange={(e) => handleInputChange('injuries_city', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.injuries_rural || ''}
+                      onChange={(e) => handleInputChange('injuries_rural', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-secondary/30 bg-orange-50 dark:bg-orange-900/20">
+                  <td className="border border-border p-2 font-medium pl-8">1) детей</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.injuries_children || ''}
+                      onChange={(e) => handleInputChange('injuries_children', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                </tr>
+
+                <tr className="hover:bg-secondary/30 bg-green-50 dark:bg-green-900/20">
+                  <td className="border border-border p-2 font-medium">5. Спасено людей на пожарах (всего)</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.saved_people || ''}
+                      onChange={(e) => handleInputChange('saved_people', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                </tr>
+
+                <tr className="hover:bg-secondary/30 bg-green-50 dark:bg-green-900/20">
+                  <td className="border border-border p-2 font-medium pl-8">1) детей</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={reportData.saved_children || ''}
+                      onChange={(e) => handleInputChange('saved_children', e.target.value)}
+                      className="text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                </tr>
+
+                <tr className="hover:bg-secondary/30 bg-blue-50 dark:bg-blue-900/20">
+                  <td className="border border-border p-2 font-medium">6. Спасено материальных ценностей (тысяч тенге)</td>
+                  <td className="border border-border p-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={reportData.saved_property || ''}
+                      onChange={(e) => handleInputChange('saved_property', e.target.value)}
+                      className="text-center"
+                      placeholder="0.0"
+                    />
+                  </td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
+                  <td className="border border-border p-2 text-center text-muted-foreground">-</td>
                 </tr>
               </tbody>
             </table>
@@ -230,19 +376,19 @@ export default function Form5SPZHS() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Всего пожаров:</span>
-                  <span className="ml-2 font-semibold text-foreground">{totals.fires_total}</span>
+                  <span className="ml-2 font-semibold text-foreground">{reportData.fires_total}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Общий ущерб:</span>
+                  <span className="ml-2 font-semibold text-foreground">{reportData.damage_total.toFixed(1)} тыс. тг</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Погибло:</span>
-                  <span className="ml-2 font-semibold text-destructive">{totals.killed_total} чел.</span>
+                  <span className="ml-2 font-semibold text-destructive">{reportData.deaths_total} чел.</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Травмировано:</span>
-                  <span className="ml-2 font-semibold text-orange-600">{totals.injured_total} чел.</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Ущерб:</span>
-                  <span className="ml-2 font-semibold text-foreground">{totals.damage_total.toFixed(1)} тыс. тг</span>
+                  <span className="text-muted-foreground">Спасено:</span>
+                  <span className="ml-2 font-semibold text-green-600">{reportData.saved_people} чел.</span>
                 </div>
               </div>
             </CardContent>
