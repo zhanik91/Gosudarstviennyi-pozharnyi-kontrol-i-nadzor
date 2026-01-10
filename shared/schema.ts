@@ -126,10 +126,6 @@ export const incidents = pgTable("incidents", {
   organizationId: varchar("organization_id").notNull(),
   createdBy: varchar("created_by").notNull(),
   packageId: varchar("package_id"),
-  status: varchar("status", { enum: ["pending", "investigating", "resolved", "archived"] })
-    .notNull()
-    .default("pending"),
-  archivedAt: timestamp("archived_at"),
   
   // Метки времени
   createdAt: timestamp("created_at").defaultNow(),

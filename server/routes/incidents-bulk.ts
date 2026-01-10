@@ -122,7 +122,7 @@ export function registerBulkIncidentRoutes(app: Express) {
         try {
           const updated = await storage.updateIncident(id, { 
             status: 'archived',
-            archivedAt: new Date()
+            archivedAt: new Date().toISOString()
           });
           if (updated) {
             results.push(updated);

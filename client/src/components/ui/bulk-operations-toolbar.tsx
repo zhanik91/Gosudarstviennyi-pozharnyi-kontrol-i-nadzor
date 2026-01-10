@@ -141,7 +141,7 @@ export default function BulkOperationsToolbar({
           data-testid="button-bulk-archive"
         >
           <Archive className="h-4 w-4" />
-          Архивировать
+          Архив
         </Button>
 
         {/* Destructive Actions */}
