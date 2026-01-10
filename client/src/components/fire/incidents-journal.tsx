@@ -23,9 +23,12 @@ export default function IncidentsJournal() {
   const queryClient = useQueryClient();
   
   const [filters, setFilters] = useState({
-    period: "",
-    organizationId: "",
     includeSubOrgs: false,
+    searchQuery: "",
+    dateFrom: "",
+    dateTo: "",
+    incidentType: "",
+    region: "",
   });
   
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
@@ -34,16 +37,44 @@ export default function IncidentsJournal() {
   const [showEmailModal, setShowEmailModal] = useState(false);
 
   const { data: incidents = [], isLoading, error, refetch } = useQuery<Incident[]>({
-    queryKey: ["/api/incidents", filters.period, filters.includeSubOrgs],
+    queryKey: [
+      "/api/incidents/search",
+      filters.searchQuery,
+      filters.dateFrom,
+      filters.dateTo,
+      filters.incidentType,
+      filters.region,
+      filters.includeSubOrgs,
+    ],
     queryFn: async ({ queryKey }) => {
-      const [, period, includeSubOrgs] = queryKey as [string, string, boolean];
+      const [
+        ,
+        searchQuery,
+        dateFrom,
+        dateTo,
+        incidentType,
+        region,
+        includeSubOrgs,
+      ] = queryKey as [string, string, string, string, string, string, boolean];
       const params = new URLSearchParams();
-      if (period) {
-        params.set("period", period);
+      if (searchQuery) {
+        params.set("q", searchQuery);
+      }
+      if (dateFrom) {
+        params.set("dateFrom", dateFrom);
+      }
+      if (dateTo) {
+        params.set("dateTo", dateTo);
+      }
+      if (incidentType) {
+        params.set("incidentType", incidentType);
+      }
+      if (region) {
+        params.set("region", region);
       }
       params.set("includeSubOrgs", String(includeSubOrgs));
       const queryString = params.toString();
-      const url = queryString ? `/api/incidents?${queryString}` : "/api/incidents";
+      const url = queryString ? `/api/incidents/search?${queryString}` : "/api/incidents/search";
       const response = await apiRequest("GET", url);
       return response.json();
     },
@@ -61,7 +92,7 @@ export default function IncidentsJournal() {
         title: "Успех",
         description: "Инцидент удален",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
     },
     onError: (error) => {
       toast({
@@ -148,7 +179,7 @@ export default function IncidentsJournal() {
       
       setSelectedIncidents([]);
       // Обновляем данные
-      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
     }
   };
 
@@ -181,7 +212,7 @@ export default function IncidentsJournal() {
         });
         
         // Обновляем данные после импорта
-        queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
         
       } catch (error) {
         toast({
@@ -297,34 +328,110 @@ export default function IncidentsJournal() {
       {/* Фильтры и управление */}
       <Card className="bg-card border border-border">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="period">Период:</Label>
-              <Input
-                id="period"
-                type="month"
-                value={filters.period}
-                onChange={(e) => setFilters({ ...filters, period: e.target.value })}
-                className="w-36"
-                data-testid="input-period"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="include-sub-orgs"
-                checked={filters.includeSubOrgs}
-                onCheckedChange={(checked) => 
-                  setFilters({ ...filters, includeSubOrgs: !!checked })
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="search-query">Поиск</Label>
+                <div className="relative">
+                  <Input
+                    id="search-query"
+                    value={filters.searchQuery}
+                    onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                    placeholder="Адрес или описание"
+                    className="w-72 pr-8"
+                    data-testid="input-search"
+                  />
+                  <Search className="pointer-events-none absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="date-from">Дата с</Label>
+                <Input
+                  id="date-from"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                  className="w-40"
+                  data-testid="input-date-from"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="date-to">Дата по</Label>
+                <Input
+                  id="date-to"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                  className="w-40"
+                  data-testid="input-date-to"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="incident-type">Тип события</Label>
+                <select
+                  id="incident-type"
+                  value={filters.incidentType}
+                  onChange={(e) => setFilters({ ...filters, incidentType: e.target.value })}
+                  className="h-10 w-48 rounded-md border border-input bg-background px-3 text-sm"
+                  data-testid="select-incident-type"
+                >
+                  <option value="">Все типы</option>
+                  <option value="fire">Пожар</option>
+                  <option value="nonfire">Случай горения</option>
+                  <option value="steppe_fire">Степной пожар</option>
+                  <option value="co_nofire">Отравление CO</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="region-filter">Регион</Label>
+                <Input
+                  id="region-filter"
+                  value={filters.region}
+                  onChange={(e) => setFilters({ ...filters, region: e.target.value })}
+                  placeholder="Регион"
+                  className="w-40"
+                  data-testid="input-region"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="include-sub-orgs"
+                  checked={filters.includeSubOrgs}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, includeSubOrgs: !!checked })
+                  }
+                  data-testid="checkbox-include-sub-orgs"
+                />
+                <Label htmlFor="include-sub-orgs" className="text-sm">
+                  Включить подведомственные организации
+                </Label>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setFilters({
+                    ...filters,
+                    searchQuery: "",
+                    dateFrom: "",
+                    dateTo: "",
+                    incidentType: "",
+                    region: "",
+                  })
                 }
-                data-testid="checkbox-include-sub-orgs"
-              />
-              <Label htmlFor="include-sub-orgs" className="text-sm">
-                Включить подведомственные организации
-              </Label>
+                data-testid="button-clear-filters"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Очистить фильтры
+              </Button>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -334,7 +441,7 @@ export default function IncidentsJournal() {
                 <Search className="h-4 w-4 mr-2" />
                 Обновить
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -344,7 +451,7 @@ export default function IncidentsJournal() {
                 <Plus className="h-4 w-4 mr-2" />
                 Добавить
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -355,7 +462,7 @@ export default function IncidentsJournal() {
                 <FileDown className="h-4 w-4 mr-2" />
                 Экспорт ({selectedIncidents.length})
               </Button>
-              
+
               <input
                 type="file"
                 id="import-file"
@@ -613,7 +720,7 @@ export default function IncidentsJournal() {
               </div>
               <IncidentFormOSP onSuccess={() => {
                 setShowNewIncidentForm(false);
-                queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
               }} />
             </div>
           </div>

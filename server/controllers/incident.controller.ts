@@ -29,6 +29,50 @@ export class IncidentController {
     }
   }
 
+  // Поиск инцидентов
+  async searchIncidents(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id || req.user?.username;
+      const user = await storage.getUser(userId);
+      const filters: any = {};
+
+      const { q, dateFrom, dateTo, incidentType, region, includeSubOrgs } = req.query;
+
+      if (dateFrom) {
+        filters.dateFrom = dateFrom as string;
+      }
+      if (dateTo) {
+        const endDate = new Date(dateTo as string);
+        if (!Number.isNaN(endDate.getTime())) {
+          endDate.setHours(23, 59, 59, 999);
+          filters.dateTo = endDate;
+        }
+      }
+      if (incidentType) {
+        filters.incidentType = incidentType as string;
+      }
+      if (region) {
+        filters.region = region as string;
+      }
+
+      if (includeSubOrgs === "true") {
+        filters.includeSubOrgs = true;
+      }
+
+      if (user?.role !== "admin" && user?.organizationId) {
+        filters.organizationId = user.organizationId;
+      } else if (req.query.organizationId) {
+        filters.organizationId = req.query.organizationId as string;
+      }
+
+      const incidents = await storage.searchIncidents(q as string || "", filters);
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error searching incidents:", error);
+      res.status(500).json({ message: "Failed to search incidents" });
+    }
+  }
+
   // Создать инцидент
   async createIncident(req: Request, res: Response) {
     try {
