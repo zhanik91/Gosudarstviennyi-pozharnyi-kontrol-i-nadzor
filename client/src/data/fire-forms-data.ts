@@ -187,59 +187,209 @@ export const NON_FIRE_CASES = [
   }
 ];
 
-// Форма 4-СОВП: Объекты возникновения пожаров (расширенная согласно приказу)
-export const FIRE_OBJECTS = [
-  // Жилые здания
-  { code: '1.1', name: 'Жилые дома (индивидуальные)', category: 'residential', subcategory: 'individual' },
-  { code: '1.2', name: 'Жилые дома (многоквартирные)', category: 'residential', subcategory: 'apartment' },
-  { code: '1.3', name: 'Общежития', category: 'residential', subcategory: 'dormitory' },
-  { code: '1.4', name: 'Гостиницы, мотели', category: 'residential', subcategory: 'hotel' },
-  
-  // Административные и общественные здания
-  { code: '2.1', name: 'Административные здания', category: 'public', subcategory: 'administrative' },
-  { code: '2.2', name: 'Учреждения образования', category: 'public', subcategory: 'education' },
-  { code: '2.3', name: 'Учреждения здравоохранения', category: 'public', subcategory: 'healthcare' },
-  { code: '2.4', name: 'Учреждения культуры', category: 'public', subcategory: 'culture' },
-  { code: '2.5', name: 'Спортивные сооружения', category: 'public', subcategory: 'sports' },
-  
-  // Торговые предприятия
-  { code: '3.1', name: 'Магазины, торговые центры', category: 'commercial', subcategory: 'retail' },
-  { code: '3.2', name: 'Рынки, базары', category: 'commercial', subcategory: 'market' },
-  { code: '3.3', name: 'Предприятия общественного питания', category: 'commercial', subcategory: 'catering' },
-  
-  // Производственные объекты
-  { code: '4.1', name: 'Промышленные предприятия', category: 'industrial', subcategory: 'manufacturing' },
-  { code: '4.2', name: 'Энергетические объекты', category: 'industrial', subcategory: 'energy' },
-  { code: '4.3', name: 'Нефтегазовые объекты', category: 'industrial', subcategory: 'oil_gas' },
-  { code: '4.4', name: 'Химические предприятия', category: 'industrial', subcategory: 'chemical' },
-  
-  // Складские помещения
-  { code: '5.1', name: 'Склады готовой продукции', category: 'storage', subcategory: 'finished_goods' },
-  { code: '5.2', name: 'Склады сырья и материалов', category: 'storage', subcategory: 'raw_materials' },
-  { code: '5.3', name: 'Зернохранилища', category: 'storage', subcategory: 'grain' },
-  
-  // Сельскохозяйственные объекты
-  { code: '6.1', name: 'Животноводческие фермы', category: 'agricultural', subcategory: 'livestock' },
-  { code: '6.2', name: 'Растениеводческие объекты', category: 'agricultural', subcategory: 'crops' },
-  { code: '6.3', name: 'Сельскохозяйственная техника', category: 'agricultural', subcategory: 'machinery' },
-  
-  // Транспорт
-  { code: '7.1', name: 'Легковые автомобили', category: 'transport', subcategory: 'passenger_car' },
-  { code: '7.2', name: 'Грузовые автомобили', category: 'transport', subcategory: 'truck' },
-  { code: '7.3', name: 'Автобусы', category: 'transport', subcategory: 'bus' },
-  { code: '7.4', name: 'Железнодорожный транспорт', category: 'transport', subcategory: 'railway' },
-  { code: '7.5', name: 'Авиационный транспорт', category: 'transport', subcategory: 'aviation' },
-  { code: '7.6', name: 'Водный транспорт', category: 'transport', subcategory: 'marine' },
-  
-  // Природные территории
-  { code: '8.1', name: 'Лесные массивы', category: 'natural', subcategory: 'forest' },
-  { code: '8.2', name: 'Степная растительность', category: 'natural', subcategory: 'steppe' },
-  { code: '8.3', name: 'Сельскохозяйственные угодья', category: 'natural', subcategory: 'farmland' },
-  
-  // Прочие объекты
-  { code: '9.1', name: 'Мусорные полигоны', category: 'other', subcategory: 'waste' },
-  { code: '9.2', name: 'Строящиеся объекты', category: 'other', subcategory: 'construction' },
-  { code: '9.3', name: 'Заброшенные здания', category: 'other', subcategory: 'abandoned' }
+// Форма 4-СОВП: Объекты возникновения пожаров (полная структура согласно Приказу №377)
+export interface Form4SOVPRow {
+  id: string;
+  number?: string;
+  label: string;
+  children?: Form4SOVPRow[];
+}
+
+export const FORM_4_SOVP_ROWS: Form4SOVPRow[] = [
+  {
+    id: '1', number: '1', label: 'Здания и сооружения производственного назначения, всего',
+    children: [
+      { id: '1.1', label: 'предприятия электроэнергетики' },
+      { id: '1.2', label: 'предприятия черной и цветной металлургии' },
+      { id: '1.3', label: 'предприятия машиностроения и металлообработки' },
+      { id: '1.4', label: 'предприятия химической отрасли' },
+      { id: '1.5', label: 'предприятия нефтяной отрасли' },
+      { id: '1.6', label: 'предприятия угольной отрасли' },
+      { id: '1.7', label: 'предприятия добычи газа' },
+      { id: '1.8', label: 'предприятия легкой промышленности' },
+      { id: '1.9', label: 'предприятия пищевой промышленности' },
+      { id: '1.10', label: 'предприятия деревообрабатывающей и целлюлозно-бумажной промышленности' },
+      { id: '1.11', label: 'предприятия промышленности строительных материалов' },
+      { id: '1.12', label: 'другие здания и сооружения производственного назначения' }
+    ]
+  },
+  {
+    id: '2', number: '2', label: 'Предприятия торговли, всего',
+    children: [
+      { id: '2.1', label: 'крытые рынки' },
+      { id: '2.2', label: 'оптовые рынки, ярмарки, выставки товаров' },
+      { id: '2.3', label: 'магазины промышленных товаров' },
+      { id: '2.4', label: 'магазины продуктовых товаров' },
+      { id: '2.5', label: 'гастрономы' },
+      { id: '2.6', label: 'универмаги' },
+      { id: '2.7', label: 'минимаркеты' },
+      { id: '2.8', label: 'супермаркеты' },
+      { id: '2.9', label: 'торгово-развлекательные центры' },
+      { id: '2.10', label: 'торговые центры' },
+      { id: '2.11', label: 'торговые дома' },
+      { id: '2.12', label: 'торговые павильоны, киоски, ларьки, палатки' },
+      { id: '2.13', label: 'объекты общественного питания', children: [
+        { id: '2.13.1', label: 'рестораны' },
+        { id: '2.13.2', label: 'кафе, бары' },
+        { id: '2.13.3', label: 'столовые' },
+        { id: '2.13.4', label: 'шашлычные' }
+      ]},
+      { id: '2.14', label: 'другие предприятия торговли' }
+    ]
+  },
+  {
+    id: '3', number: '3', label: 'Складские здания, всего',
+    children: [
+      { id: '3.1', label: 'склады продовольственных товаров, плодовоовощные базы' },
+      { id: '3.2', label: 'склады промышленных товаров' },
+      { id: '3.3', label: 'склады легковоспламеняющихся жидкостей, горючих жидкостей и сжиженных газов' },
+      { id: '3.4', label: 'склады химических веществ, минеральных удобрений' },
+      { id: '3.5', label: 'склады лесопиломатериалов' },
+      { id: '3.6', label: 'склады медицинских товаров' },
+      { id: '3.7', label: 'другие складские здания' }
+    ]
+  },
+  {
+    id: '4', number: '4', label: 'Здания образовательных учреждений, всего',
+    children: [
+      { id: '4.1', label: 'общеобразовательные (школы, лицеи, гимназии, интернаты)' },
+      { id: '4.2', label: 'высшего и среднего профессионального образования (ВУЗы, ПТУ)' },
+      { id: '4.3', label: 'институты повышения квалификации, учебные комбинаты и курсы' },
+      { id: '4.4', label: 'другие здания образовательных учреждений' },
+      { id: '4.5', label: 'из них в зданиях повышенной этажности' }
+    ]
+  },
+  {
+    id: '5', number: '5', label: 'Детские учреждения, всего',
+    children: [
+      { id: '5.1', label: 'дошкольные (сады, ясли, дома ребенка)' },
+      { id: '5.2', label: 'оздоровительные лагеря, пансионаты' },
+      { id: '5.3', label: 'дворцы и дома школьников' },
+      { id: '5.4', label: 'другие детские учреждения' }
+    ]
+  },
+  {
+    id: '6', number: '6', label: 'Культурно-зрелищные учреждения, всего',
+    children: [
+      { id: '6.1', label: 'театры, кинотеатры, цирки, концертные залы, видеосалоны' },
+      { id: '6.2', label: 'дворцы культуры, клубы, музеи, выставки, библиотеки' },
+      { id: '6.3', label: 'туристические базы' },
+      { id: '6.4', label: 'парки, зоопарки, дендрарий, аквапарки, океанариум' },
+      { id: '6.5', label: 'казино, боулинг, дискотеки, залы игровых автоматов, бильярдные' },
+      { id: '6.6', label: 'другие культурно-зрелищные учреждения' }
+    ]
+  },
+  {
+    id: '7', number: '7', label: 'Спортивно-зрелищные учреждения, всего',
+    children: [
+      { id: '7.1', label: 'стадионы, ипподромы' },
+      { id: '7.2', label: 'дворцы спорта, манежы, бассейны, тир, корты' },
+      { id: '7.3', label: 'другие спортивно-зрелищные учреждения' }
+    ]
+  },
+  {
+    id: '8', number: '8', label: 'Лечебно-профилактические учреждения, всего',
+    children: [
+      { id: '8.1', label: 'больницы, госпитали, родильные дома' },
+      { id: '8.2', label: 'поликлиники, диспансеры, медпункты' },
+      { id: '8.3', label: 'санатории, профилактории' },
+      { id: '8.4', label: 'санитарно-эпидемиологические станции' },
+      { id: '8.5', label: 'дома престарелых и лиц с инвалидностью' },
+      { id: '8.6', label: 'станции скорой помощи' },
+      { id: '8.7', label: 'другие лечебно-профилактические учреждения' }
+    ]
+  },
+  {
+    id: '9', number: '9', label: 'Банно-прачечные комплексы, всего',
+    children: [
+      { id: '9.1', label: 'бани' },
+      { id: '9.2', label: 'сауны' },
+      { id: '9.3', label: 'прачечные' },
+      { id: '9.4', label: 'химчистки' }
+    ]
+  },
+  {
+    id: '10', number: '10', label: 'Административно-общественные здания, всего',
+    children: [
+      { id: '10.1', label: 'здания органов государственной власти' },
+      { id: '10.2', label: 'здания органов представительной власти' },
+      { id: '10.3', label: 'здания местных исполнительных органов' },
+      { id: '10.4', label: 'здания судов, нотариальные и адвокатские конторы' },
+      { id: '10.5', label: 'культовые здания' },
+      { id: '10.6', label: 'административные здания организаций, предприятий, учреждений' },
+      { id: '10.7', label: 'аэропорты и аэровокзалы' },
+      { id: '10.8', label: 'железнодорожные, морские, речные и автовокзалы' },
+      { id: '10.9', label: 'почтамт, телеграф, АТС, отделения связи' },
+      { id: '10.10', label: 'радио и вычислительные центры, телестудии' },
+      { id: '10.11', label: 'банки, биржи, брокерские конторы' },
+      { id: '10.12', label: 'гостиницы, мотели, кемпинги' },
+      { id: '10.13', label: 'здания бытового обслуживания населения' },
+      { id: '10.14', label: 'объекты Комитета национальной безопасности' },
+      { id: '10.15', label: 'объекты Министерства внутренних дел' },
+      { id: '10.16', label: 'объекты Министерства обороны' },
+      { id: '10.17', label: 'объекты Министерства по чрезвычайным ситуациям' },
+      { id: '10.18', label: 'другие административно-общественные здания', children: [
+        { id: '10.18.1', label: 'автосалоны' },
+        { id: '10.18.2', label: 'станции технического обслуживания, гаражные кооперативы' },
+        { id: '10.18.3', label: 'шиномонтажные мастерские' }
+      ]},
+      { id: '10.19', label: 'из них в зданиях повышенной этажности' }
+    ]
+  },
+  {
+    id: '11', number: '11', label: 'Сельскохозяйственные объекты, всего',
+    children: [
+      { id: '11.1', label: 'животноводческая ферма, кошара, конюшня, хлев' },
+      { id: '11.2', label: 'птицеводческая ферма' },
+      { id: '11.3', label: 'склады сена, фуража' },
+      { id: '11.4', label: 'мельницы' },
+      { id: '11.5', label: 'элеваторы, склады зерна' },
+      { id: '11.6', label: 'зерносушилки, механизированные тока, кормоцеха' },
+      { id: '11.7', label: 'теплицы, парники' },
+      { id: '11.8', label: 'фрукто- и овощехранилища' },
+      { id: '11.9', label: 'полевой стан, пчельник, стригальный пункт' },
+      { id: '11.10', label: 'поля зерновых культур' },
+      { id: '11.11', label: 'другие сельскохозяйственные объекты' }
+    ]
+  },
+  { id: '12', number: '12', label: 'Строящиеся объекты и стройплощадки' },
+  {
+    id: '13', number: '13', label: 'Транспортные средства, всего',
+    children: [
+      { id: '13.1', label: 'автомобильный транспорт', children: [
+        { id: '13.1.1', label: 'грузовые' },
+        { id: '13.1.2', label: 'легковые' },
+        { id: '13.1.3', label: 'автобусы' },
+        { id: '13.1.4', label: 'троллейбусы' }
+      ]},
+      { id: '13.2', label: 'сельскохозяйственная техника' },
+      { id: '13.3', label: 'железнодорожный транспорт' },
+      { id: '13.4', label: 'воздушные суда' },
+      { id: '13.5', label: 'морские, речные суда' },
+      { id: '13.6', label: 'другие транспортные средства' }
+    ]
+  },
+  {
+    id: '14', number: '14', label: 'Жилищный фонд, всего',
+    children: [
+      { id: '14.1', label: 'многоэтажное государственное жилье' },
+      { id: '14.2', label: 'многоэтажное жилье собственников квартир' },
+      { id: '14.3', label: 'жилые здания высотой 10 и более этажей' },
+      { id: '14.4', label: 'частный сектор' },
+      { id: '14.5', label: 'общежития' },
+      { id: '14.6', label: 'временное жилище' },
+      { id: '14.7', label: 'другой жилищный фонд' }
+    ]
+  },
+  {
+    id: '15', number: '15', label: 'Леса, всего',
+    children: [
+      { id: '15.1', label: 'находящиеся в ведении местных исполнительных органов' },
+      { id: '15.2', label: 'в ведении Комитета лесного хозяйства и животного мира' }
+    ]
+  },
+  { id: '16', number: '16', label: 'Степи, луга, пастбища' },
+  { id: '17', number: '17', label: 'Открытые территории (пустыри, обочины дорог, улицы и другие)' }
 ];
 
 // Форма 5-СПЖС: Жилищный фонд (сведения о пожарах в жилом секторе)
@@ -291,14 +441,66 @@ export const FORM_5_INDICATORS = [
   { id: '4.1', number: '', label: 'в том числе детей' }
 ];
 
-// Форма 6-ССПЗ: Типы степных пожаров и загораний
-export const STEPPE_FIRE_TYPES = [
-  { code: '1', name: 'Степные пожары (травяные)', area_type: 'steppe' },
-  { code: '2', name: 'Лесные пожары', area_type: 'forest' },
-  { code: '3', name: 'Пожары на сельскохозяйственных землях', area_type: 'agricultural' },
-  { code: '4', name: 'Пожары тростника и камыша', area_type: 'wetland' },
-  { code: '5', name: 'Торфяные пожары', area_type: 'peat' },
-  { code: '6', name: 'Пожары мусорных свалок', area_type: 'waste' }
+// Форма 6-ССПЗ: Сведения о степных пожарах и загораниях (согласно Приказу №377)
+export interface Form6SSPZRow {
+  id: string;
+  number?: string;
+  label: string;
+  children?: Form6SSPZRow[];
+}
+
+export const FORM_6_SSPZ_ROWS: Form6SSPZRow[] = [
+  {
+    id: '1', number: '1', label: 'Степные пожары и загорания, всего',
+    children: [
+      { id: '1.1', number: '1)', label: 'степные пожары' },
+      { id: '1.2', number: '2)', label: 'загорания сухой травы' },
+      { id: '1.3', number: '3)', label: 'загорания камыша' },
+      { id: '1.4', number: '4)', label: 'загорания стерни, пожнивных остатков' }
+    ]
+  },
+  { id: '2', number: '2', label: 'Степные пожары и загорания на землях населенных пунктов' },
+  { id: '3', number: '3', label: 'Степные пожары и загорания на землях сельскохозяйственного назначения' },
+  { id: '4', number: '4', label: 'Степные пожары и загорания на землях лесного фонда' },
+  { id: '5', number: '5', label: 'Степные пожары и загорания на землях запаса' }
+];
+
+// Форма 6-ССПЗ: Колонки
+export const FORM_6_COLUMNS = [
+  { key: 'fires_total', label: 'Количество степных пожаров и загораний', valueType: 'integer' },
+  { key: 'area_burned', label: 'Площадь, пройденная огнем (гектар)', valueType: 'decimal', precision: 1 },
+  { key: 'damage_total', label: 'Ущерб (тысяч тенге)', valueType: 'decimal', precision: 1 }
+];
+
+// Форма 7-CO: Сведения о погибших и травмированных от угарного газа (согласно Приказу №377)
+export interface Form7CORow {
+  id: string;
+  number?: string;
+  label: string;
+  children?: Form7CORow[];
+}
+
+export const FORM_7_CO_ROWS: Form7CORow[] = [
+  {
+    id: '1', number: '1', label: 'Отравление угарным газом в жилом секторе, всего',
+    children: [
+      { id: '1.1', number: '1)', label: 'в индивидуальных жилых домах' },
+      { id: '1.2', number: '2)', label: 'в многоквартирных жилых домах' },
+      { id: '1.3', number: '3)', label: 'в общежитиях' },
+      { id: '1.4', number: '4)', label: 'во временных жилых строениях' }
+    ]
+  },
+  { id: '2', number: '2', label: 'Отравление угарным газом в результате эксплуатации печного отопления' },
+  { id: '3', number: '3', label: 'Отравление угарным газом в результате эксплуатации газовых отопительных приборов' },
+  { id: '4', number: '4', label: 'Отравление угарным газом в результате эксплуатации газовых плит' },
+  { id: '5', number: '5', label: 'Отравление угарным газом в результате эксплуатации водонагревательных газовых приборов (колонок)' },
+  { id: '6', number: '6', label: 'Отравление угарным газом в результате эксплуатации иных источников угарного газа' }
+];
+
+// Форма 7-CO: Колонки
+export const FORM_7_COLUMNS = [
+  { key: 'killed_total', label: 'Погибло людей', valueType: 'integer' },
+  { key: 'injured_total', label: 'Травмировано людей', valueType: 'integer' }
 ];
 
 // Классификация населенных пунктов для отчетности
@@ -345,14 +547,34 @@ export function getFireCauseByCode(code: string) {
   return FIRE_CAUSES.find(cause => cause.code === code);
 }
 
-export function getFireObjectByCode(code: string) {
-  return FIRE_OBJECTS.find(obj => obj.code === code);
+export function getFireObjectById(id: string): Form4SOVPRow | undefined {
+  const findInRows = (rows: Form4SOVPRow[]): Form4SOVPRow | undefined => {
+    for (const row of rows) {
+      if (row.id === id) return row;
+      if (row.children) {
+        const found = findInRows(row.children);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+  return findInRows(FORM_4_SOVP_ROWS);
 }
 
 export function getNonFireCaseByCode(code: string) {
   return NON_FIRE_CASES.find(case_ => case_.code === code);
 }
 
-export function getSteppeFireTypeByCode(code: string) {
-  return STEPPE_FIRE_TYPES.find(type => type.code === code);
+export function getSteppeFireTypeById(id: string): Form6SSPZRow | undefined {
+  const findInRows = (rows: Form6SSPZRow[]): Form6SSPZRow | undefined => {
+    for (const row of rows) {
+      if (row.id === id) return row;
+      if (row.children) {
+        const found = findInRows(row.children);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+  return findInRows(FORM_6_SSPZ_ROWS);
 }
