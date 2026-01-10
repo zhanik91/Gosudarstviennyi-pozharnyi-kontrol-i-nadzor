@@ -185,6 +185,10 @@ export default function IncidentsJournal() {
   const queryClient = useQueryClient();
   
   const [filters, setFilters] = useState({
+ codex/add-search-and-filters-to-incidents-journal-sgxp3p
+
+    includeSubOrgs: false,
+ main
     searchQuery: "",
     dateFrom: "",
     dateTo: "",
@@ -205,6 +209,10 @@ export default function IncidentsJournal() {
       filters.dateTo,
       filters.incidentType,
       filters.region,
+ codex/add-search-and-filters-to-incidents-journal-sgxp3p
+
+      filters.includeSubOrgs,
+ main
     ],
     queryFn: async ({ queryKey }) => {
       const [
@@ -214,7 +222,12 @@ export default function IncidentsJournal() {
         dateTo,
         incidentType,
         region,
+ codex/add-search-and-filters-to-incidents-journal-sgxp3p
       ] = queryKey as [string, string, string, string, string, string];
+
+        includeSubOrgs,
+      ] = queryKey as [string, string, string, string, string, string, boolean];
+ main
       const params = new URLSearchParams();
       if (searchQuery) {
         params.set("q", searchQuery);
@@ -503,6 +516,7 @@ export default function IncidentsJournal() {
                 </div>
               </div>
 
+ codex/add-search-and-filters-to-incidents-journal-sgxp3p
               <DateField
                 label="Дата с"
                 value={filters.dateFrom}
@@ -514,6 +528,30 @@ export default function IncidentsJournal() {
                 onChange={(value) => setFilters({ ...filters, dateTo: value })}
                 min={filters.dateFrom || undefined}
               />
+
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="date-from">Дата с</Label>
+                <Input
+                  id="date-from"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                  className="w-40"
+                  data-testid="input-date-from"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="date-to">Дата по</Label>
+                <Input
+                  id="date-to"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                  className="w-40"
+                  data-testid="input-date-to"
+                />
+              </div>
+ main
 
               <div className="flex flex-col gap-1">
                 <Label htmlFor="incident-type">Тип события</Label>
@@ -544,6 +582,23 @@ export default function IncidentsJournal() {
                 />
               </div>
 
+ codex/add-search-and-filters-to-incidents-journal-sgxp3p
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="include-sub-orgs"
+                  checked={filters.includeSubOrgs}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, includeSubOrgs: !!checked })
+                  }
+                  data-testid="checkbox-include-sub-orgs"
+                />
+                <Label htmlFor="include-sub-orgs" className="text-sm">
+                  Включить подведомственные организации
+                </Label>
+              </div>
+
+ main
               <Button
                 variant="outline"
                 size="sm"
