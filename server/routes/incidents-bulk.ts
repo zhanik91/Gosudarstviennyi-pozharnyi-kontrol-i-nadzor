@@ -167,7 +167,7 @@ export function registerBulkIncidentRoutes(app: Express) {
       }
 
       if (format === 'csv') {
-        const csvHeader = "№,Дата,Время,Область,Район,Тип,Адрес,Причина,Ущерб,Погибло,Травмировано\n";
+        const csvHeader = "№,Дата,Время,Область,Город-район,Тип,Адрес,Причина,Ущерб,Погибло,Травмировано\n";
         const csvData = incidents.map((incident, index) => {
           const date = new Date(incident.dateTime);
           return [
@@ -175,7 +175,7 @@ export function registerBulkIncidentRoutes(app: Express) {
             date.toLocaleDateString('ru-RU'),
             date.toLocaleTimeString('ru-RU'),
             incident.region || '',
-            incident.district || '',
+            incident.city || '',
             incident.incidentType || '',
             incident.address || '',
             incident.cause || '',
