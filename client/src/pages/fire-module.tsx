@@ -87,6 +87,7 @@ export default function FireModule() {
             {[
               { id: 'journal', label: '📋 Журнал пожаров' },
               { id: 'forms', label: '📄 Отчетные формы' },
+              { id: 'reports', label: '🧾 Отчёты' },
               { id: 'charts', label: '📊 Диаграммы' },
               { id: 'packages', label: '📦 Пакеты данных' }
             ].map((tab) => (
