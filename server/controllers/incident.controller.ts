@@ -36,25 +36,17 @@ export class IncidentController {
       const user = await storage.getUser(userId);
       const filters: any = {};
 
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
-      const { q, dateFrom, dateTo, incidentType, region } = req.query;
-
       const { q, dateFrom, dateTo, incidentType, region, includeSubOrgs } = req.query;
- main
 
       if (dateFrom) {
         filters.dateFrom = dateFrom as string;
       }
       if (dateTo) {
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
-        filters.dateTo = dateTo as string;
-
         const endDate = new Date(dateTo as string);
         if (!Number.isNaN(endDate.getTime())) {
           endDate.setHours(23, 59, 59, 999);
           filters.dateTo = endDate;
         }
- main
       }
       if (incidentType) {
         filters.incidentType = incidentType as string;
@@ -63,20 +55,16 @@ export class IncidentController {
         filters.region = region as string;
       }
 
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
-
       if (includeSubOrgs === "true") {
         filters.includeSubOrgs = true;
       }
 
- main
       if (user?.role !== "admin" && user?.organizationId) {
         filters.organizationId = user.organizationId;
       } else if (req.query.organizationId) {
         filters.organizationId = req.query.organizationId as string;
       }
 
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
       const hasSearchParams =
         Boolean(q) ||
         Boolean(dateFrom) ||
@@ -93,9 +81,6 @@ export class IncidentController {
       }
 
       const incidents = await storage.searchIncidents((q as string) || "", filters);
-
-      const incidents = await storage.searchIncidents(q as string || "", filters);
- main
       res.json(incidents);
     } catch (error) {
       console.error("Error searching incidents:", error);

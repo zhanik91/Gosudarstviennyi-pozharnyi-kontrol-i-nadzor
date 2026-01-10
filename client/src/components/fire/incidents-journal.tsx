@@ -10,7 +10,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import BulkOperationsToolbar from "@/components/ui/bulk-operations-toolbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, Search, FileDown, Filter, Plus } from "lucide-react";
-import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
 import type { Incident } from "@shared/schema";
 import IncidentFormOSP from "./incident-form-osp";
@@ -183,69 +182,69 @@ function DateField({
 export default function IncidentsJournal() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [filters, setFilters] = useState({
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
 
+  const [filters, setFilters] = useState({
     includeSubOrgs: false,
- main
     searchQuery: "",
     dateFrom: "",
     dateTo: "",
     incidentType: "",
     region: "",
   });
-  
+
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
   const [showNewIncidentForm, setShowNewIncidentForm] = useState(false);
   const [showBulkEditModal, setShowBulkEditModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
 
+  // Если нет активных фильтров — грузим полный список /api/incidents
+  // Если есть фильтры — используем /api/incidents/search (у него может быть limit)
+  const hasFilters =
+    !!filters.searchQuery ||
+    !!filters.dateFrom ||
+    !!filters.dateTo ||
+    !!filters.incidentType ||
+    !!filters.region ||
+    !!filters.includeSubOrgs;
+
+  const endpoint = hasFilters ? "/api/incidents/search" : "/api/incidents";
+
   const { data: incidents = [], isLoading, error, refetch } = useQuery<Incident[]>({
     queryKey: [
-      "/api/incidents/search",
+      endpoint,
       filters.searchQuery,
       filters.dateFrom,
       filters.dateTo,
       filters.incidentType,
       filters.region,
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
-
       filters.includeSubOrgs,
- main
     ],
     queryFn: async ({ queryKey }) => {
       const [
-        ,
+        ep,
         searchQuery,
         dateFrom,
         dateTo,
         incidentType,
         region,
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
-      ] = queryKey as [string, string, string, string, string, string];
-
         includeSubOrgs,
       ] = queryKey as [string, string, string, string, string, string, boolean];
- main
+
       const params = new URLSearchParams();
-      if (searchQuery) {
-        params.set("q", searchQuery);
+
+      // Параметры нужны только для /search
+      if (ep === "/api/incidents/search") {
+        if (searchQuery) params.set("q", searchQuery);
+        if (dateFrom) params.set("dateFrom", dateFrom);
+        if (dateTo) params.set("dateTo", dateTo);
+        if (incidentType) params.set("incidentType", incidentType);
+        if (region) params.set("region", region);
+        if (includeSubOrgs) params.set("includeSubOrgs", "true");
       }
-      if (dateFrom) {
-        params.set("dateFrom", dateFrom);
-      }
-      if (dateTo) {
-        params.set("dateTo", dateTo);
-      }
-      if (incidentType) {
-        params.set("incidentType", incidentType);
-      }
-      if (region) {
-        params.set("region", region);
-      }
-      const queryString = params.toString();
-      const url = queryString ? `/api/incidents/search?${queryString}` : "/api/incidents/search";
+
+      const qs = params.toString();
+      const url = qs ? `${ep}?${qs}` : ep;
+
       const response = await apiRequest("GET", url);
       return response.json();
     },
@@ -263,12 +262,14 @@ export default function IncidentsJournal() {
         title: "Успех",
         description: "Инцидент удален",
       });
+      // Обновляем и общий список, и поиск
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
     },
-    onError: (error) => {
+    onError: (err: any) => {
       toast({
         title: "Ошибка",
-        description: error.message || "Не удалось удалить инцидент",
+        description: err?.message || "Не удалось удалить инцидент",
         variant: "destructive",
       });
     },
@@ -294,9 +295,9 @@ export default function IncidentsJournal() {
 
   const handleBulkDelete = () => {
     if (selectedIncidents.length === 0) return;
-    
+
     if (confirm(`Удалить ${selectedIncidents.length} записей?`)) {
-      selectedIncidents.forEach(id => {
+      selectedIncidents.forEach((id) => {
         deleteIncidentMutation.mutate(id);
       });
       setSelectedIncidents([]);
@@ -305,23 +306,31 @@ export default function IncidentsJournal() {
 
   const handleBulkExport = () => {
     if (selectedIncidents.length === 0) return;
-    
-    const selectedData = incidents.filter((incident: Incident) => 
+
+    const selectedData = incidents.filter((incident: Incident) =>
       selectedIncidents.includes(incident.id)
     );
-    
-    // Создаем CSV данные
-    const csvContent = "data:text/csv;charset=utf-8," + 
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
       "Дата,Тип,Адрес,Причина,Ущерб,Погибшие,Травмированные\n" +
-      selectedData.map((incident: Incident) => 
-        `${incident.dateTime},${incident.incidentType},${incident.address},${incident.cause},${incident.damage || 0},${incident.deathsTotal || 0},${incident.injuredTotal || 0}`
-      ).join("\n");
-    
+      selectedData
+        .map(
+          (incident: Incident) =>
+            `${incident.dateTime},${incident.incidentType},${incident.address},${incident.cause},${
+              incident.damage || 0
+            },${incident.deathsTotal || 0},${incident.injuredTotal || 0}`
+        )
+        .join("\n");
+
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", `incidents_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `incidents_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
     link.click();
-    
+
     toast({
       title: "Успех",
       description: `Экспортировано ${selectedIncidents.length} записей`,
@@ -335,21 +344,19 @@ export default function IncidentsJournal() {
 
   const handleBulkArchive = () => {
     if (selectedIncidents.length === 0) return;
-    
+
     if (confirm(`Архивировать ${selectedIncidents.length} записей?`)) {
-      // Создаем запрос на архивирование
-      selectedIncidents.forEach(id => {
-        // В реальной системе это будет API вызов
+      selectedIncidents.forEach((id) => {
         console.log(`Архивирование записи ${id}`);
       });
-      
+
       toast({
         title: "Успех",
         description: `${selectedIncidents.length} записей отправлено в архив`,
       });
-      
+
       setSelectedIncidents([]);
-      // Обновляем данные
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
     }
   };
@@ -362,30 +369,28 @@ export default function IncidentsJournal() {
   const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const csvData = e.target?.result as string;
-        const lines = csvData.split('\n');
-        const headers = lines[0].split(',');
-        
-        // Простая проверка формата
-        if (!headers.includes('Дата') || !headers.includes('Тип')) {
-          throw new Error('Неверный формат файла');
+        const lines = csvData.split("\n");
+        const headers = lines[0].split(",");
+
+        if (!headers.includes("Дата") || !headers.includes("Тип")) {
+          throw new Error("Неверный формат файла");
         }
-        
-        const importedCount = lines.length - 1; // исключаем заголовок
-        
+
+        const importedCount = lines.length - 1;
+
         toast({
           title: "Импорт выполнен",
           description: `Импортировано ${importedCount} записей`,
         });
-        
-        // Обновляем данные после импорта
-      queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
-        
-      } catch (error) {
+
+        queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+      } catch {
         toast({
           title: "Ошибка импорта",
           description: "Проверьте формат файла",
@@ -393,32 +398,44 @@ export default function IncidentsJournal() {
         });
       }
     };
-    
+
     reader.readAsText(file);
-    // Сбрасываем значение input для повторного выбора того же файла
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const handleGenerateReport = () => {
     if (selectedIncidents.length === 0) return;
-    
-    const selectedData = incidents.filter((incident: Incident) => 
+
+    const selectedData = incidents.filter((incident: Incident) =>
       selectedIncidents.includes(incident.id)
     );
-    
-    // Создаем детальный отчет в формате CSV
-    const reportContent = "data:text/csv;charset=utf-8," + 
+
+    const reportContent =
+      "data:text/csv;charset=utf-8," +
       "№,Дата,Время,Местность,Тип,Адрес,Причина,Объект,Ущерб (тыс.тг),Погибло,Детей,Травмировано,Спасено людей,Спасено ценностей\n" +
-      selectedData.map((incident: Incident, index: number) => {
-        const date = new Date(incident.dateTime);
-        return `${index + 1},${date.toLocaleDateString('ru-RU')},${date.toLocaleTimeString('ru-RU')},${formatLocality(incident.locality)},${formatIncidentType(incident.incidentType)},${incident.address},${incident.cause},${incident.objectType || ''},${incident.damage || 0},${incident.deathsTotal || 0},${incident.deathsChildren || 0},${incident.injuredTotal || 0},${incident.savedPeopleTotal || 0},${incident.savedProperty || 0}`;
-      }).join("\n");
-    
+      selectedData
+        .map((incident: Incident, index: number) => {
+          const date = new Date(incident.dateTime);
+          return `${index + 1},${date.toLocaleDateString("ru-RU")},${date.toLocaleTimeString(
+            "ru-RU"
+          )},${formatLocality(incident.locality)},${formatIncidentType(
+            incident.incidentType
+          )},${incident.address},${incident.cause},${incident.objectType || ""},${
+            incident.damage || 0
+          },${incident.deathsTotal || 0},${incident.deathsChildren || 0},${
+            incident.injuredTotal || 0
+          },${incident.savedPeopleTotal || 0},${incident.savedProperty || 0}`;
+        })
+        .join("\n");
+
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(reportContent));
-    link.setAttribute("download", `detailed_incident_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `detailed_incident_report_${new Date().toISOString().split("T")[0]}.csv`
+    );
     link.click();
-    
+
     toast({
       title: "Успех",
       description: `Создан детальный отчет по ${selectedIncidents.length} записям`,
@@ -434,8 +451,8 @@ export default function IncidentsJournal() {
       });
       return;
     }
-    
-    if (action === 'delete') {
+
+    if (action === "delete") {
       handleBulkDelete();
     }
   };
@@ -458,29 +475,30 @@ export default function IncidentsJournal() {
     return localities[locality] || locality;
   };
 
-  // Вычисляем итоги
-  const totals = incidents.reduce((acc: any, incident: any) => {
-    acc.count++;
-    acc.damage += parseFloat(incident.damage || '0');
-    acc.deathsTotal += incident.deathsTotal || 0;
-    acc.deathsChildren += incident.deathsChildren || 0;
-    acc.injuredTotal += incident.injuredTotal || 0;
-    acc.injuredChildren += incident.injuredChildren || 0;
-    acc.savedPeopleTotal += incident.savedPeopleTotal || 0;
-    acc.savedProperty += parseFloat(incident.savedProperty || '0');
-    return acc;
-  }, {
-    count: 0,
-    damage: 0,
-    deathsTotal: 0,
-    deathsChildren: 0,
-    injuredTotal: 0,
-    injuredChildren: 0,
-    savedPeopleTotal: 0,
-    savedProperty: 0,
-  });
+  const totals = incidents.reduce(
+    (acc: any, incident: any) => {
+      acc.count++;
+      acc.damage += parseFloat(incident.damage || "0");
+      acc.deathsTotal += incident.deathsTotal || 0;
+      acc.deathsChildren += incident.deathsChildren || 0;
+      acc.injuredTotal += incident.injuredTotal || 0;
+      acc.injuredChildren += incident.injuredChildren || 0;
+      acc.savedPeopleTotal += incident.savedPeopleTotal || 0;
+      acc.savedProperty += parseFloat(incident.savedProperty || "0");
+      return acc;
+    },
+    {
+      count: 0,
+      damage: 0,
+      deathsTotal: 0,
+      deathsChildren: 0,
+      injuredTotal: 0,
+      injuredChildren: 0,
+      savedPeopleTotal: 0,
+      savedProperty: 0,
+    }
+  );
 
-  // Показать ошибку если есть проблема с загрузкой
   if (error) {
     return (
       <div className="space-y-6">
@@ -496,7 +514,6 @@ export default function IncidentsJournal() {
 
   return (
     <div className="space-y-6">
-      {/* Фильтры и управление */}
       <Card className="bg-card border border-border">
         <CardContent className="p-4">
           <div className="flex flex-col gap-4">
@@ -516,7 +533,6 @@ export default function IncidentsJournal() {
                 </div>
               </div>
 
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
               <DateField
                 label="Дата с"
                 value={filters.dateFrom}
@@ -528,30 +544,6 @@ export default function IncidentsJournal() {
                 onChange={(value) => setFilters({ ...filters, dateTo: value })}
                 min={filters.dateFrom || undefined}
               />
-
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="date-from">Дата с</Label>
-                <Input
-                  id="date-from"
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                  className="w-40"
-                  data-testid="input-date-from"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="date-to">Дата по</Label>
-                <Input
-                  id="date-to"
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                  className="w-40"
-                  data-testid="input-date-to"
-                />
-              </div>
- main
 
               <div className="flex flex-col gap-1">
                 <Label htmlFor="incident-type">Тип события</Label>
@@ -582,8 +574,6 @@ export default function IncidentsJournal() {
                 />
               </div>
 
- codex/add-search-and-filters-to-incidents-journal-sgxp3p
-
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="include-sub-orgs"
@@ -598,13 +588,13 @@ export default function IncidentsJournal() {
                 </Label>
               </div>
 
- main
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() =>
                   setFilters({
                     ...filters,
+                    includeSubOrgs: false,
                     searchQuery: "",
                     dateFrom: "",
                     dateTo: "",
@@ -620,12 +610,7 @@ export default function IncidentsJournal() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLoad}
-                data-testid="button-refresh"
-              >
+              <Button variant="outline" size="sm" onClick={handleLoad} data-testid="button-refresh">
                 <Search className="h-4 w-4 mr-2" />
                 Обновить
               </Button>
@@ -655,13 +640,13 @@ export default function IncidentsJournal() {
                 type="file"
                 id="import-file"
                 accept=".csv,.xlsx"
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onChange={handleImportFile}
               />
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => document.getElementById('import-file')?.click()}
+                onClick={() => document.getElementById("import-file")?.click()}
                 data-testid="button-import"
               >
                 <FileDown className="h-4 w-4 mr-2 rotate-180" />
@@ -672,7 +657,6 @@ export default function IncidentsJournal() {
         </CardContent>
       </Card>
 
-      {/* Bulk Operations Toolbar */}
       <BulkOperationsToolbar
         selectedCount={selectedIncidents.length}
         totalCount={incidents.length}
@@ -686,7 +670,6 @@ export default function IncidentsJournal() {
         onGenerateReport={handleGenerateReport}
       />
 
-      {/* Журнал (Excel-подобная таблица) */}
       <Card className="bg-card border border-border">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -697,11 +680,8 @@ export default function IncidentsJournal() {
                     <Checkbox
                       checked={selectedIncidents.length === incidents.length && incidents.length > 0}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedIncidents(incidents.map((i) => i.id));
-                        } else {
-                          setSelectedIncidents([]);
-                        }
+                        if (checked) setSelectedIncidents(incidents.map((i) => i.id));
+                        else setSelectedIncidents([]);
                       }}
                       data-testid="checkbox-select-all"
                     />
@@ -736,20 +716,19 @@ export default function IncidentsJournal() {
                 ) : (
                   <>
                     {incidents.map((incident, index: number) => (
-                      <tr 
-                        key={incident.id} 
-                        className={`border-b hover:bg-muted/50 ${selectedIncidents.includes(incident.id) ? 'bg-primary/10' : ''}`}
+                      <tr
+                        key={incident.id}
+                        className={`border-b hover:bg-muted/50 ${
+                          selectedIncidents.includes(incident.id) ? "bg-primary/10" : ""
+                        }`}
                         data-testid={`row-incident-${incident.id}`}
                       >
                         <td className="p-2 border-r border-border">
                           <Checkbox
                             checked={selectedIncidents.includes(incident.id)}
                             onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedIncidents([...selectedIncidents, incident.id]);
-                              } else {
-                                setSelectedIncidents(selectedIncidents.filter(id => id !== incident.id));
-                              }
+                              if (checked) setSelectedIncidents([...selectedIncidents, incident.id]);
+                              else setSelectedIncidents(selectedIncidents.filter((id) => id !== incident.id));
                             }}
                             data-testid={`checkbox-select-${incident.id}`}
                           />
@@ -801,17 +780,17 @@ export default function IncidentsJournal() {
                         </td>
                         <td className="p-2">
                           <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-7 w-7 p-0 text-primary hover:text-primary/80"
                               data-testid={`button-edit-${incident.id}`}
                             >
                               <Edit className="w-3 h-3" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-7 w-7 p-0 text-destructive hover:text-destructive/80"
                               onClick={() => handleDelete(incident.id)}
                               disabled={deleteIncidentMutation.isPending}
@@ -823,14 +802,11 @@ export default function IncidentsJournal() {
                         </td>
                       </tr>
                     ))}
-                    
-                    {/* Итоговая строка */}
+
                     <tr className="bg-primary/10 border-t-2 border-primary font-semibold">
                       <td className="p-2 border-r border-border"></td>
                       <td className="p-2 border-r border-border text-foreground">ИТОГО:</td>
-                      <td className="p-2 border-r border-border text-center text-foreground">
-                        {totals.count}
-                      </td>
+                      <td className="p-2 border-r border-border text-center text-foreground">{totals.count}</td>
                       <td className="p-2 border-r border-border"></td>
                       <td className="p-2 border-r border-border"></td>
                       <td className="p-2 border-r border-border"></td>
@@ -863,7 +839,7 @@ export default function IncidentsJournal() {
           </div>
         </CardContent>
       </Card>
-      
+
       {incidents.length > 0 && (
         <Card className="bg-secondary border border-border">
           <CardContent className="p-4">
@@ -890,7 +866,6 @@ export default function IncidentsJournal() {
         </Card>
       )}
 
-      {/* Модальное окно для добавления происшествия */}
       {showNewIncidentForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -906,16 +881,18 @@ export default function IncidentsJournal() {
                   ✕
                 </Button>
               </div>
-              <IncidentFormOSP onSuccess={() => {
-                setShowNewIncidentForm(false);
-                queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
-              }} />
+              <IncidentFormOSP
+                onSuccess={() => {
+                  setShowNewIncidentForm(false);
+                  queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+                }}
+              />
             </div>
           </div>
         </div>
       )}
 
-      {/* Модальное окно массового редактирования */}
       <BulkEditModal
         isOpen={showBulkEditModal}
         onClose={() => setShowBulkEditModal(false)}
@@ -923,7 +900,6 @@ export default function IncidentsJournal() {
         selectedCount={selectedIncidents.length}
       />
 
-      {/* Модальное окно отправки email */}
       <EmailNotificationModal
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
