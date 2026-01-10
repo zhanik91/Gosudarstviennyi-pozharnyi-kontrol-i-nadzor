@@ -3,68 +3,132 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { STEPPE_FIRE_TYPES } from "@/data/fire-forms-data";
-import { Download, FileText, Send, Flame } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FORM_6_SSPZ_ROWS, Form6SSPZRow } from "@/data/fire-forms-data";
+import { Download, FileText, Send, Printer, Flame, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+interface ValidationError {
+  rowId: string;
+  message: string;
+  type: 'error' | 'warning';
+}
+
 interface SteppeFireData {
-  count: number;
-  area_hectares: number;
-  damage: number;
-  cause: string;
+  fires_total: number;
+  area_burned: number;
+  damage_total: number;
 }
 
 export default function Form6SSPZ() {
   const [reportData, setReportData] = useState<Record<string, SteppeFireData>>({});
-  const [reportPeriod, setReportPeriod] = useState("");
+  const [reportMonth, setReportMonth] = useState("");
+  const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
+  const [region, setRegion] = useState("Республика Казахстан (Свод)");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
 
-  const handleInputChange = (typeCode: string, field: keyof SteppeFireData, value: string) => {
-    const numValue = field === 'cause' ? value : (parseFloat(value) || 0);
+  const validateForm = (): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    
+    const checkRow = (row: Form6SSPZRow) => {
+      const data = getFireData(row.id);
+      if (data.fires_total < 0 || data.area_burned < 0 || data.damage_total < 0) {
+        errors.push({
+          rowId: row.id,
+          message: `Строка ${row.number}: Отрицательные значения не допускаются`,
+          type: 'error'
+        });
+      }
+      row.children?.forEach(checkRow);
+    };
+    
+    FORM_6_SSPZ_ROWS.forEach(checkRow);
+    return errors;
+  };
+
+  const handleValidate = () => {
+    const errors = validateForm();
+    setValidationErrors(errors);
+    
+    if (errors.length === 0) {
+      toast({
+        title: "Валидация пройдена",
+        description: "Все данные корректны"
+      });
+    } else {
+      toast({
+        title: "Обнаружены проблемы",
+        description: `Найдено ${errors.length} замечаний`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleInputChange = (rowId: string, field: keyof SteppeFireData, value: string) => {
+    const numValue = parseFloat(value) || 0;
     setReportData(prev => ({
       ...prev,
-      [typeCode]: {
-        ...prev[typeCode],
+      [rowId]: {
+        ...prev[rowId],
         [field]: numValue
       }
     }));
   };
 
-  const getFireData = (typeCode: string): SteppeFireData => {
-    return reportData[typeCode] || {
-      count: 0,
-      area_hectares: 0,
-      damage: 0,
-      cause: ''
+  const getFireData = (rowId: string): SteppeFireData => {
+    return reportData[rowId] || {
+      fires_total: 0,
+      area_burned: 0,
+      damage_total: 0
     };
+  };
+
+  const toggleRow = (rowId: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(rowId)) {
+        next.delete(rowId);
+      } else {
+        next.add(rowId);
+      }
+      return next;
+    });
   };
 
   const getTotals = () => {
     const totals = {
-      count: 0,
-      area_hectares: 0,
-      damage: 0
+      fires_total: 0,
+      area_burned: 0,
+      damage_total: 0
     };
 
     Object.values(reportData).forEach(data => {
-      totals.count += data.count;
-      totals.area_hectares += data.area_hectares;
-      totals.damage += data.damage;
+      totals.fires_total += data.fires_total;
+      totals.area_burned += data.area_burned;
+      totals.damage_total += data.damage_total;
     });
 
     return totals;
   };
 
   const handleExport = () => {
-    const csvHeader = "Тип пожара,Количество,Площадь (га),Ущерб (тыс. тенге),Основная причина\n";
+    const csvHeader = "Код строки,Наименование показателя,Количество пожаров,Площадь (га),Ущерб (тыс. тг)\n";
     
-    const csvData = STEPPE_FIRE_TYPES.map(type => {
-      const data = getFireData(type.code);
-      return `"${type.name}",${data.count},${data.area_hectares.toFixed(1)},${data.damage.toFixed(1)},"${data.cause}"`;
-    }).join('\n');
+    const flattenRows = (rows: Form6SSPZRow[], level = 0): string[] => {
+      return rows.flatMap(row => {
+        const data = getFireData(row.id);
+        const prefix = "  ".repeat(level);
+        const rowLine = `"${row.number || ''}","${prefix}${row.label}",${data.fires_total},${data.area_burned.toFixed(1)},${data.damage_total.toFixed(1)}`;
+        const childLines = row.children ? flattenRows(row.children, level + 1) : [];
+        return [rowLine, ...childLines];
+      });
+    };
     
+    const csvData = flattenRows(FORM_6_SSPZ_ROWS).join('\n');
     const totals = getTotals();
-    const totalRow = `\nИТОГО:,${totals.count},${totals.area_hectares.toFixed(1)},${totals.damage.toFixed(1)},`;
+    const totalRow = `\n"","ИТОГО:",${totals.fires_total},${totals.area_burned.toFixed(1)},${totals.damage_total.toFixed(1)}`;
     
     const csvContent = csvHeader + csvData + totalRow;
     
@@ -72,7 +136,7 @@ export default function Form6SSPZ() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `form_6_sspz_${reportPeriod || 'report'}.csv`;
+    link.download = `form_6_sspz_${reportMonth}_${reportYear}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     
@@ -82,8 +146,23 @@ export default function Form6SSPZ() {
     });
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleSubmit = () => {
-    if (!reportPeriod) {
+    const errors = validateForm();
+    if (errors.filter(e => e.type === 'error').length > 0) {
+      setValidationErrors(errors);
+      toast({
+        title: "Ошибка",
+        description: "Исправьте ошибки перед отправкой",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!reportMonth || !reportYear) {
       toast({
         title: "Ошибка",
         description: "Укажите отчетный период",
@@ -92,7 +171,7 @@ export default function Form6SSPZ() {
       return;
     }
 
-    console.log("Отправка формы 6-ССПЗ:", { reportPeriod, data: reportData });
+    console.log("Отправка формы 6-ССПЗ:", { reportMonth, reportYear, region, data: reportData });
     
     toast({
       title: "Форма отправлена",
@@ -100,121 +179,215 @@ export default function Form6SSPZ() {
     });
   };
 
+  const renderRow = (row: Form6SSPZRow, level = 0) => {
+    const data = getFireData(row.id);
+    const hasChildren = row.children && row.children.length > 0;
+    const isExpanded = expandedRows.has(row.id);
+
+    return (
+      <tr key={row.id} className={`hover:bg-secondary/30 ${level === 0 ? 'bg-secondary/20' : ''}`}>
+        <td className="border border-border p-2 text-center font-medium w-16">
+          {row.number}
+        </td>
+        <td className="border border-border p-2" style={{ paddingLeft: `${level * 20 + 8}px` }}>
+          <div className="flex items-center gap-2">
+            {hasChildren && (
+              <button
+                onClick={() => toggleRow(row.id)}
+                className="p-0.5 hover:bg-secondary rounded"
+              >
+                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </button>
+            )}
+            {!hasChildren && level > 0 && <span className="w-5" />}
+            <span>{row.label}</span>
+          </div>
+        </td>
+        <td className="border border-border p-2 w-28">
+          <Input
+            type="number"
+            min="0"
+            value={data.fires_total || ''}
+            onChange={(e) => handleInputChange(row.id, 'fires_total', e.target.value)}
+            className="text-center"
+            placeholder="0"
+          />
+        </td>
+        <td className="border border-border p-2 w-28">
+          <Input
+            type="number"
+            min="0"
+            step="0.1"
+            value={data.area_burned || ''}
+            onChange={(e) => handleInputChange(row.id, 'area_burned', e.target.value)}
+            className="text-center"
+            placeholder="0.0"
+          />
+        </td>
+        <td className="border border-border p-2 w-28">
+          <Input
+            type="number"
+            min="0"
+            step="0.1"
+            value={data.damage_total || ''}
+            onChange={(e) => handleInputChange(row.id, 'damage_total', e.target.value)}
+            className="text-center"
+            placeholder="0.0"
+          />
+        </td>
+      </tr>
+    );
+  };
+
+  const renderRows = (rows: Form6SSPZRow[], level = 0): JSX.Element[] => {
+    return rows.flatMap(row => {
+      const elements = [renderRow(row, level)];
+      if (row.children && expandedRows.has(row.id)) {
+        elements.push(...renderRows(row.children, level + 1));
+      }
+      return elements;
+    });
+  };
+
+  const months = [
+    { value: '01', label: 'январь' },
+    { value: '02', label: 'февраль' },
+    { value: '03', label: 'март' },
+    { value: '04', label: 'апрель' },
+    { value: '05', label: 'май' },
+    { value: '06', label: 'июнь' },
+    { value: '07', label: 'июль' },
+    { value: '08', label: 'август' },
+    { value: '09', label: 'сентябрь' },
+    { value: '10', label: 'октябрь' },
+    { value: '11', label: 'ноябрь' },
+    { value: '12', label: 'декабрь' }
+  ];
+
+  const years = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - 5 + i).toString());
+
+  const regions = [
+    "Республика Казахстан (Свод)",
+    "г. Астана",
+    "г. Алматы",
+    "г. Шымкент",
+    "Акмолинская область",
+    "Актюбинская область",
+    "Алматинская область",
+    "Атырауская область",
+    "Восточно-Казахстанская область",
+    "Жамбылская область",
+    "Западно-Казахстанская область",
+    "Карагандинская область",
+    "Костанайская область",
+    "Кызылординская область",
+    "Мангистауская область",
+    "Павлодарская область",
+    "Северо-Казахстанская область",
+    "Туркестанская область",
+    "Улытауская область",
+    "Абай область",
+    "Жетісу область"
+  ];
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Flame className="h-5 w-5 text-orange-500" />
+    <div className="space-y-6 print:space-y-2">
+      <Card className="print:shadow-none print:border-none">
+        <CardHeader className="print:pb-2">
+          <CardTitle className="flex items-center gap-2 print:text-lg">
+            <Flame className="h-5 w-5 text-orange-500 print:hidden" />
             Форма 6-ССПЗ: Сведения о степных пожарах и загораниях
           </CardTitle>
-          <div className="text-sm text-muted-foreground">
-            Индекс: 6-ССПЗ | Периодичность: ежемесячная | Срок: до 27 числа отчетного месяца
+          <div className="text-sm text-muted-foreground print:text-xs">
+            Приложение 6 к приказу Министра по чрезвычайным ситуациям Республики Казахстан от 28 августа 2025 года № 377
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-6 print:space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label>Отчетный период</Label>
+                <Select value={reportMonth} onValueChange={setReportMonth}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Месяц" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map(m => (
+                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-24">
+                <Label>&nbsp;</Label>
+                <Select value={reportYear} onValueChange={setReportYear}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map(y => (
+                      <SelectItem key={y} value={y}>{y} г.</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
-              <Label htmlFor="period">Отчетный период</Label>
-              <Input
-                id="period"
-                type="month"
-                value={reportPeriod}
-                onChange={(e) => setReportPeriod(e.target.value)}
-                placeholder="Выберите месяц и год"
-              />
+              <Label>Регион</Label>
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map(r => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-end">
               <div className="text-sm text-muted-foreground">
-                Всего степных пожаров: <span className="font-bold text-foreground">{getTotals().count}</span>
+                Всего пожаров: <span className="font-bold text-foreground">{getTotals().fires_total}</span>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-4">
-            {STEPPE_FIRE_TYPES.map((type) => {
-              const data = getFireData(type.code);
-              return (
-                <Card key={type.code} className="bg-secondary/50">
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-center">
-                      <div className="lg:col-span-2">
-                        <h4 className="font-medium text-sm">
-                          {type.code}. {type.name}
-                        </h4>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Тип территории: {type.area_type}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`count-${type.code}`} className="text-xs">
-                          Количество
-                        </Label>
-                        <Input
-                          id={`count-${type.code}`}
-                          type="number"
-                          min="0"
-                          value={data.count || ''}
-                          onChange={(e) => handleInputChange(type.code, 'count', e.target.value)}
-                          placeholder="0"
-                          className="text-center"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`area-${type.code}`} className="text-xs">
-                          Площадь (га)
-                        </Label>
-                        <Input
-                          id={`area-${type.code}`}
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={data.area_hectares || ''}
-                          onChange={(e) => handleInputChange(type.code, 'area_hectares', e.target.value)}
-                          placeholder="0.0"
-                          className="text-center"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`damage-${type.code}`} className="text-xs">
-                          Ущерб (тыс. тг)
-                        </Label>
-                        <Input
-                          id={`damage-${type.code}`}
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={data.damage || ''}
-                          onChange={(e) => handleInputChange(type.code, 'damage', e.target.value)}
-                          placeholder="0.0"
-                          className="text-center"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`cause-${type.code}`} className="text-xs">
-                          Основная причина
-                        </Label>
-                        <Input
-                          id={`cause-${type.code}`}
-                          type="text"
-                          value={data.cause || ''}
-                          onChange={(e) => handleInputChange(type.code, 'cause', e.target.value)}
-                          placeholder="Укажите причину"
-                          className="text-sm"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="text-center print:mt-4">
+            <p className="text-sm text-muted-foreground">Форма, предназначенная для сбора административных данных</p>
+            <h2 className="text-lg font-bold mt-2">СВЕДЕНИЯ О СТЕПНЫХ ПОЖАРАХ И ЗАГОРАНИЯХ</h2>
+            <p className="text-sm">за _{months.find(m => m.value === reportMonth)?.label || '________'}_ месяц {reportYear} года</p>
           </div>
 
-          <Card className="bg-orange-50 dark:bg-orange-900/20">
+          <div className="overflow-x-auto print:overflow-visible">
+            <table className="w-full border-collapse border border-border text-sm">
+              <thead>
+                <tr className="bg-secondary print:bg-gray-100">
+                  <th rowSpan={2} className="border border-border p-2 text-center">Код строки</th>
+                  <th rowSpan={2} className="border border-border p-2 text-left">Наименование показателя</th>
+                  <th className="border border-border p-2 text-center">Количество</th>
+                  <th className="border border-border p-2 text-center">Площадь (га)</th>
+                  <th className="border border-border p-2 text-center">Ущерб (тыс. тг)</th>
+                </tr>
+                <tr className="bg-secondary/50 text-xs">
+                  <th className="border border-border p-1 text-center">1</th>
+                  <th className="border border-border p-1 text-center">2</th>
+                  <th className="border border-border p-1 text-center">3</th>
+                </tr>
+              </thead>
+              <tbody>
+                {renderRows(FORM_6_SSPZ_ROWS)}
+                <tr className="bg-yellow-100 dark:bg-yellow-900/20 font-bold">
+                  <td className="border border-border p-2 text-center"></td>
+                  <td className="border border-border p-2">ИТОГО:</td>
+                  <td className="border border-border p-2 text-center">{getTotals().fires_total}</td>
+                  <td className="border border-border p-2 text-center">{getTotals().area_burned.toFixed(1)}</td>
+                  <td className="border border-border p-2 text-center">{getTotals().damage_total.toFixed(1)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <Card className="bg-orange-50 dark:bg-orange-900/20 print:hidden">
             <CardContent className="p-4">
               <h4 className="font-semibold mb-2 flex items-center gap-2">
                 <Flame className="h-4 w-4" />
@@ -222,34 +395,99 @@ export default function Form6SSPZ() {
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{getTotals().count}</div>
+                  <div className="text-2xl font-bold text-orange-600">{getTotals().fires_total}</div>
                   <div className="text-muted-foreground">Всего пожаров</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{getTotals().area_hectares.toFixed(1)} га</div>
+                  <div className="text-2xl font-bold text-orange-600">{getTotals().area_burned.toFixed(1)} га</div>
                   <div className="text-muted-foreground">Общая площадь</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{getTotals().damage.toFixed(1)} тыс. тг</div>
+                  <div className="text-2xl font-bold text-orange-600">{getTotals().damage_total.toFixed(1)} тыс. тг</div>
                   <div className="text-muted-foreground">Общий ущерб</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-yellow-50 dark:bg-yellow-900/20">
-            <CardContent className="p-4">
-              <h4 className="font-semibold mb-2">Меры профилактики</h4>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p>• Контроль сжигания растительных остатков</p>
-                <p>• Создание противопожарных полос</p>
-                <p>• Мониторинг погодных условий</p>
-                <p>• Информирование населения о запрете разведения костров</p>
+          <div className="border border-border rounded-lg p-4 mt-6 space-y-4 print:mt-8 print:border-black">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Наименование организации</Label>
+                <Input placeholder="Наименование ДЧС / ОГПС" className="mt-1" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <Label className="text-xs text-muted-foreground">БИН организации</Label>
+                <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Исполнитель</Label>
+                <Input placeholder="Фамилия И.О., должность" className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Телефон исполнителя</Label>
+                <Input placeholder="+7 (___) ___-__-__" className="mt-1" />
+              </div>
+            </div>
 
-          <div className="flex gap-4 pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
+              <div className="text-center">
+                <div className="border-b border-border pb-6 mb-1">
+                  <span className="text-muted-foreground text-xs">подпись</span>
+                </div>
+                <Label className="text-xs">Руководитель</Label>
+              </div>
+              <div className="text-center">
+                <Input placeholder="Фамилия И.О." className="text-center" />
+                <Label className="text-xs text-muted-foreground">расшифровка подписи</Label>
+              </div>
+              <div className="text-center">
+                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="text-center" />
+                <Label className="text-xs text-muted-foreground">дата</Label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-border print:pt-6">
+              <div className="text-center w-24 h-24 border border-dashed border-border rounded-lg flex items-center justify-center">
+                <span className="text-xs text-muted-foreground">М.П.</span>
+              </div>
+              <div className="text-xs text-muted-foreground text-right">
+                <p>Форма представляется ежемесячно</p>
+                <p>до 5 числа месяца, следующего за отчетным</p>
+              </div>
+            </div>
+          </div>
+
+          {validationErrors.length > 0 && (
+            <Card className="border-red-200 bg-red-50 dark:bg-red-900/10 print:hidden">
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-red-700 dark:text-red-400 flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Ошибки валидации
+                </h4>
+                <ul className="space-y-1 text-sm">
+                  {validationErrors.map((error, idx) => (
+                    <li key={idx} className={error.type === 'error' ? 'text-red-600' : 'text-yellow-600'}>
+                      {error.type === 'error' ? '❌' : '⚠️'} {error.message}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex flex-wrap gap-4 pt-4 print:hidden">
+            <Button onClick={handleValidate} variant="outline" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Проверить
+            </Button>
+            <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
+              <Printer className="h-4 w-4" />
+              Печать
+            </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Экспорт CSV

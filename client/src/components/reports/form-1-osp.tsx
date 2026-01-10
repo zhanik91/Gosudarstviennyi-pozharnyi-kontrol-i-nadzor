@@ -391,6 +391,77 @@ export default function Form1OSP() {
             </Card>
           )}
 
+          <div className="border border-border rounded-lg p-4 mt-6 space-y-4 print:mt-8 print:border-black">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Наименование организации</Label>
+                <Input 
+                  placeholder="Наименование ДЧС / ОГПС"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">БИН организации</Label>
+                <Input 
+                  placeholder="XXXXXXXXXXXX"
+                  maxLength={12}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Исполнитель</Label>
+                <Input 
+                  placeholder="Фамилия И.О., должность"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Телефон исполнителя</Label>
+                <Input 
+                  placeholder="+7 (___) ___-__-__"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
+              <div className="text-center">
+                <div className="border-b border-border pb-6 mb-1">
+                  <span className="text-muted-foreground text-xs">подпись</span>
+                </div>
+                <Label className="text-xs">Руководитель</Label>
+              </div>
+              <div className="text-center">
+                <Input 
+                  placeholder="Фамилия И.О."
+                  className="text-center"
+                />
+                <Label className="text-xs text-muted-foreground">расшифровка подписи</Label>
+              </div>
+              <div className="text-center">
+                <Input 
+                  type="date"
+                  defaultValue={new Date().toISOString().split('T')[0]}
+                  className="text-center"
+                />
+                <Label className="text-xs text-muted-foreground">дата</Label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-border print:pt-6">
+              <div className="text-center w-24 h-24 border border-dashed border-border rounded-lg flex items-center justify-center">
+                <span className="text-xs text-muted-foreground">М.П.</span>
+              </div>
+              <div className="text-xs text-muted-foreground text-right">
+                <p>Форма представляется ежемесячно</p>
+                <p>до 5 числа месяца, следующего за отчетным</p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-4 pt-4 print:hidden">
             <Button onClick={handleValidate} variant="outline" className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
