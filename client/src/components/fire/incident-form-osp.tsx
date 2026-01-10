@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 
-// Схема формы согласно 1-ОСП МЧС РК (Приказ № 928 от 16.11.2015)
+// Схема формы согласно 1-ОСП МЧС РК (Приказ № 377 от 28.08.2025)
 // Убираем поля, которые заполняются на сервере (organizationId, createdBy, packageId),
 // чтобы клиентская валидация не блокировала отправку формы
 const ospIncidentSchema = insertIncidentSchema
@@ -237,7 +237,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
               Форма 1-ОСП: Общие сведения о пожарах и гибели людей
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Согласно приказу МЧС РК от 16.11.2015 № 928
+              Согласно приказу МЧС РК от 28.08.2025 № 377
             </p>
           </div>
         </div>

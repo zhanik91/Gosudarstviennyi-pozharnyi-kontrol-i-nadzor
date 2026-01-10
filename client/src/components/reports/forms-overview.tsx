@@ -4,74 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  FileText, 
-  Download, 
-  Printer, 
+import {
+  FileText,
+  Download,
+  Printer,
   AlertTriangle,
   CheckCircle,
   Clock,
-  BarChart
+  BarChart,
 } from "lucide-react";
+import { FORM_DEFINITIONS, flattenFormRows } from "@/data/fire-forms-data";
 
-const FORMS_CONFIG = [
-  {
-    id: '1-osp',
-    title: 'Форма 1-ОСП',
-    description: 'Общие сведения о пожарах и гибели людей',
-    sections: ['Количество пожаров', 'Погибшие', 'Травмированные', 'Материальный ущерб'],
-    status: 'completed',
-    lastUpdated: '2025-01-15'
-  },
-  {
-    id: '2-ssg',
-    title: 'Форма 2-ССГ',
-    description: 'Сведения о случаях горения',
-    sections: ['Пункты 1-11 случаев горения'],
-    status: 'pending',
-    lastUpdated: '2025-01-10'
-  },
-  {
-    id: '3-spvp',
-    title: 'Форма 3-СПВП',
-    description: 'Сведения о причинах возникновения пожаров',
-    sections: ['Причины пожаров', 'Классификация ОВСР'],
-    status: 'completed',
-    lastUpdated: '2025-01-14'
-  },
-  {
-    id: '4-sovp',
-    title: 'Форма 4-СОВП',
-    description: 'Сведения об объектах возникновения пожаров',
-    sections: ['Типы объектов', 'Классификация ОВСР'],
-    status: 'completed',
-    lastUpdated: '2025-01-13'
-  },
-  {
-    id: '5-spzs',
-    title: 'Форма 5-СПЖС',
-    description: 'Сведения о пожарах в жилом секторе',
-    sections: ['Социальное положение', 'Условия пожара', 'Места возникновения', 'Временные характеристики'],
-    status: 'warning',
-    lastUpdated: '2025-01-08'
-  },
-  {
-    id: '6-sspz',
-    title: 'Форма 6-ССПЗ',
-    description: 'Сведения о степных пожарах',
-    sections: ['Таблица 1: Пожары', 'Таблица 2: Загорания'],
-    status: 'completed',
-    lastUpdated: '2025-01-12'
-  },
-  {
-    id: 'co',
-    title: 'Форма СО',
-    description: 'Отравления угарным газом без пожара',
-    sections: ['Случаи отравления', 'Пострадавшие'],
-    status: 'completed',
-    lastUpdated: '2025-01-11'
-  }
-];
+const FORMS_CONFIG = FORM_DEFINITIONS.map((form) => ({
+  ...form,
+  status: form.id === "1-osp" ? "completed" : form.id === "5-spzhs" ? "warning" : "pending",
+  lastUpdated: form.id === "1-osp" ? "2025-01-15" : "2025-01-10",
+}));
 
 export default function FormsOverview() {
   const [selectedPeriod, setSelectedPeriod] = useState('2025-01');
@@ -175,12 +123,12 @@ export default function FormsOverview() {
                 <div>
                   <h4 className="font-medium text-sm mb-2">Разделы:</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    {form.sections.map((section, index) => (
-                      <li key={index} className="flex items-center">
-                        <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-                        {section}
-                      </li>
-                    ))}
+                {form.sections.map((section, index) => (
+                  <li key={index} className="flex items-center">
+                    <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                    {section}
+                  </li>
+                ))}
                   </ul>
                 </div>
 
@@ -256,39 +204,84 @@ export default function FormsOverview() {
               <TabsContent value="data" className="space-y-4">
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Сводные данные</h4>
-                  {selectedForm === '1-osp' && (
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <div className="font-medium">Всего пожаров</div>
-                        <div className="text-2xl font-bold text-primary">145</div>
-                      </div>
-                      <div>
-                        <div className="font-medium">Погибло</div>
-                        <div className="text-2xl font-bold text-red-600">12</div>
-                      </div>
-                      <div>
-                        <div className="font-medium">Ущерб (тыс. тг)</div>
-                        <div className="text-2xl font-bold text-orange-600">2,850.5</div>
-                      </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="font-medium">Строк в форме:</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {flattenFormRows(FORMS_CONFIG.find((f) => f.id === selectedForm)?.rows || []).length}
                     </div>
-                  )}
-                  {selectedForm === '3-spvp' && (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Установленные поджоги</span>
-                        <span className="font-medium">12</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Короткое замыкание</span>
-                        <span className="font-medium">25</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Нарушение технологии</span>
-                        <span className="font-medium">8</span>
-                      </div>
+                    <div className="text-muted-foreground">
+                      Колонки:{" "}
+                      {FORMS_CONFIG.find((f) => f.id === selectedForm)
+                        ?.columns.map((column) => column.label)
+                        .join(", ")}
                     </div>
-                  )}
+                  </div>
                 </div>
+
+                <Card className="border border-border/60">
+                  <CardHeader>
+                    <CardTitle className="text-base">Структура формы</CardTitle>
+                    <CardDescription>
+                      {FORMS_CONFIG.find((f) => f.id === selectedForm)?.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-border">
+                        <thead>
+                          <tr className="bg-secondary">
+                            <th className="border border-border p-2 text-left">Показатель</th>
+                            {(FORMS_CONFIG.find((f) => f.id === selectedForm)?.columns || []).map((column) => (
+                              <th key={column.key} className="border border-border p-2 text-center">
+                                {column.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {flattenFormRows(FORMS_CONFIG.find((f) => f.id === selectedForm)?.rows || []).map(
+                            (row) => (
+                              <tr key={row.id} className="hover:bg-secondary/30">
+                                <td className="border border-border p-2 font-medium">
+                                  <div
+                                    className="flex items-start gap-2"
+                                    style={{ paddingLeft: `${row.depth * 16}px` }}
+                                  >
+                                    <span className="text-xs text-muted-foreground">{row.number}</span>
+                                    <span>{row.label}</span>
+                                  </div>
+                                </td>
+                                {(FORMS_CONFIG.find((f) => f.id === selectedForm)?.columns || []).map((column) => (
+                                  <td key={`${row.id}-${column.key}`} className="border border-border p-2 text-center text-muted-foreground">
+                                    —
+                                  </td>
+                                ))}
+                              </tr>
+                            )
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Правила валидации</h4>
+                      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                        {(FORMS_CONFIG.find((f) => f.id === selectedForm)?.validationRules || []).map(
+                          (rule, index) => (
+                            <li key={index}>{rule}</li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Реквизиты подписи</h4>
+                      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                        {(FORMS_CONFIG.find((f) => f.id === selectedForm)?.signBlock || []).map((field, index) => (
+                          <li key={index}>{field}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
               
               <TabsContent value="validation" className="space-y-4">

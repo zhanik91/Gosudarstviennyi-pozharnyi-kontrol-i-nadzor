@@ -162,7 +162,7 @@ export default function ReportsDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Формы отчетности МЧС РК</h1>
           <p className="text-muted-foreground">
-            Ежемесячные формы согласно Приказу № 928 от 16.11.2015
+            Ежемесячные формы согласно Приказу № 377 от 28.08.2025
           </p>
         </div>
         <div className="flex items-center gap-2">
