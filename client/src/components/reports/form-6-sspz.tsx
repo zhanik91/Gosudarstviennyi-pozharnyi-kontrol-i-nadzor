@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FORM_6_SSPZ_ROWS, flattenFormRows } from "@/data/fire-forms-data";
+import { STEPPE_FIRE_TYPES } from "@/data/fire-forms-data";
 import { Download, FileText, Send, Flame } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -11,6 +11,7 @@ interface SteppeFireData {
   count: number;
   area_hectares: number;
   damage: number;
+  cause: string;
 }
 
 export default function Form6SSPZ() {
@@ -19,7 +20,7 @@ export default function Form6SSPZ() {
   const { toast } = useToast();
 
   const handleInputChange = (typeCode: string, field: keyof SteppeFireData, value: string) => {
-    const numValue = parseFloat(value) || 0;
+    const numValue = field === 'cause' ? value : (parseFloat(value) || 0);
     setReportData(prev => ({
       ...prev,
       [typeCode]: {
@@ -33,7 +34,8 @@ export default function Form6SSPZ() {
     return reportData[typeCode] || {
       count: 0,
       area_hectares: 0,
-      damage: 0
+      damage: 0,
+      cause: ''
     };
   };
 
@@ -54,15 +56,15 @@ export default function Form6SSPZ() {
   };
 
   const handleExport = () => {
-    const csvHeader = "Показатель,Количество,Площадь (га),Ущерб (тыс. тенге)\n";
+    const csvHeader = "Тип пожара,Количество,Площадь (га),Ущерб (тыс. тенге),Основная причина\n";
     
-    const csvData = flattenFormRows(FORM_6_SSPZ_ROWS).map(type => {
-      const data = getFireData(type.id);
-      return `"${type.label}",${data.count},${data.area_hectares.toFixed(1)},${data.damage.toFixed(1)}`;
+    const csvData = STEPPE_FIRE_TYPES.map(type => {
+      const data = getFireData(type.code);
+      return `"${type.name}",${data.count},${data.area_hectares.toFixed(1)},${data.damage.toFixed(1)},"${data.cause}"`;
     }).join('\n');
     
     const totals = getTotals();
-    const totalRow = `\nИТОГО:,${totals.count},${totals.area_hectares.toFixed(1)},${totals.damage.toFixed(1)}`;
+    const totalRow = `\nИТОГО:,${totals.count},${totals.area_hectares.toFixed(1)},${totals.damage.toFixed(1)},`;
     
     const csvContent = csvHeader + csvData + totalRow;
     
@@ -129,67 +131,87 @@ export default function Form6SSPZ() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-border">
-              <thead>
-                <tr className="bg-secondary">
-                  <th className="border border-border p-2 text-left">Показатель</th>
-                  <th className="border border-border p-2 text-center">Количество</th>
-                  <th className="border border-border p-2 text-center">Площадь (га)</th>
-                  <th className="border border-border p-2 text-center">Ущерб (тыс. тг)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {flattenFormRows(FORM_6_SSPZ_ROWS).map((type) => {
-                  const data = getFireData(type.id);
-                  return (
-                    <tr key={type.id} className="hover:bg-secondary/30">
-                      <td className="border border-border p-2 font-medium">
-                        <div
-                          className="flex items-start gap-2"
-                          style={{ paddingLeft: `${type.depth * 16}px` }}
-                        >
-                          <span className="text-xs text-muted-foreground">{type.number}</span>
-                          <span>{type.label}</span>
+          <div className="grid gap-4">
+            {STEPPE_FIRE_TYPES.map((type) => {
+              const data = getFireData(type.code);
+              return (
+                <Card key={type.code} className="bg-secondary/50">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-center">
+                      <div className="lg:col-span-2">
+                        <h4 className="font-medium text-sm">
+                          {type.code}. {type.name}
+                        </h4>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Тип территории: {type.area_type}
                         </div>
-                      </td>
-                      <td className="border border-border p-2">
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor={`count-${type.code}`} className="text-xs">
+                          Количество
+                        </Label>
                         <Input
+                          id={`count-${type.code}`}
                           type="number"
                           min="0"
                           value={data.count || ''}
-                          onChange={(e) => handleInputChange(type.id, 'count', e.target.value)}
+                          onChange={(e) => handleInputChange(type.code, 'count', e.target.value)}
                           placeholder="0"
                           className="text-center"
                         />
-                      </td>
-                      <td className="border border-border p-2">
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`area-${type.code}`} className="text-xs">
+                          Площадь (га)
+                        </Label>
                         <Input
+                          id={`area-${type.code}`}
                           type="number"
                           min="0"
                           step="0.1"
                           value={data.area_hectares || ''}
-                          onChange={(e) => handleInputChange(type.id, 'area_hectares', e.target.value)}
+                          onChange={(e) => handleInputChange(type.code, 'area_hectares', e.target.value)}
                           placeholder="0.0"
                           className="text-center"
                         />
-                      </td>
-                      <td className="border border-border p-2">
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`damage-${type.code}`} className="text-xs">
+                          Ущерб (тыс. тг)
+                        </Label>
                         <Input
+                          id={`damage-${type.code}`}
                           type="number"
                           min="0"
                           step="0.1"
                           value={data.damage || ''}
-                          onChange={(e) => handleInputChange(type.id, 'damage', e.target.value)}
+                          onChange={(e) => handleInputChange(type.code, 'damage', e.target.value)}
                           placeholder="0.0"
                           className="text-center"
                         />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`cause-${type.code}`} className="text-xs">
+                          Основная причина
+                        </Label>
+                        <Input
+                          id={`cause-${type.code}`}
+                          type="text"
+                          value={data.cause || ''}
+                          onChange={(e) => handleInputChange(type.code, 'cause', e.target.value)}
+                          placeholder="Укажите причину"
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <Card className="bg-orange-50 dark:bg-orange-900/20">
@@ -217,11 +239,12 @@ export default function Form6SSPZ() {
 
           <Card className="bg-yellow-50 dark:bg-yellow-900/20">
             <CardContent className="p-4">
-              <h4 className="font-semibold mb-2">Памятка заполнения</h4>
+              <h4 className="font-semibold mb-2">Меры профилактики</h4>
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>• Количество указывается целыми числами.</p>
-                <p>• Площадь и ущерб — в тысячах тенге с точностью до одного десятичного знака.</p>
-                <p>• Итоговая строка 1 должна быть равна сумме подпунктов 1.1–1.4.</p>
+                <p>• Контроль сжигания растительных остатков</p>
+                <p>• Создание противопожарных полос</p>
+                <p>• Мониторинг погодных условий</p>
+                <p>• Информирование населения о запрете разведения костров</p>
               </div>
             </CardContent>
           </Card>

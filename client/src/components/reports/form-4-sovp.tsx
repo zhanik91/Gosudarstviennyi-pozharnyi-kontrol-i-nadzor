@@ -3,15 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FIRE_OBJECTS, FORM_4_OBJECT_ROWS, flattenFormRows } from "@/data/fire-forms-data";
+import { FIRE_OBJECTS } from "@/data/fire-forms-data";
 import { Download, FileText, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ObjectData {
   fires_total: number;
-  fires_high_risk: number;
   damage_total: number;
-  damage_high_risk: number;
+  deaths_total: number;
+  injuries_total: number;
 }
 
 export default function Form4SOVP() {
@@ -33,40 +33,60 @@ export default function Form4SOVP() {
   const getObjectData = (objectCode: string): ObjectData => {
     return reportData[objectCode] || {
       fires_total: 0,
-      fires_high_risk: 0,
       damage_total: 0,
-      damage_high_risk: 0,
+      deaths_total: 0,
+      injuries_total: 0
     };
   };
 
   const getTotals = () => {
     const totals = {
       fires_total: 0,
-      fires_high_risk: 0,
       damage_total: 0,
-      damage_high_risk: 0,
+      deaths_total: 0,
+      injuries_total: 0
     };
 
     Object.values(reportData).forEach(data => {
       totals.fires_total += data.fires_total;
-      totals.fires_high_risk += data.fires_high_risk;
       totals.damage_total += data.damage_total;
-      totals.damage_high_risk += data.damage_high_risk;
+      totals.deaths_total += data.deaths_total;
+      totals.injuries_total += data.injuries_total;
     });
 
     return totals;
   };
 
+  const groupedObjects = FIRE_OBJECTS.reduce((acc, obj) => {
+    if (!acc[obj.category]) {
+      acc[obj.category] = [];
+    }
+    acc[obj.category].push(obj);
+    return acc;
+  }, {} as Record<string, typeof FIRE_OBJECTS>);
+
+  const categoryNames = {
+    residential: 'Жилые объекты',
+    public: 'Общественные здания',
+    commercial: 'Коммерческие объекты',
+    industrial: 'Производственные объекты',
+    storage: 'Складские помещения',
+    agricultural: 'Сельскохозяйственные объекты',
+    transport: 'Транспортные средства',
+    natural: 'Природные территории',
+    other: 'Прочие объекты'
+  };
+
   const handleExport = () => {
-    const csvHeader = "Объекты возникновения пожаров,Количество пожаров всего,в том числе на объектах высокой степени риска,Ущерб всего (тыс. тенге),в том числе на объектах высокой степени риска\n";
+    const csvHeader = "Объекты возникновения пожаров,Количество пожаров,Ущерб (тыс. тенге),Погибло людей,Травмировано людей\n";
     
     const csvData = FIRE_OBJECTS.map(obj => {
       const data = getObjectData(obj.code);
-      return `"${obj.name}",${data.fires_total},${data.fires_high_risk},${data.damage_total.toFixed(1)},${data.damage_high_risk.toFixed(1)}`;
+      return `"${obj.name}",${data.fires_total},${data.damage_total.toFixed(1)},${data.deaths_total},${data.injuries_total}`;
     }).join('\n');
     
     const totals = getTotals();
-    const totalRow = `\nИТОГО:,${totals.fires_total},${totals.fires_high_risk},${totals.damage_total.toFixed(1)},${totals.damage_high_risk.toFixed(1)}`;
+    const totalRow = `\nИТОГО:,${totals.fires_total},${totals.damage_total.toFixed(1)},${totals.deaths_total},${totals.injuries_total}`;
     
     const csvContent = csvHeader + csvData + totalRow;
     
@@ -133,78 +153,82 @@ export default function Form4SOVP() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-border">
-              <thead>
-                <tr className="bg-secondary">
-                  <th className="border border-border p-2 text-left">Объекты возникновения пожаров</th>
-                  <th className="border border-border p-2 text-center">Количество пожаров всего</th>
-                  <th className="border border-border p-2 text-center">в т.ч. на объектах высокой степени риска</th>
-                  <th className="border border-border p-2 text-center">Ущерб всего (тыс. тг)</th>
-                  <th className="border border-border p-2 text-center">в т.ч. на объектах высокой степени риска</th>
-                </tr>
-              </thead>
-              <tbody>
-                {flattenFormRows(FORM_4_OBJECT_ROWS).map((obj) => {
-                  const data = getObjectData(obj.id);
-                  return (
-                    <tr key={obj.id} className="hover:bg-secondary/30">
-                      <td className="border border-border p-2 font-medium">
-                        <div
-                          className="flex items-start gap-2"
-                          style={{ paddingLeft: `${obj.depth * 16}px` }}
-                        >
-                          <span className="text-xs text-muted-foreground">{obj.number}</span>
-                          <span>{obj.label}</span>
-                        </div>
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={data.fires_total || ''}
-                          onChange={(e) => handleInputChange(obj.id, 'fires_total', e.target.value)}
-                          className="text-center"
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={data.fires_high_risk || ''}
-                          onChange={(e) => handleInputChange(obj.id, 'fires_high_risk', e.target.value)}
-                          className="text-center"
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={data.damage_total || ''}
-                          onChange={(e) => handleInputChange(obj.id, 'damage_total', e.target.value)}
-                          className="text-center"
-                          placeholder="0.0"
-                        />
-                      </td>
-                      <td className="border border-border p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={data.damage_high_risk || ''}
-                          onChange={(e) => handleInputChange(obj.id, 'damage_high_risk', e.target.value)}
-                          className="text-center"
-                          placeholder="0.0"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-6">
+            {Object.entries(groupedObjects).map(([category, objects]) => (
+              <Card key={category} className="bg-secondary/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">{categoryNames[category as keyof typeof categoryNames]}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-border">
+                      <thead>
+                        <tr className="bg-secondary">
+                          <th className="border border-border p-2 text-left">Тип объекта</th>
+                          <th className="border border-border p-2 text-center">Пожаров</th>
+                          <th className="border border-border p-2 text-center">Ущерб (тыс. тг)</th>
+                          <th className="border border-border p-2 text-center">Погибло</th>
+                          <th className="border border-border p-2 text-center">Травмировано</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {objects.map((obj) => {
+                          const data = getObjectData(obj.code);
+                          return (
+                            <tr key={obj.code} className="hover:bg-secondary/30">
+                              <td className="border border-border p-2 font-medium">
+                                {obj.name}
+                              </td>
+                              <td className="border border-border p-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={data.fires_total || ''}
+                                  onChange={(e) => handleInputChange(obj.code, 'fires_total', e.target.value)}
+                                  className="text-center"
+                                  placeholder="0"
+                                />
+                              </td>
+                              <td className="border border-border p-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  value={data.damage_total || ''}
+                                  onChange={(e) => handleInputChange(obj.code, 'damage_total', e.target.value)}
+                                  className="text-center"
+                                  placeholder="0.0"
+                                />
+                              </td>
+                              <td className="border border-border p-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={data.deaths_total || ''}
+                                  onChange={(e) => handleInputChange(obj.code, 'deaths_total', e.target.value)}
+                                  className="text-center"
+                                  placeholder="0"
+                                />
+                              </td>
+                              <td className="border border-border p-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={data.injuries_total || ''}
+                                  onChange={(e) => handleInputChange(obj.code, 'injuries_total', e.target.value)}
+                                  className="text-center"
+                                  placeholder="0"
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <Card className="bg-yellow-100 dark:bg-yellow-900/20">
@@ -215,16 +239,16 @@ export default function Form4SOVP() {
                   <div className="text-xl">{getTotals().fires_total}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">На объектах высокой степени риска</div>
-                  <div className="text-xl">{getTotals().fires_high_risk}</div>
-                </div>
-                <div>
                   <div className="text-sm text-muted-foreground">Общий ущерб</div>
                   <div className="text-xl">{getTotals().damage_total.toFixed(1)} тыс. тг</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Ущерб (высокий риск)</div>
-                  <div className="text-xl">{getTotals().damage_high_risk.toFixed(1)} тыс. тг</div>
+                  <div className="text-sm text-muted-foreground">Погибло</div>
+                  <div className="text-xl text-destructive">{getTotals().deaths_total} чел.</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Травмировано</div>
+                  <div className="text-xl text-orange-600">{getTotals().injuries_total} чел.</div>
                 </div>
               </div>
             </CardContent>
