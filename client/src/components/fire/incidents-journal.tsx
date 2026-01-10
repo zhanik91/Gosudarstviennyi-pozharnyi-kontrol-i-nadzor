@@ -184,7 +184,6 @@ export default function IncidentsJournal() {
   const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState({
-    includeSubOrgs: false,
     searchQuery: "",
     dateFrom: "",
     dateTo: "",
@@ -204,8 +203,7 @@ export default function IncidentsJournal() {
     !!filters.dateFrom ||
     !!filters.dateTo ||
     !!filters.incidentType ||
-    !!filters.region ||
-    !!filters.includeSubOrgs;
+    !!filters.region;
 
   const endpoint = hasFilters ? "/api/incidents/search" : "/api/incidents";
 
@@ -217,7 +215,6 @@ export default function IncidentsJournal() {
       filters.dateTo,
       filters.incidentType,
       filters.region,
-      filters.includeSubOrgs,
     ],
     queryFn: async ({ queryKey }) => {
       const [
@@ -227,8 +224,7 @@ export default function IncidentsJournal() {
         dateTo,
         incidentType,
         region,
-        includeSubOrgs,
-      ] = queryKey as [string, string, string, string, string, string, boolean];
+      ] = queryKey as [string, string, string, string, string, string];
 
       const params = new URLSearchParams();
 
@@ -239,7 +235,6 @@ export default function IncidentsJournal() {
         if (dateTo) params.set("dateTo", dateTo);
         if (incidentType) params.set("incidentType", incidentType);
         if (region) params.set("region", region);
-        if (includeSubOrgs) params.set("includeSubOrgs", "true");
       }
 
       const qs = params.toString();
@@ -576,27 +571,12 @@ export default function IncidentsJournal() {
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="include-sub-orgs"
-                  checked={filters.includeSubOrgs}
-                  onCheckedChange={(checked) =>
-                    setFilters({ ...filters, includeSubOrgs: !!checked })
-                  }
-                  data-testid="checkbox-include-sub-orgs"
-                />
-                <Label htmlFor="include-sub-orgs" className="text-sm">
-                  Включить подведомственные организации
-                </Label>
-              </div>
-
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() =>
                   setFilters({
                     ...filters,
-                    includeSubOrgs: false,
                     searchQuery: "",
                     dateFrom: "",
                     dateTo: "",

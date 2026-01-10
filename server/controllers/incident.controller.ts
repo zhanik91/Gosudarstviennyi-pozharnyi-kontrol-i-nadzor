@@ -8,7 +8,10 @@ export class IncidentController {
   async getIncidents(req: Request, res: Response) {
     try {
       const userId = req.user?.id || req.user?.username;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
+      if (!user && req.user?.username) {
+        user = await storage.getUserByUsername(req.user.username);
+      }
       const filters: any = {};
 
       if (req.query.period) filters.period = req.query.period as string;
@@ -33,7 +36,10 @@ export class IncidentController {
   async searchIncidents(req: Request, res: Response) {
     try {
       const userId = req.user?.id || req.user?.username;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
+      if (!user && req.user?.username) {
+        user = await storage.getUserByUsername(req.user.username);
+      }
       const filters: any = {};
 
       const { q, dateFrom, dateTo, incidentType, region, includeSubOrgs } = req.query;
@@ -92,7 +98,10 @@ export class IncidentController {
   async createIncident(req: Request, res: Response) {
     try {
       const userId = req.user?.id || req.user?.username;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
+      if (!user && req.user?.username) {
+        user = await storage.getUserByUsername(req.user.username);
+      }
       console.log("📝 Creating incident for user:", user);
       console.log("📍 Request body region/city:", req.body.region, req.body.city);
 
