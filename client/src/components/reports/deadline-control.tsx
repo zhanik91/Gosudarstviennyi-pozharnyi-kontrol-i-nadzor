@@ -92,8 +92,8 @@ export default function DeadlineControl() {
         priority: daysLeft <= 3 ? 'high' : daysLeft <= 7 ? 'medium' : 'low'
       },
       {
-        formIndex: 'CO',
-        formName: 'Сведения о погибших от отравления угарным газом',
+        formIndex: '7-CO',
+        formName: 'Сведения о погибших и травмированных от отравления угарным газом',
         dueDate,
         status: 'draft',
         daysLeft,

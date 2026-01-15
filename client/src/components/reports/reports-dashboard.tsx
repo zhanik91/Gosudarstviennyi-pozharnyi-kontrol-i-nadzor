@@ -102,8 +102,8 @@ export default function ReportsDashboard() {
     },
     {
       id: 'co',
-      name: 'Сведения о погибших от отравления угарным газом',
-      index: 'CO',
+      name: 'Сведения о погибших и травмированных от отравления угарным газом',
+      index: '7-CO',
       status: 'draft',
       dueDate: '2025-01-27',
       icon: AlertTriangle,
@@ -182,7 +182,7 @@ export default function ReportsDashboard() {
           <TabsTrigger value="4-sovp">4-СОВП</TabsTrigger>
           <TabsTrigger value="5-spzhs">5-СПЖС</TabsTrigger>
           <TabsTrigger value="6-sspz">6-ССПЗ</TabsTrigger>
-          <TabsTrigger value="co">CO</TabsTrigger>
+          <TabsTrigger value="co">7-CO</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">

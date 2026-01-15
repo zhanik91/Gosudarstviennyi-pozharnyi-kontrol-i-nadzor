@@ -91,8 +91,8 @@ export default function LanguageSupport() {
       lastUpdated: '2025-01-26'
     },
     {
-      formIndex: 'CO',
-      formName: 'Сведения о погибших от отравления угарным газом',
+      formIndex: '7-CO',
+      formName: 'Сведения о погибших и травмированных от отравления угарным газом',
       kazakh: 100,
       russian: 100,
       lastUpdated: '2025-01-26'

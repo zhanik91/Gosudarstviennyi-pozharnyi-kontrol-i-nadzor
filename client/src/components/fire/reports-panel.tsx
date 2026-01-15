@@ -32,7 +32,7 @@ export default function ReportsPanel() {
   };
 
   const reportTypes = [
-    '1-ОСП', '2-ССГ', '3-СПВП', '4-СОВП', '5-СПЖС', '6-ССПЗ', 'CO'
+    '1-ОСП', '2-ССГ', '3-СПВП', '4-СОВП', '5-СПЖС', '6-ССПЗ', '7-CO'
   ];
 
   return (
