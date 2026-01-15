@@ -200,7 +200,7 @@ function addSSPZSheet(workbook: XLSX.WorkBook, data: any, period: string) {
 
 function addCOSheet(workbook: XLSX.WorkBook, data: any, period: string) {
   const sheetData = [
-    ['Форма СО: Отравления угарным газом без пожара'],
+    ['Форма 7-CO: Сведения о погибших и травмированных от отравления угарным газом без пожара'],
     ['Период:', period],
     [''],
     ['Показатель', 'Количество'],
@@ -212,7 +212,7 @@ function addCOSheet(workbook: XLSX.WorkBook, data: any, period: string) {
   ];
 
   const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'СО');
+  XLSX.utils.book_append_sheet(workbook, worksheet, '7-CO');
 }
 
 export const exportController = new ExportController();

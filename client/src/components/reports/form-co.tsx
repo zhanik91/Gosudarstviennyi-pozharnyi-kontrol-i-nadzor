@@ -3,10 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FORM_7_CO_ROWS, Form7CORow } from "@/data/fire-forms-data";
-import { Download, FileText, Send, Printer, AlertTriangle, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import { Download, Send, Printer, AlertTriangle, ChevronDown, ChevronRight, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ValidationError {
@@ -26,9 +25,19 @@ export default function FormCO() {
   const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [description, setDescription] = useState("");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
+
+  const formMeta = {
+    formCode: "7-CO",
+    formName: "Сведения о погибших и травмированных людях от отравления угарным газом в жилом секторе, не повлекшего возникновения пожара",
+    order: "Приказ Министра по чрезвычайным ситуациям Республики Казахстан от 28.08.2025 № 377",
+    periodicity: "ежемесячная",
+    submitUntilDay: 27,
+    method: "electronic",
+    languages: ["ru", "kz"],
+    respondents: "территориальные органы Министерства по чрезвычайным ситуациям Республики Казахстан"
+  };
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
@@ -46,6 +55,37 @@ export default function FormCO() {
     };
     
     FORM_7_CO_ROWS.forEach(checkRow);
+
+    const totalRow = FORM_7_CO_ROWS.find(row => row.id === '1');
+    if (totalRow?.children) {
+      const sumChildren = totalRow.children.reduce(
+        (acc, child) => {
+          const data = getCOData(child.id);
+          return {
+            killed_total: acc.killed_total + data.killed_total,
+            injured_total: acc.injured_total + data.injured_total
+          };
+        },
+        { killed_total: 0, injured_total: 0 }
+      );
+      const totalData = getCOData(totalRow.id);
+
+      if (totalData.killed_total !== sumChildren.killed_total) {
+        errors.push({
+          rowId: totalRow.id,
+          message: "Строка 1 должна быть равна сумме подпунктов 1.1–1.4 по погибшим",
+          type: 'error'
+        });
+      }
+      if (totalData.injured_total !== sumChildren.injured_total) {
+        errors.push({
+          rowId: totalRow.id,
+          message: "Строка 1 должна быть равна сумме подпунктов 1.1–1.4 по травмированным",
+          type: 'error'
+        });
+      }
+    }
+
     return errors;
   };
 
@@ -68,12 +108,13 @@ export default function FormCO() {
   };
 
   const handleInputChange = (rowId: string, field: keyof COData, value: string) => {
-    const numValue = parseInt(value) || 0;
+    const parsedValue = Number.parseInt(value, 10);
+    const normalizedValue = Number.isNaN(parsedValue) ? 0 : Math.max(0, parsedValue);
     setReportData(prev => ({
       ...prev,
       [rowId]: {
         ...prev[rowId],
-        [field]: numValue
+        [field]: normalizedValue
       }
     }));
   };
@@ -98,17 +139,7 @@ export default function FormCO() {
   };
 
   const getTotals = () => {
-    const totals = {
-      killed_total: 0,
-      injured_total: 0
-    };
-
-    Object.values(reportData).forEach(data => {
-      totals.killed_total += data.killed_total;
-      totals.injured_total += data.injured_total;
-    });
-
-    return totals;
+    return getCOData('1');
   };
 
   const handleExport = () => {
@@ -125,11 +156,7 @@ export default function FormCO() {
     };
     
     const csvData = flattenRows(FORM_7_CO_ROWS).join('\n');
-    const totals = getTotals();
-    const totalRow = `\n"","ИТОГО:",${totals.killed_total},${totals.injured_total}`;
-    const descriptionRow = `\n\n"Описание обстоятельств:","${description.replace(/"/g, '""')}"`;
-    
-    const csvContent = csvHeader + csvData + totalRow + descriptionRow;
+    const csvContent = csvHeader + csvData;
     
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -170,7 +197,7 @@ export default function FormCO() {
       return;
     }
 
-    console.log("Отправка формы 7-CO:", { reportMonth, reportYear, region, data: reportData, description });
+    console.log("Отправка формы 7-CO:", { reportMonth, reportYear, region, data: reportData });
     
     toast({
       title: "Форма отправлена",
@@ -206,6 +233,7 @@ export default function FormCO() {
           <Input
             type="number"
             min="0"
+            step="1"
             value={data.killed_total || ''}
             onChange={(e) => handleInputChange(row.id, 'killed_total', e.target.value)}
             className="text-center"
@@ -216,6 +244,7 @@ export default function FormCO() {
           <Input
             type="number"
             min="0"
+            step="1"
             value={data.injured_total || ''}
             onChange={(e) => handleInputChange(row.id, 'injured_total', e.target.value)}
             className="text-center"
@@ -283,16 +312,32 @@ export default function FormCO() {
         <CardHeader className="print:pb-2">
           <CardTitle className="flex items-center gap-2 print:text-lg">
             <AlertTriangle className="h-5 w-5 text-red-500 print:hidden" />
-            Форма 7-CO: Сведения о погибших и травмированных от отравления угарным газом
+            Форма 7-CO: {formMeta.formName}
           </CardTitle>
           <div className="text-sm text-muted-foreground print:text-xs">
-            Приложение 7 к приказу Министра по чрезвычайным ситуациям Республики Казахстан от 28 августа 2025 года № 377
+            {formMeta.order}
           </div>
           <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded print:hidden">
-            Случаи в результате нарушений требований пожарной безопасности, не повлекших возникновения пожара
+            Форма заполняется только по случаям, не повлекшим возникновения пожара
           </div>
         </CardHeader>
         <CardContent className="space-y-6 print:space-y-2">
+          <Card className="bg-slate-50 dark:bg-slate-900/40 print:hidden">
+            <CardContent className="p-4 space-y-3 text-sm">
+              <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-200">
+                <Info className="h-4 w-4" />
+                Метаданные формы
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-muted-foreground">
+                <div><span className="font-medium text-foreground">Код формы:</span> {formMeta.formCode}</div>
+                <div><span className="font-medium text-foreground">Периодичность:</span> {formMeta.periodicity}</div>
+                <div><span className="font-medium text-foreground">Срок сдачи:</span> до {formMeta.submitUntilDay} числа</div>
+                <div><span className="font-medium text-foreground">Метод:</span> {formMeta.method}</div>
+                <div><span className="font-medium text-foreground">Языки:</span> {formMeta.languages.join(", ")}</div>
+                <div><span className="font-medium text-foreground">Респонденты:</span> {formMeta.respondents}</div>
+              </div>
+            </CardContent>
+          </Card>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
             <div className="flex gap-2">
               <div className="flex-1">
@@ -364,52 +409,9 @@ export default function FormCO() {
               </thead>
               <tbody>
                 {renderRows(FORM_7_CO_ROWS)}
-                <tr className="bg-yellow-100 dark:bg-yellow-900/20 font-bold">
-                  <td className="border border-border p-2 text-center"></td>
-                  <td className="border border-border p-2">ИТОГО:</td>
-                  <td className="border border-border p-2 text-center">{getTotals().killed_total}</td>
-                  <td className="border border-border p-2 text-center">{getTotals().injured_total}</td>
-                </tr>
               </tbody>
             </table>
           </div>
-
-          <Card className="print:hidden">
-            <CardHeader>
-              <CardTitle className="text-lg">Описание обстоятельств</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Label htmlFor="description">
-                Подробное описание обстоятельств происшествий и принятых мер
-              </Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Укажите обстоятельства каждого случая отравления угарным газом, принятые меры профилактики..."
-                className="mt-2 min-h-[120px]"
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="bg-red-50 dark:bg-red-900/20 print:hidden">
-            <CardContent className="p-4">
-              <h4 className="font-semibold mb-2 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Итоговая статистика
-              </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-destructive">{getTotals().killed_total}</div>
-                  <div className="text-muted-foreground">Погибло людей</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{getTotals().injured_total}</div>
-                  <div className="text-muted-foreground">Травмировано людей</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           <div className="border border-border rounded-lg p-4 mt-6 space-y-4 print:mt-8 print:border-black">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -418,36 +420,49 @@ export default function FormCO() {
                 <Input placeholder="Наименование ДЧС / ОГПС" className="mt-1" />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">БИН организации</Label>
-                <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" />
+                <Label className="text-xs text-muted-foreground">Адрес</Label>
+                <Input placeholder="Полный адрес организации" className="mt-1" />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-muted-foreground">Исполнитель</Label>
-                <Input placeholder="Фамилия И.О., должность" className="mt-1" />
+                <Label className="text-xs text-muted-foreground">Телефон</Label>
+                <Input placeholder="+7 (___) ___-__-__" className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Input placeholder="email@example.kz" className="mt-1" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
+              <div>
+                <Label className="text-xs text-muted-foreground">Исполнитель (Ф.И.О.)</Label>
+                <Input placeholder="Фамилия И.О." className="mt-1" />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Телефон исполнителя</Label>
                 <Input placeholder="+7 (___) ___-__-__" className="mt-1" />
               </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Подпись исполнителя</Label>
+                <Input placeholder="Подпись" className="mt-1" />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
-              <div className="text-center">
-                <div className="border-b border-border pb-6 mb-1">
-                  <span className="text-muted-foreground text-xs">подпись</span>
-                </div>
-                <Label className="text-xs">Руководитель</Label>
+              <div>
+                <Label className="text-xs text-muted-foreground">Руководитель (Ф.И.О.)</Label>
+                <Input placeholder="Фамилия И.О." className="mt-1" />
               </div>
-              <div className="text-center">
-                <Input placeholder="Фамилия И.О." className="text-center" />
-                <Label className="text-xs text-muted-foreground">расшифровка подписи</Label>
+              <div>
+                <Label className="text-xs text-muted-foreground">Подпись руководителя</Label>
+                <Input placeholder="Подпись" className="mt-1" />
               </div>
-              <div className="text-center">
-                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="text-center" />
-                <Label className="text-xs text-muted-foreground">дата</Label>
+              <div>
+                <Label className="text-xs text-muted-foreground">Дата</Label>
+                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="mt-1" />
               </div>
             </div>
 
@@ -457,7 +472,7 @@ export default function FormCO() {
               </div>
               <div className="text-xs text-muted-foreground text-right">
                 <p>Форма представляется ежемесячно</p>
-                <p>до 5 числа месяца, следующего за отчетным</p>
+                <p>до {formMeta.submitUntilDay} числа месяца, следующего за отчетным</p>
               </div>
             </div>
           </div>
