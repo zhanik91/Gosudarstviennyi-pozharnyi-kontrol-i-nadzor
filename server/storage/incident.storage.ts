@@ -12,8 +12,7 @@ export class IncidentStorage {
     period?: string;
     includeSubOrgs?: boolean;
   }): Promise<Incident[]> {
-    let query = db.select().from(incidents);
-    const conditions = [];
+    const conditions: ReturnType<typeof eq>[] = [];
 
     if (filters?.organizationId) {
       if (filters.includeSubOrgs) {
@@ -34,10 +33,12 @@ export class IncidentStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      const result = await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.dateTime));
+      return result as Incident[];
     }
 
-    return await query.orderBy(desc(incidents.dateTime)) as Incident[];
+    const result = await db.select().from(incidents).orderBy(desc(incidents.dateTime));
+    return result as Incident[];
   }
 
   async getIncident(id: string): Promise<Incident | undefined> {
@@ -46,17 +47,18 @@ export class IncidentStorage {
   }
 
   async createIncident(incidentData: InsertIncident): Promise<Incident> {
-    const [incident] = await db.insert(incidents).values(incidentData).returning();
-    return incident;
+    const [incident] = await db.insert(incidents).values(incidentData as any).returning();
+    return incident as Incident;
   }
 
   async updateIncident(id: string, incidentData: Partial<InsertIncident>): Promise<Incident> {
+    const updateData = { ...incidentData, updatedAt: new Date() };
     const [incident] = await db
       .update(incidents)
-      .set({ ...incidentData, updatedAt: new Date() })
+      .set(updateData as any)
       .where(eq(incidents.id, id))
       .returning();
-    return incident;
+    return incident as Incident;
   }
 
   async deleteIncident(id: string): Promise<void> {
@@ -142,13 +144,13 @@ export class IncidentStorage {
       }
     }
 
-    let searchQuery = db.select().from(incidents);
-
     if (conditions.length > 0) {
-      searchQuery = searchQuery.where(and(...conditions));
+      const result = await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.dateTime)).limit(100);
+      return result as any[];
     }
 
-    return await searchQuery.orderBy(desc(incidents.dateTime)).limit(100) as any[];
+    const result = await db.select().from(incidents).orderBy(desc(incidents.dateTime)).limit(100);
+    return result as any[];
   }
 
   // Advanced Analytics (Charts/Maps)
