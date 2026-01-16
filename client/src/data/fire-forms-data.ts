@@ -994,23 +994,25 @@ export interface Form6SSPZRow {
   id: string;
   number?: string;
   label: string;
-  children?: Form6SSPZRow[];
 }
 
-export const FORM_6_SSPZ_ROWS: Form6SSPZRow[] = [
-  {
-    id: '1', number: '1', label: 'Степные пожары и загорания, всего',
-    children: [
-      { id: '1.1', number: '1)', label: 'степные пожары' },
-      { id: '1.2', number: '2)', label: 'загорания сухой травы' },
-      { id: '1.3', number: '3)', label: 'загорания камыша' },
-      { id: '1.4', number: '4)', label: 'загорания стерни, пожнивных остатков' }
-    ]
-  },
-  { id: '2', number: '2', label: 'Степные пожары и загорания на землях населенных пунктов' },
-  { id: '3', number: '3', label: 'Степные пожары и загорания на землях сельскохозяйственного назначения' },
-  { id: '4', number: '4', label: 'Степные пожары и загорания на землях лесного фонда' },
-  { id: '5', number: '5', label: 'Степные пожары и загорания на землях запаса' }
+export const FORM_6_STEPPE_FIRES_ROWS: Form6SSPZRow[] = [
+  { id: 'fires_total', number: '1', label: 'Степные пожары, всего' },
+  { id: 'fires_settlement', number: '2', label: 'Степные пожары на землях населенных пунктов' },
+  { id: 'fires_agri', number: '3', label: 'Степные пожары на землях сельскохозяйственного назначения' },
+  { id: 'fires_forest', number: '4', label: 'Степные пожары на землях лесного фонда' },
+  { id: 'fires_stock', number: '5', label: 'Степные пожары на землях запаса' }
+];
+
+export const FORM_6_IGNITIONS_ROWS: Form6SSPZRow[] = [
+  { id: 'ignitions_total', number: '1', label: 'Загорания, всего' },
+  { id: 'ignitions_dry_grass', number: '2', label: 'загорания сухой травы' },
+  { id: 'ignitions_reed', number: '3', label: 'загорания камыша' },
+  { id: 'ignitions_stubble', number: '4', label: 'загорания стерни, пожнивных остатков' },
+  { id: 'ignitions_settlement', number: '5', label: 'Загорания на землях населенных пунктов' },
+  { id: 'ignitions_agri', number: '6', label: 'Загорания на землях сельскохозяйственного назначения' },
+  { id: 'ignitions_forest', number: '7', label: 'Загорания на землях лесного фонда' },
+  { id: 'ignitions_stock', number: '8', label: 'Загорания на землях запаса' }
 ];
 
 // Форма 6-ССПЗ: Колонки
