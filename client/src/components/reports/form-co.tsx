@@ -56,9 +56,12 @@ export default function FormCO() {
     
     FORM_7_CO_ROWS.forEach(checkRow);
 
-    const totalRow = FORM_7_CO_ROWS.find(row => row.id === '1');
-    if (totalRow?.children) {
-      const sumChildren = totalRow.children.reduce(
+    const sumDirectChildren = (rowId: string) => {
+      const totalRow = FORM_7_CO_ROWS.find(row => row.id === rowId);
+      if (!totalRow?.children) {
+        return null;
+      }
+      return totalRow.children.reduce(
         (acc, child) => {
           const data = getCOData(child.id);
           return {
@@ -68,19 +71,43 @@ export default function FormCO() {
         },
         { killed_total: 0, injured_total: 0 }
       );
-      const totalData = getCOData(totalRow.id);
+    };
 
-      if (totalData.killed_total !== sumChildren.killed_total) {
+    const totalKilledRow = FORM_7_CO_ROWS.find(row => row.id === '1');
+    const killedChildrenSum = sumDirectChildren('1');
+    if (totalKilledRow && killedChildrenSum) {
+      const totalData = getCOData(totalKilledRow.id);
+      if (totalData.killed_total !== killedChildrenSum.killed_total) {
         errors.push({
-          rowId: totalRow.id,
-          message: "Строка 1 должна быть равна сумме подпунктов 1.1–1.4 по погибшим",
+          rowId: totalKilledRow.id,
+          message: "Строка 1 должна быть равна сумме подпунктов 1.1–1.3 по погибшим",
           type: 'error'
         });
       }
-      if (totalData.injured_total !== sumChildren.injured_total) {
+      if (totalData.injured_total !== killedChildrenSum.injured_total) {
         errors.push({
-          rowId: totalRow.id,
-          message: "Строка 1 должна быть равна сумме подпунктов 1.1–1.4 по травмированным",
+          rowId: totalKilledRow.id,
+          message: "Строка 1 должна быть равна сумме подпунктов 1.1–1.3 по травмированным",
+          type: 'error'
+        });
+      }
+    }
+
+    const totalInjuredRow = FORM_7_CO_ROWS.find(row => row.id === '11');
+    const injuredChildrenSum = sumDirectChildren('11');
+    if (totalInjuredRow && injuredChildrenSum) {
+      const totalData = getCOData(totalInjuredRow.id);
+      if (totalData.killed_total !== injuredChildrenSum.killed_total) {
+        errors.push({
+          rowId: totalInjuredRow.id,
+          message: "Строка 11 должна быть равна сумме подпунктов 11.1–11.3 по погибшим",
+          type: 'error'
+        });
+      }
+      if (totalData.injured_total !== injuredChildrenSum.injured_total) {
+        errors.push({
+          rowId: totalInjuredRow.id,
+          message: "Строка 11 должна быть равна сумме подпунктов 11.1–11.3 по травмированным",
           type: 'error'
         });
       }
