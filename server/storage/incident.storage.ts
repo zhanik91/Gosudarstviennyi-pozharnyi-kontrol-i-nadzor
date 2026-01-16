@@ -28,13 +28,30 @@ export class IncidentStorage {
     return { startDate, endDate, periodKey: `${year}-${String(month).padStart(2, "0")}` };
   }
 
-  private getYearRange(period?: string) {
+  private getDateRange(params: { periodFrom?: string; periodTo?: string; period?: string }) {
     const fallback = this.getPeriodKey(new Date());
-    const [year] = (period ?? fallback).split("-").map(Number);
-    const startDate = new Date(year, 0, 1);
-    const endDate = new Date(year, 11, 31);
+    const periodFrom = params.periodFrom ?? params.period ?? fallback;
+    const periodTo = params.periodTo ?? periodFrom;
+    const [startYear, startMonth] = periodFrom.split("-").map(Number);
+    const [endYear, endMonth] = periodTo.split("-").map(Number);
+    const startDate = new Date(startYear, startMonth - 1, 1);
+    const endDate = new Date(endYear, endMonth, 0);
     endDate.setHours(23, 59, 59, 999);
-    return { startDate, endDate };
+    const monthsSpan = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+
+    return {
+      startDate,
+      endDate,
+      periodFromKey: `${startYear}-${String(startMonth).padStart(2, "0")}`,
+      periodToKey: `${endYear}-${String(endMonth).padStart(2, "0")}`,
+      monthsSpan,
+    };
+  }
+
+  private shiftPeriodKey(periodKey: string, offsetMonths: number) {
+    const [year, month] = periodKey.split("-").map(Number);
+    const date = new Date(year, month - 1 + offsetMonths, 1);
+    return this.getPeriodKey(date);
   }
 
   private getPreviousPeriod(periodKey: string) {
@@ -113,6 +130,8 @@ export class IncidentStorage {
   async getSimpleAnalytics(params: {
     organizationId?: string;
     period?: string;
+    periodFrom?: string;
+    periodTo?: string;
     includeSubOrgs?: boolean;
   }): Promise<{
     regions: Array<{
@@ -131,13 +150,13 @@ export class IncidentStorage {
   }> {
     const conditions: any[] = await this.getOrganizationConditions(params);
 
-    if (params.period) {
-      const [year, month] = params.period.split("-");
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0);
-      conditions.push(gte(incidents.dateTime, startDate));
-      conditions.push(lte(incidents.dateTime, endDate));
-    }
+    const { startDate, endDate } = this.getDateRange({
+      periodFrom: params.periodFrom,
+      periodTo: params.periodTo,
+      period: params.period,
+    });
+    conditions.push(gte(incidents.dateTime, startDate));
+    conditions.push(lte(incidents.dateTime, endDate));
 
     const regionQuery = db
       .select({
@@ -188,13 +207,28 @@ export class IncidentStorage {
   async getFormAnalytics(params: {
     organizationId?: string;
     period?: string;
+    periodFrom?: string;
+    periodTo?: string;
     includeSubOrgs?: boolean;
   }) {
     const orgConditions = await this.getOrganizationConditions(params);
-    const currentPeriod = this.getPeriodRange(params.period);
-    const previousPeriodKey = this.getPreviousPeriod(currentPeriod.periodKey);
-    const previousPeriod = this.getPeriodRange(previousPeriodKey);
-    const yearRange = this.getYearRange(currentPeriod.periodKey);
+    const currentPeriod = this.getDateRange({
+      periodFrom: params.periodFrom,
+      periodTo: params.periodTo,
+      period: params.period,
+    });
+    const previousPeriodFromKey = this.shiftPeriodKey(
+      currentPeriod.periodFromKey,
+      -currentPeriod.monthsSpan
+    );
+    const previousPeriodToKey = this.shiftPeriodKey(
+      currentPeriod.periodToKey,
+      -currentPeriod.monthsSpan
+    );
+    const previousPeriod = this.getDateRange({
+      periodFrom: previousPeriodFromKey,
+      periodTo: previousPeriodToKey,
+    });
     const ospIncidentTypes = ["fire", "steppe_fire"] as const;
 
     const baseConditions = [
@@ -219,8 +253,8 @@ export class IncidentStorage {
         and(
           ...orgConditions,
           inArray(incidents.incidentType, ospIncidentTypes),
-          gte(incidents.dateTime, yearRange.startDate),
-          lte(incidents.dateTime, yearRange.endDate)
+          gte(incidents.dateTime, currentPeriod.startDate),
+          lte(incidents.dateTime, currentPeriod.endDate)
         )
       )
       .groupBy(sql`to_char(date_time, 'YYYY-MM')`)
@@ -334,8 +368,8 @@ export class IncidentStorage {
         and(
           ...orgConditions,
           inArray(incidents.incidentType, steppeTypes),
-          gte(incidents.dateTime, yearRange.startDate),
-          lte(incidents.dateTime, yearRange.endDate)
+          gte(incidents.dateTime, currentPeriod.startDate),
+          lte(incidents.dateTime, currentPeriod.endDate)
         )
       )
       .groupBy(sql`to_char(date_time, 'YYYY-MM')`)
@@ -379,8 +413,13 @@ export class IncidentStorage {
       labelOrFallback(row.objectType, row.objectCode)
     );
 
+    const periodLabel =
+      currentPeriod.periodFromKey === currentPeriod.periodToKey
+        ? currentPeriod.periodFromKey
+        : `${currentPeriod.periodFromKey} — ${currentPeriod.periodToKey}`;
+
     return {
-      period: currentPeriod.periodKey,
+      period: periodLabel,
       form1: {
         monthly: form1MonthlyRows.map((row) => ({
           month: row.month,
