@@ -997,22 +997,51 @@ export interface Form6SSPZRow {
 }
 
 export const FORM_6_STEPPE_FIRES_ROWS: Form6SSPZRow[] = [
-  { id: 'fires_total', number: '1', label: 'Степные пожары, всего' },
-  { id: 'fires_settlement', number: '2', label: 'Степные пожары на землях населенных пунктов' },
-  { id: 'fires_agri', number: '3', label: 'Степные пожары на землях сельскохозяйственного назначения' },
-  { id: 'fires_forest', number: '4', label: 'Степные пожары на землях лесного фонда' },
-  { id: 'fires_stock', number: '5', label: 'Степные пожары на землях запаса' }
+  { id: 'fires_region_rk', number: '1', label: 'РК' },
+  { id: 'fires_region_astana', number: '2', label: 'г. Астана' },
+  { id: 'fires_region_almaty_city', number: '3', label: 'г. Алматы' },
+  { id: 'fires_region_shymkent', number: '4', label: 'г. Шымкент' },
+  { id: 'fires_region_akmola', number: '5', label: 'Акмолинская область' },
+  { id: 'fires_region_aktobe', number: '6', label: 'Актюбинская область' },
+  { id: 'fires_region_almaty', number: '7', label: 'Алматинская область' },
+  { id: 'fires_region_atyrau', number: '8', label: 'Атырауская область' },
+  { id: 'fires_region_vko', number: '9', label: 'Восточно-Казахстанская область' },
+  { id: 'fires_region_zhambyl', number: '10', label: 'Жамбылская область' },
+  { id: 'fires_region_zko', number: '11', label: 'Западно-Казахстанская область' },
+  { id: 'fires_region_karaganda', number: '12', label: 'Карагандинская область' },
+  { id: 'fires_region_kostanay', number: '13', label: 'Костанайская область' },
+  { id: 'fires_region_kyzylorda', number: '14', label: 'Кызылординская область' },
+  { id: 'fires_region_mangystau', number: '15', label: 'Мангистауская область' },
+  { id: 'fires_region_pavlodar', number: '16', label: 'Павлодарская область' },
+  { id: 'fires_region_sko', number: '17', label: 'Северо-Казахстанская область' },
+  { id: 'fires_region_turkestan', number: '18', label: 'Туркестанская область' },
+  { id: 'fires_region_ulytau', number: '19', label: 'Улытауская область' },
+  { id: 'fires_region_abai', number: '20', label: 'Абай область' },
+  { id: 'fires_region_zhetisu', number: '21', label: 'Жетісу область' }
 ];
 
 export const FORM_6_IGNITIONS_ROWS: Form6SSPZRow[] = [
-  { id: 'ignitions_total', number: '1', label: 'Загорания, всего' },
-  { id: 'ignitions_dry_grass', number: '2', label: 'загорания сухой травы' },
-  { id: 'ignitions_reed', number: '3', label: 'загорания камыша' },
-  { id: 'ignitions_stubble', number: '4', label: 'загорания стерни, пожнивных остатков' },
-  { id: 'ignitions_settlement', number: '5', label: 'Загорания на землях населенных пунктов' },
-  { id: 'ignitions_agri', number: '6', label: 'Загорания на землях сельскохозяйственного назначения' },
-  { id: 'ignitions_forest', number: '7', label: 'Загорания на землях лесного фонда' },
-  { id: 'ignitions_stock', number: '8', label: 'Загорания на землях запаса' }
+  { id: 'ignitions_region_rk', number: '1', label: 'РК' },
+  { id: 'ignitions_region_astana', number: '2', label: 'г. Астана' },
+  { id: 'ignitions_region_almaty_city', number: '3', label: 'г. Алматы' },
+  { id: 'ignitions_region_shymkent', number: '4', label: 'г. Шымкент' },
+  { id: 'ignitions_region_akmola', number: '5', label: 'Акмолинская область' },
+  { id: 'ignitions_region_aktobe', number: '6', label: 'Актюбинская область' },
+  { id: 'ignitions_region_almaty', number: '7', label: 'Алматинская область' },
+  { id: 'ignitions_region_atyrau', number: '8', label: 'Атырауская область' },
+  { id: 'ignitions_region_vko', number: '9', label: 'Восточно-Казахстанская область' },
+  { id: 'ignitions_region_zhambyl', number: '10', label: 'Жамбылская область' },
+  { id: 'ignitions_region_zko', number: '11', label: 'Западно-Казахстанская область' },
+  { id: 'ignitions_region_karaganda', number: '12', label: 'Карагандинская область' },
+  { id: 'ignitions_region_kostanay', number: '13', label: 'Костанайская область' },
+  { id: 'ignitions_region_kyzylorda', number: '14', label: 'Кызылординская область' },
+  { id: 'ignitions_region_mangystau', number: '15', label: 'Мангистауская область' },
+  { id: 'ignitions_region_pavlodar', number: '16', label: 'Павлодарская область' },
+  { id: 'ignitions_region_sko', number: '17', label: 'Северо-Казахстанская область' },
+  { id: 'ignitions_region_turkestan', number: '18', label: 'Туркестанская область' },
+  { id: 'ignitions_region_ulytau', number: '19', label: 'Улытауская область' },
+  { id: 'ignitions_region_abai', number: '20', label: 'Абай область' },
+  { id: 'ignitions_region_zhetisu', number: '21', label: 'Жетісу область' }
 ];
 
 // Форма 6-ССПЗ: Колонки
