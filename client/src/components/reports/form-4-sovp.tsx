@@ -449,7 +449,7 @@ export default function Form4SOVP() {
               </div>
               <div className="text-xs text-muted-foreground text-right">
                 <p>Форма представляется ежемесячно</p>
-                <p>до 5 числа месяца, следующего за отчетным</p>
+                <p>до 27 числа месяца, следующего за отчетным</p>
               </div>
             </div>
           </div>
