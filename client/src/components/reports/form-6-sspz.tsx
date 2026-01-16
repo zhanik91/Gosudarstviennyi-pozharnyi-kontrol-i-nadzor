@@ -62,41 +62,47 @@ export default function Form6SSPZ() {
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
-    
-    const checkRow = (row: Form6SSPZRow) => {
-      const data = getFireData(row.id);
-      columnDefinitions.forEach(column => {
-        const value = data[column.key as keyof SteppeFireData];
-        if (value < 0) {
-          errors.push({
-            rowId: row.id,
-            message: `Строка ${row.number}: Отрицательные значения не допускаются`,
-            type: 'error'
-          });
-        }
-        if (column.valueType === 'integer' && !Number.isInteger(value)) {
-          errors.push({
-            rowId: row.id,
-            message: `Строка ${row.number}: показатель "${column.label}" должен быть целым числом`,
-            type: 'error'
-          });
-        }
-        if (column.valueType === 'decimal') {
-          const precision = column.precision ?? 1;
-          const multiplier = 10 ** precision;
-          if (!Number.isInteger(value * multiplier)) {
+
+    const checkRows = (
+      rows: Form6SSPZRow[],
+      overrides: Partial<Record<typeof columnDefinitions[number]['key'], string>> = {}
+    ) => {
+      rows.forEach(row => {
+        const data = getFireData(row.id);
+        columnDefinitions.forEach(column => {
+          const value = data[column.key as keyof SteppeFireData];
+          const label = overrides[column.key] ?? column.label;
+          if (value < 0) {
             errors.push({
               rowId: row.id,
-              message: `Строка ${row.number}: показатель "${column.label}" должен иметь точность до ${precision} знака`,
+              message: `Строка ${row.number}: Отрицательные значения не допускаются`,
               type: 'error'
             });
           }
-        }
+          if (column.valueType === 'integer' && !Number.isInteger(value)) {
+            errors.push({
+              rowId: row.id,
+              message: `Строка ${row.number}: показатель "${label}" должен быть целым числом`,
+              type: 'error'
+            });
+          }
+          if (column.valueType === 'decimal') {
+            const precision = column.precision ?? 1;
+            const multiplier = 10 ** precision;
+            if (!Number.isInteger(value * multiplier)) {
+              errors.push({
+                rowId: row.id,
+                message: `Строка ${row.number}: показатель "${label}" должен иметь точность до ${precision} знака`,
+                type: 'error'
+              });
+            }
+          }
+        });
       });
     };
-    
-    FORM_6_STEPPE_FIRES_ROWS.forEach(checkRow);
-    FORM_6_IGNITIONS_ROWS.forEach(checkRow);
+
+    checkRows(FORM_6_STEPPE_FIRES_ROWS);
+    checkRows(FORM_6_IGNITIONS_ROWS, { fires_count: 'Количество загораний' });
     return errors;
   };
 
@@ -159,11 +165,13 @@ export default function Form6SSPZ() {
   };
 
   const handleExport = () => {
-    const csvHeader = [
-      "№ п/п",
-      "Наименование показателя",
-      ...columnDefinitions.map(column => column.label)
-    ].join(',') + "\n";
+    const buildCsvHeader = (overrides: Partial<Record<typeof columnDefinitions[number]['key'], string>> = {}) => {
+      return [
+        "№ п/п",
+        "Наименование области/города",
+        ...columnDefinitions.map(column => overrides[column.key] ?? column.label)
+      ].join(',') + "\n";
+    };
     
     const flattenRows = (rows: Form6SSPZRow[], level = 0): string[] => {
       return rows.flatMap(row => {
@@ -181,8 +189,12 @@ export default function Form6SSPZ() {
       });
     };
     
-    const table1 = ['Таблица 1. Степные пожары', csvHeader.trim(), ...flattenRows(FORM_6_STEPPE_FIRES_ROWS)].join('\n');
-    const table2 = ['Таблица 2. Загорания', csvHeader.trim(), ...flattenRows(FORM_6_IGNITIONS_ROWS)].join('\n');
+    const table1 = ['Таблица 1. Степные пожары', buildCsvHeader().trim(), ...flattenRows(FORM_6_STEPPE_FIRES_ROWS)].join('\n');
+    const table2 = [
+      'Таблица 2. Загорания',
+      buildCsvHeader({ fires_count: 'Количество загораний' }).trim(),
+      ...flattenRows(FORM_6_IGNITIONS_ROWS)
+    ].join('\n');
     const csvContent = `${table1}\n\n${table2}\n`;
     
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
@@ -377,7 +389,7 @@ export default function Form6SSPZ() {
                   <thead>
                     <tr className="bg-secondary print:bg-gray-100">
                       <th rowSpan={2} className="border border-border p-2 text-center">№ п/п</th>
-                      <th rowSpan={2} className="border border-border p-2 text-left">Наименование показателей</th>
+                      <th rowSpan={2} className="border border-border p-2 text-left">Наименование областей и городов</th>
                       <th rowSpan={2} className="border border-border p-2 text-center">Количество пожаров</th>
                       <th rowSpan={2} className="border border-border p-2 text-center">Степная площадь (гектар)</th>
                       <th rowSpan={2} className="border border-border p-2 text-center">Общий ущерб (тысяч тенге)</th>
@@ -423,14 +435,14 @@ export default function Form6SSPZ() {
                   <thead>
                     <tr className="bg-secondary print:bg-gray-100">
                       <th rowSpan={2} className="border border-border p-2 text-center">№ п/п</th>
-                      <th rowSpan={2} className="border border-border p-2 text-left">Наименование показателей</th>
-                      <th rowSpan={2} className="border border-border p-2 text-center">Количество пожаров</th>
+                      <th rowSpan={2} className="border border-border p-2 text-left">Наименование областей и городов</th>
+                      <th rowSpan={2} className="border border-border p-2 text-center">Количество загораний</th>
                       <th rowSpan={2} className="border border-border p-2 text-center">Степная площадь (гектар)</th>
                       <th rowSpan={2} className="border border-border p-2 text-center">Общий ущерб (тысяч тенге)</th>
                       <th colSpan={3} className="border border-border p-2 text-center">Число пострадавших людей</th>
                       <th colSpan={3} className="border border-border p-2 text-center">Число пострадавших животных (голов)</th>
                       <th colSpan={5} className="border border-border p-2 text-center">
-                        Ликвидировано степных пожаров акиматами и добровольными противопожарными формированиями без привлечения сил и средств гарнизона противопожарной службы
+                        Ликвидировано степных загораний акиматами и добровольными противопожарными формированиями без привлечения сил и средств гарнизона противопожарной службы
                       </th>
                       <th colSpan={2} className="border border-border p-2 text-center">
                         Привлечено сил и средств Министерства по чрезвычайным ситуациям Республики Казахстан
