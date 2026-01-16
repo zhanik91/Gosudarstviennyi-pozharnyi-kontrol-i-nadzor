@@ -15,6 +15,67 @@ export class IncidentStorage {
     co_nofire: "Отравление CO без пожара",
   };
 
+  private getPeriodKey(date: Date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  private getPeriodRange(period?: string) {
+    const fallback = this.getPeriodKey(new Date());
+    const [year, month] = (period ?? fallback).split("-").map(Number);
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    endDate.setHours(23, 59, 59, 999);
+    return { startDate, endDate, periodKey: `${year}-${String(month).padStart(2, "0")}` };
+  }
+
+  private getYearRange(period?: string) {
+    const fallback = this.getPeriodKey(new Date());
+    const [year] = (period ?? fallback).split("-").map(Number);
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year, 11, 31);
+    endDate.setHours(23, 59, 59, 999);
+    return { startDate, endDate };
+  }
+
+  private getPreviousPeriod(periodKey: string) {
+    const [year, month] = periodKey.split("-").map(Number);
+    const previousDate = new Date(year, month - 2, 1);
+    return this.getPeriodKey(previousDate);
+  }
+
+  private async getOrganizationConditions(params: {
+    organizationId?: string;
+    includeSubOrgs?: boolean;
+  }) {
+    const conditions: any[] = [];
+
+    if (params.organizationId) {
+      if (params.includeSubOrgs) {
+        const hierarchy = await orgStorage.getOrganizationHierarchy(params.organizationId);
+        const orgIds = hierarchy.map((org) => org.id);
+        conditions.push(inArray(incidents.organizationId, orgIds));
+      } else {
+        conditions.push(eq(incidents.organizationId, params.organizationId));
+      }
+    }
+
+    return conditions;
+  }
+
+  private aggregateLabelSeries<T extends { count: number | string }>(
+    rows: T[],
+    getLabel: (row: T) => string
+  ) {
+    const map = new Map<string, number>();
+    rows.forEach((row) => {
+      const label = getLabel(row);
+      map.set(label, (map.get(label) ?? 0) + Number(row.count || 0));
+    });
+    return Array.from(map.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
   async getIncidents(filters?: {
     organizationId?: string;
     period?: string;
@@ -68,17 +129,7 @@ export class IncidentStorage {
       damage: number;
     }>;
   }> {
-    const conditions: any[] = [];
-
-    if (params.organizationId) {
-      if (params.includeSubOrgs) {
-        const hierarchy = await orgStorage.getOrganizationHierarchy(params.organizationId);
-        const orgIds = hierarchy.map((org) => org.id);
-        conditions.push(inArray(incidents.organizationId, orgIds));
-      } else {
-        conditions.push(eq(incidents.organizationId, params.organizationId));
-      }
-    }
+    const conditions: any[] = await this.getOrganizationConditions(params);
 
     if (params.period) {
       const [year, month] = params.period.split("-");
@@ -131,6 +182,272 @@ export class IncidentStorage {
         count: Number(item.count) || 0,
         damage: Number(item.damage) || 0,
       })),
+    };
+  }
+
+  async getFormAnalytics(params: {
+    organizationId?: string;
+    period?: string;
+    includeSubOrgs?: boolean;
+  }) {
+    const orgConditions = await this.getOrganizationConditions(params);
+    const currentPeriod = this.getPeriodRange(params.period);
+    const previousPeriodKey = this.getPreviousPeriod(currentPeriod.periodKey);
+    const previousPeriod = this.getPeriodRange(previousPeriodKey);
+    const yearRange = this.getYearRange(currentPeriod.periodKey);
+    const ospIncidentTypes = ["fire", "steppe_fire"] as const;
+
+    const baseConditions = [
+      ...orgConditions,
+      gte(incidents.dateTime, currentPeriod.startDate),
+      lte(incidents.dateTime, currentPeriod.endDate),
+    ];
+
+    const labelOrFallback = (value?: string | null, fallback?: string | null) =>
+      value || fallback || "Не указано";
+
+    const form1MonthlyRows = await db
+      .select({
+        month: sql<string>`to_char(date_time, 'YYYY-MM')`,
+        count: sql<number>`count(*)`,
+        deaths: sql<number>`sum(deaths_total)`,
+        injured: sql<number>`sum(injured_total)`,
+        damage: sql<number>`sum(damage)`,
+      })
+      .from(incidents)
+      .where(
+        and(
+          ...orgConditions,
+          inArray(incidents.incidentType, ospIncidentTypes),
+          gte(incidents.dateTime, yearRange.startDate),
+          lte(incidents.dateTime, yearRange.endDate)
+        )
+      )
+      .groupBy(sql`to_char(date_time, 'YYYY-MM')`)
+      .orderBy(sql`to_char(date_time, 'YYYY-MM')`);
+
+    const form1LocalityRows = await db
+      .select({
+        locality: incidents.locality,
+        count: sql<number>`count(*)`,
+        deaths: sql<number>`sum(deaths_total)`,
+        injured: sql<number>`sum(injured_total)`,
+        damage: sql<number>`sum(damage)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, inArray(incidents.incidentType, ospIncidentTypes)))
+      .groupBy(incidents.locality);
+
+    const form1Totals = form1LocalityRows.reduce(
+      (acc, row) => ({
+        deaths: acc.deaths + Number(row.deaths || 0),
+        injured: acc.injured + Number(row.injured || 0),
+        damage: acc.damage + Number(row.damage || 0),
+      }),
+      { deaths: 0, injured: 0, damage: 0 }
+    );
+
+    const form2CauseRows = await db
+      .select({
+        cause: incidents.cause,
+        causeCode: incidents.causeCode,
+        count: sql<number>`count(*)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, eq(incidents.incidentType, "nonfire")))
+      .groupBy(incidents.cause, incidents.causeCode);
+
+    const form2RegionRows = await db
+      .select({
+        region: incidents.region,
+        count: sql<number>`count(*)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, eq(incidents.incidentType, "nonfire")))
+      .groupBy(incidents.region);
+
+    const form3CauseRows = await db
+      .select({
+        cause: incidents.cause,
+        causeCode: incidents.causeCode,
+        count: sql<number>`count(*)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, eq(incidents.incidentType, "fire")))
+      .groupBy(incidents.cause, incidents.causeCode);
+
+    const form4ObjectRows = await db
+      .select({
+        objectType: incidents.objectType,
+        objectCode: incidents.objectCode,
+        count: sql<number>`count(*)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, eq(incidents.incidentType, "fire")))
+      .groupBy(incidents.objectType, incidents.objectCode);
+
+    const previousObjectRows = await db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(incidents)
+      .where(
+        and(
+          ...orgConditions,
+          eq(incidents.incidentType, "fire"),
+          gte(incidents.dateTime, previousPeriod.startDate),
+          lte(incidents.dateTime, previousPeriod.endDate)
+        )
+      );
+
+    const currentObjectTotal = form4ObjectRows.reduce((sum, row) => sum + Number(row.count || 0), 0);
+    const previousObjectTotal = previousObjectRows.reduce(
+      (sum, row) => sum + Number(row.count || 0),
+      0
+    );
+
+    const residentialFilter = or(
+      ilike(incidents.objectType, "%жил%"),
+      ilike(incidents.objectType, "%residen%"),
+      eq(incidents.objectType, "residential")
+    );
+
+    const form5LocalityRows = await db
+      .select({
+        locality: incidents.locality,
+        count: sql<number>`count(*)`,
+        damage: sql<number>`sum(damage)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, eq(incidents.incidentType, "fire"), residentialFilter))
+      .groupBy(incidents.locality);
+
+    const steppeTypes = ["steppe_fire", "steppe_smolder"] as const;
+
+    const form6MonthlyRows = await db
+      .select({
+        month: sql<string>`to_char(date_time, 'YYYY-MM')`,
+        count: sql<number>`count(*)`,
+      })
+      .from(incidents)
+      .where(
+        and(
+          ...orgConditions,
+          inArray(incidents.incidentType, steppeTypes),
+          gte(incidents.dateTime, yearRange.startDate),
+          lte(incidents.dateTime, yearRange.endDate)
+        )
+      )
+      .groupBy(sql`to_char(date_time, 'YYYY-MM')`)
+      .orderBy(sql`to_char(date_time, 'YYYY-MM')`);
+
+    const form6RegionRows = await db
+      .select({
+        region: incidents.region,
+        count: sql<number>`count(*)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, inArray(incidents.incidentType, steppeTypes)))
+      .groupBy(incidents.region);
+
+    const form7RegionRows = await db
+      .select({
+        region: incidents.region,
+        count: sql<number>`count(*)`,
+        deaths: sql<number>`sum(deaths_co_total)`,
+        injured: sql<number>`sum(injured_co_total)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, eq(incidents.incidentType, "co_nofire")))
+      .groupBy(incidents.region);
+
+    const form7Totals = form7RegionRows.reduce(
+      (acc, row) => ({
+        deaths: acc.deaths + Number(row.deaths || 0),
+        injured: acc.injured + Number(row.injured || 0),
+      }),
+      { deaths: 0, injured: 0 }
+    );
+
+    const form2Causes = this.aggregateLabelSeries(form2CauseRows, (row) =>
+      labelOrFallback(row.cause, row.causeCode)
+    );
+    const form3Causes = this.aggregateLabelSeries(form3CauseRows, (row) =>
+      labelOrFallback(row.cause, row.causeCode)
+    );
+    const form4Objects = this.aggregateLabelSeries(form4ObjectRows, (row) =>
+      labelOrFallback(row.objectType, row.objectCode)
+    );
+
+    return {
+      period: currentPeriod.periodKey,
+      form1: {
+        monthly: form1MonthlyRows.map((row) => ({
+          month: row.month,
+          count: Number(row.count) || 0,
+          deaths: Number(row.deaths) || 0,
+          injured: Number(row.injured) || 0,
+          damage: Number(row.damage) || 0,
+        })),
+        locality: form1LocalityRows.map((row) => ({
+          locality: row.locality ?? "unknown",
+          label: row.locality === "cities" ? "Город" : row.locality === "rural" ? "Село" : "Не указано",
+          count: Number(row.count) || 0,
+          deaths: Number(row.deaths) || 0,
+          injured: Number(row.injured) || 0,
+          damage: Number(row.damage) || 0,
+        })),
+        totals: form1Totals,
+      },
+      form2: {
+        causes: form2Causes,
+        regions: form2RegionRows.map((row) => ({
+          label: row.region ?? "Не указан",
+          count: Number(row.count) || 0,
+        })),
+      },
+      form3: {
+        causes: form3Causes,
+        topCauses: form3Causes.slice(0, 10),
+      },
+      form4: {
+        objects: form4Objects.slice(0, 10),
+        comparison: {
+          current: currentObjectTotal,
+          previous: previousObjectTotal,
+          delta: currentObjectTotal - previousObjectTotal,
+          percent: previousObjectTotal
+            ? Number(((currentObjectTotal - previousObjectTotal) / previousObjectTotal) * 100)
+            : null,
+        },
+      },
+      form5: {
+        locality: form5LocalityRows.map((row) => ({
+          locality: row.locality ?? "unknown",
+          label: row.locality === "cities" ? "Город" : row.locality === "rural" ? "Село" : "Не указано",
+          count: Number(row.count) || 0,
+          damage: Number(row.damage) || 0,
+        })),
+      },
+      form6: {
+        monthly: form6MonthlyRows.map((row) => ({
+          month: row.month,
+          count: Number(row.count) || 0,
+        })),
+        regions: form6RegionRows.map((row) => ({
+          label: row.region ?? "Не указан",
+          count: Number(row.count) || 0,
+        })),
+      },
+      form7: {
+        totals: form7Totals,
+        regions: form7RegionRows.map((row) => ({
+          label: row.region ?? "Не указан",
+          count: Number(row.count) || 0,
+          deaths: Number(row.deaths) || 0,
+          injured: Number(row.injured) || 0,
+        })),
+      },
     };
   }
 
