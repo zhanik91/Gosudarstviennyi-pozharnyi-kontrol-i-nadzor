@@ -206,6 +206,7 @@ export class IncidentStorage {
     includeChildren?: boolean;
   }): Promise<any> {
     const conditions = [];
+    const ospIncidentTypes = ['fire', 'steppe_fire'] as const;
 
     if (params.includeChildren) {
       const hierarchy = await orgStorage.getOrganizationHierarchy(params.orgId);
@@ -221,6 +222,10 @@ export class IncidentStorage {
       const endDate = new Date(parseInt(year), parseInt(month), 0);
       conditions.push(gte(incidents.dateTime, startDate));
       conditions.push(lte(incidents.dateTime, endDate));
+    }
+
+    if (params.form === '1-osp') {
+      conditions.push(inArray(incidents.incidentType, ospIncidentTypes));
     }
 
     const query = db
