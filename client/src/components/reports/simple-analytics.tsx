@@ -1,5 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   BarChart,
   Bar,
@@ -18,8 +23,35 @@ import {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export default function SimpleAnalytics() {
+  const [periodFrom, setPeriodFrom] = useState("");
+  const [periodTo, setPeriodTo] = useState("");
+  const [includeOrgTree, setIncludeOrgTree] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({
+    periodFrom: "",
+    periodTo: "",
+    includeOrgTree: false,
+  });
+
+  const handleBuildCharts = () => {
+    setAppliedFilters({
+      periodFrom,
+      periodTo,
+      includeOrgTree,
+    });
+  };
+
+  const queryParams = new URLSearchParams();
+  if (appliedFilters.periodFrom) {
+    queryParams.set("periodFrom", appliedFilters.periodFrom);
+  }
+  if (appliedFilters.periodTo) {
+    queryParams.set("periodTo", appliedFilters.periodTo);
+  }
+  queryParams.set("includeChildren", appliedFilters.includeOrgTree ? "true" : "false");
+  const analyticsUrl = `/api/analytics/forms${queryParams.toString() ? `?${queryParams}` : ""}`;
+
   const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
-    queryKey: ["/api/analytics/forms"],
+    queryKey: [analyticsUrl],
   });
 
   const form1Monthly = (analytics as any)?.form1?.monthly ?? [];
@@ -58,6 +90,11 @@ export default function SimpleAnalytics() {
     { name: "Прошлый период", value: Number(form4Comparison.previous) || 0 },
   ];
 
+  const displayPeriodFrom = appliedFilters.periodFrom || "начало";
+  const displayPeriodTo = appliedFilters.periodTo || "настоящее время";
+  const periodLabel = `${displayPeriodFrom} — ${displayPeriodTo}`;
+  const tooltipLabelFormatter = (label: string | number) => `${label} (${periodLabel})`;
+
   return (
     <div className="space-y-6">
       {/* Заголовок */}
@@ -65,6 +102,61 @@ export default function SimpleAnalytics() {
         <h2 className="text-2xl font-bold text-foreground">Сводная аналитика по формам</h2>
         <p className="text-muted-foreground">Ключевые показатели форм 1‑ОСП…7‑CO</p>
       </div>
+
+      <Card className="bg-card border border-border">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Параметры диаграмм</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="periodFrom" className="text-sm font-medium text-foreground mb-2">
+                Период с
+              </Label>
+              <Input
+                id="periodFrom"
+                type="month"
+                placeholder="2025-01"
+                value={periodFrom}
+                onChange={(e) => setPeriodFrom(e.target.value)}
+                data-testid="input-period-from"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="periodTo" className="text-sm font-medium text-foreground mb-2">
+                по
+              </Label>
+              <Input
+                id="periodTo"
+                type="month"
+                placeholder="2025-12"
+                value={periodTo}
+                onChange={(e) => setPeriodTo(e.target.value)}
+                data-testid="input-period-to"
+              />
+            </div>
+
+            <div className="flex items-end">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="chartOrgTree"
+                  checked={includeOrgTree}
+                  onCheckedChange={(checked) => setIncludeOrgTree(checked as boolean)}
+                  data-testid="checkbox-chart-org-tree"
+                />
+                <Label htmlFor="chartOrgTree" className="text-sm text-foreground">
+                  По дереву
+                </Label>
+              </div>
+            </div>
+
+            <div className="flex items-end">
+              <Button onClick={handleBuildCharts} data-testid="button-build-charts">
+                Построить
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Форма 1-ОСП */}
       <section className="space-y-4">
@@ -78,6 +170,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Динамика пожаров по месяцам</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
               <p className="text-sm text-muted-foreground">
                 Погибшие: {form1Totals.deaths}, травмированные: {form1Totals.injured}, ущерб:{" "}
                 {form1Totals.damage}
@@ -98,7 +191,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" fontSize={12} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Line type="monotone" dataKey="count" name="Пожары" stroke="#0088FE" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -109,6 +202,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Город и село</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
               <p className="text-sm text-muted-foreground">Число пожаров и ущерб</p>
             </CardHeader>
             <CardContent>
@@ -126,7 +220,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={12} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#00C49F" name="Пожары" />
                     <Bar dataKey="damage" fill="#FF8042" name="Ущерб" />
                   </BarChart>
@@ -149,6 +243,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Причины инцидентов</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -165,7 +260,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#0088FE" name="Инциденты" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -176,6 +271,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Регионы</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -192,7 +288,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#00C49F" name="Инциденты" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -212,6 +308,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Распределение причин</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -238,7 +335,7 @@ export default function SimpleAnalytics() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -248,6 +345,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Топ‑10 причин</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -264,7 +362,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#FF8042" name="Пожары" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -286,6 +384,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Топ объектов пожара</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -302,7 +401,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#8884d8" name="Пожары" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -313,6 +412,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Сравнение периодов</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
               <p className="text-sm text-muted-foreground">
                 Изменение: {form4Comparison.delta}{" "}
                 {form4Comparison.percent !== null ? `(${form4Comparison.percent.toFixed(1)}%)` : ""}
@@ -329,7 +429,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="value" fill="#FFBB28" name="Пожары" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -351,6 +451,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Пожары в жилом секторе</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -367,7 +468,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#0088FE" name="Пожары" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -378,6 +479,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Ущерб (жилой сектор)</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -394,7 +496,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="damage" fill="#FF8042" name="Ущерб" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -416,6 +518,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Сезонность по месяцам</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -432,7 +535,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Line type="monotone" dataKey="count" stroke="#00C49F" name="Степные пожары" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -443,6 +546,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Регионы</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -459,7 +563,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#0088FE" name="Случаи" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -481,6 +585,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Погибшие и травмированные</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -493,7 +598,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="value" fill="#FF8042" name="Люди" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -504,6 +609,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Распределение по регионам</CardTitle>
+              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -520,7 +626,7 @@ export default function SimpleAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={11} />
                     <YAxis fontSize={12} />
-                    <Tooltip />
+                    <Tooltip labelFormatter={tooltipLabelFormatter} />
                     <Bar dataKey="count" fill="#8884d8" name="Инциденты" />
                   </BarChart>
                 </ResponsiveContainer>

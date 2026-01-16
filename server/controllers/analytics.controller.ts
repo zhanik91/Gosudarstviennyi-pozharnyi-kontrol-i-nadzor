@@ -10,11 +10,16 @@ export class AnalyticsController {
       }
 
       const period = req.query.period as string | undefined;
-      const includeSubOrgs = req.query.includeSubOrgs === "true";
+      const periodFrom = req.query.periodFrom as string | undefined;
+      const periodTo = req.query.periodTo as string | undefined;
+      const includeSubOrgs =
+        req.query.includeChildren === "true" || req.query.includeSubOrgs === "true";
 
       const analytics = await storage.getSimpleAnalytics({
         organizationId: user.organizationId,
         period,
+        periodFrom,
+        periodTo,
         includeSubOrgs,
       });
 
@@ -33,11 +38,16 @@ export class AnalyticsController {
       }
 
       const period = req.query.period as string | undefined;
-      const includeSubOrgs = req.query.includeSubOrgs === "true";
+      const periodFrom = req.query.periodFrom as string | undefined;
+      const periodTo = req.query.periodTo as string | undefined;
+      const includeSubOrgs =
+        req.query.includeChildren === "true" || req.query.includeSubOrgs === "true";
 
       const analytics = await storage.getFormAnalytics({
         organizationId: user.organizationId,
         period,
+        periodFrom,
+        periodTo,
         includeSubOrgs,
       });
 
