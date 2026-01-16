@@ -22,6 +22,10 @@ export default function SimpleAnalytics() {
     queryKey: ["/api/stats/dashboard"],
   });
 
+  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+    queryKey: ["/api/analytics/simple"],
+  });
+
   const { data: monthlyData } = useQuery({
     queryKey: ["/api/analytics/monthly"],
     enabled: false, // Загружаем по запросу
@@ -29,21 +33,23 @@ export default function SimpleAnalytics() {
 
   const currentMonth = new Date().toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
 
-  // Данные для графиков (примерные данные на основе статистики)
-  const regionData = [
-    { name: 'Алматы', incidents: 15, deaths: 2 },
-    { name: 'Астана', incidents: 12, deaths: 1 },
-    { name: 'Шымкент', incidents: 8, deaths: 0 },
-    { name: 'Караганда', incidents: 6, deaths: 1 },
-    { name: 'Актобе', incidents: 4, deaths: 0 },
-  ];
+  const regionData = (analytics as any)?.regions
+    ? [...(analytics as any).regions]
+        .map((item: any) => ({
+          name: item.label,
+          incidents: Number(item.count) || 0,
+          deaths: Number(item.deaths) || 0,
+        }))
+        .sort((a: any, b: any) => b.incidents - a.incidents)
+    : [];
 
-  const typeData = [
-    { name: 'Пожары в жилых домах', value: 45, color: '#FF8042' },
-    { name: 'Пожары на производстве', value: 25, color: '#0088FE' },
-    { name: 'Степные пожары', value: 20, color: '#00C49F' },
-    { name: 'Прочие', value: 10, color: '#FFBB28' },
-  ];
+  const typeData = (analytics as any)?.incidentTypes
+    ? (analytics as any).incidentTypes.map((item: any, index: number) => ({
+        name: item.label,
+        value: Number(item.count) || 0,
+        color: COLORS[index % COLORS.length],
+      }))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -106,19 +112,29 @@ export default function SimpleAnalytics() {
         <Card>
           <CardHeader>
             <CardTitle>Пожары по регионам</CardTitle>
-            <p className="text-sm text-muted-foreground">Топ-5 регионов с наибольшим количеством пожаров</p>
+            <p className="text-sm text-muted-foreground">Все регионы с наибольшим количеством пожаров</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={regionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="incidents" fill="#0088FE" name="Пожары" />
-                <Bar dataKey="deaths" fill="#FF8042" name="Погибшие" />
-              </BarChart>
-            </ResponsiveContainer>
+            {isAnalyticsLoading ? (
+              <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                Загрузка данных...
+              </div>
+            ) : regionData.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                Нет данных за выбранный период
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={regionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="incidents" fill="#0088FE" name="Пожары" />
+                  <Bar dataKey="deaths" fill="#FF8042" name="Погибшие" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -129,25 +145,35 @@ export default function SimpleAnalytics() {
             <p className="text-sm text-muted-foreground">Структура пожаров по объектам возгорания</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={typeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {typeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {isAnalyticsLoading ? (
+              <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                Загрузка данных...
+              </div>
+            ) : typeData.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                Нет данных за выбранный период
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={typeData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {typeData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -12,6 +12,7 @@ import { exportController } from "./controllers/export.controller";
 import { adminController } from "./controllers/admin.controller";
 import { statsController } from "./controllers/stats.controller";
 import { auditController } from "./controllers/audit.controller";
+import { analyticsController } from "./controllers/analytics.controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -68,6 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === Статистика ===
   app.get('/api/stats', isAuthenticated, statsController.getStats);
+  app.get('/api/analytics/simple', isAuthenticated, analyticsController.getSimpleAnalytics);
 
   // === Audit Logs (Admin) ===
   app.get('/api/audit-logs', isAuthenticated, auditController.getLogs);
