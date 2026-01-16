@@ -7,6 +7,14 @@ import { OrganizationStorage } from "./organization.storage";
 const orgStorage = new OrganizationStorage();
 
 export class IncidentStorage {
+  private incidentTypeLabels: Record<string, string> = {
+    fire: "Пожары",
+    nonfire: "Происшествия без пожара",
+    steppe_fire: "Степные пожары",
+    steppe_smolder: "Тление степи",
+    co_nofire: "Отравление CO без пожара",
+  };
+
   async getIncidents(filters?: {
     organizationId?: string;
     period?: string;
@@ -39,6 +47,91 @@ export class IncidentStorage {
 
     const result = await db.select().from(incidents).orderBy(desc(incidents.dateTime));
     return result as Incident[];
+  }
+
+  async getSimpleAnalytics(params: {
+    organizationId?: string;
+    period?: string;
+    includeSubOrgs?: boolean;
+  }): Promise<{
+    regions: Array<{
+      region: string;
+      label: string;
+      count: number;
+      deaths: number;
+      damage: number;
+    }>;
+    incidentTypes: Array<{
+      incidentType: string;
+      label: string;
+      count: number;
+      damage: number;
+    }>;
+  }> {
+    const conditions: any[] = [];
+
+    if (params.organizationId) {
+      if (params.includeSubOrgs) {
+        const hierarchy = await orgStorage.getOrganizationHierarchy(params.organizationId);
+        const orgIds = hierarchy.map((org) => org.id);
+        conditions.push(inArray(incidents.organizationId, orgIds));
+      } else {
+        conditions.push(eq(incidents.organizationId, params.organizationId));
+      }
+    }
+
+    if (params.period) {
+      const [year, month] = params.period.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0);
+      conditions.push(gte(incidents.dateTime, startDate));
+      conditions.push(lte(incidents.dateTime, endDate));
+    }
+
+    const regionQuery = db
+      .select({
+        region: incidents.region,
+        count: sql<number>`count(*)`,
+        deaths: sql<number>`sum(deaths_total)`,
+        damage: sql<number>`sum(damage)`,
+      })
+      .from(incidents);
+
+    if (conditions.length > 0) {
+      regionQuery.where(and(...conditions));
+    }
+
+    const regionStats = await regionQuery.groupBy(incidents.region);
+
+    const typeQuery = db
+      .select({
+        incidentType: incidents.incidentType,
+        count: sql<number>`count(*)`,
+        damage: sql<number>`sum(damage)`,
+      })
+      .from(incidents);
+
+    if (conditions.length > 0) {
+      typeQuery.where(and(...conditions));
+    }
+
+    const incidentTypes = await typeQuery.groupBy(incidents.incidentType);
+
+    return {
+      regions: regionStats.map((item) => ({
+        region: item.region ?? "unknown",
+        label: item.region ?? "Не указан",
+        count: Number(item.count) || 0,
+        deaths: Number(item.deaths) || 0,
+        damage: Number(item.damage) || 0,
+      })),
+      incidentTypes: incidentTypes.map((item) => ({
+        incidentType: item.incidentType,
+        label: this.incidentTypeLabels[item.incidentType] ?? item.incidentType,
+        count: Number(item.count) || 0,
+        damage: Number(item.damage) || 0,
+      })),
+    };
   }
 
   async getIncident(id: string): Promise<Incident | undefined> {
