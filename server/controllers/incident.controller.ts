@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
-import { insertIncidentSchema } from "@shared/schema";
+import { insertIncidentSchema, insertIncidentVictimSchema } from "@shared/schema";
+import { z } from "zod";
 
 export class IncidentController {
 
@@ -131,8 +132,22 @@ export class IncidentController {
 
       console.log("✅ Prepared incident data:", incidentData);
 
+      // Prepare victims data if present
+      let victimsData: any[] = [];
+      if (req.body.victims && Array.isArray(req.body.victims)) {
+        victimsData = req.body.victims;
+      }
+
+      // Validate incident
       const validatedData = insertIncidentSchema.parse(incidentData);
-      const incident = await storage.createIncident(validatedData);
+
+      // Validate victims
+      const validatedVictims = victimsData.map(v => insertIncidentVictimSchema.parse(v));
+
+      const incident = await storage.createIncident({
+        ...validatedData,
+        victims: validatedVictims
+      });
 
       // Audit Log (временно здесь, позже перенесем в middleware или сервис)
       if (userId) {
@@ -176,8 +191,21 @@ export class IncidentController {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
+      // Prepare victims data if present
+      let victimsData: any[] | undefined = undefined;
+      if (req.body.victims && Array.isArray(req.body.victims)) {
+        victimsData = req.body.victims;
+      }
+
       const updateData = insertIncidentSchema.partial().parse(req.body);
-      const updatedIncident = await storage.updateIncident(req.params.id, updateData);
+      const validatedVictims = victimsData
+        ? victimsData.map(v => insertIncidentVictimSchema.parse(v))
+        : undefined;
+
+      const updatedIncident = await storage.updateIncident(req.params.id, {
+        ...updateData,
+        victims: validatedVictims
+      });
 
       if (userId) {
         await storage.createAuditLog({

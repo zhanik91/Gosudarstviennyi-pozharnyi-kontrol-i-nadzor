@@ -86,10 +86,12 @@ export const incidents = pgTable("incidents", {
   // Причина пожара (согласно форме 3-СПВП)
   cause: varchar("cause"),
   causeCode: varchar("cause_code"), // Код причины согласно классификации МЧС РК
+  causeDetailed: varchar("cause_detailed"), // Детальный код причины (6.1, 6.2 и т.д.)
   
   // Объект пожара (согласно форме 4-СОВП) 
   objectType: varchar("object_type"), // Тип объекта (жилой, производственный и т.д.)
   objectCode: varchar("object_code"), // Код объекта
+  objectDetailed: varchar("object_detailed"), // Детальный код объекта
   
   // Географические данные РК
   region: varchar("region"), // Область
@@ -98,6 +100,15 @@ export const incidents = pgTable("incidents", {
   // Ущерб (тысячи тенге)
   damage: decimal("damage", { precision: 15, scale: 2 }).default('0'),
   
+  // Детали здания
+  floor: integer("floor"),
+  totalFloors: integer("total_floors"),
+  buildingDetails: jsonb("building_details"), // Доп. детали строения
+
+  // Детальная статистика по потерям (Form 5)
+  livestockLost: jsonb("livestock_lost"), // { cows: 5, sheep: 2, ... }
+  destroyedItems: jsonb("destroyed_items"), // { techniques: 1, structures: 1 }
+
   // Погибшие на пожарах
   deathsTotal: integer("deaths_total").default(0),
   deathsChildren: integer("deaths_children").default(0),
@@ -132,8 +143,33 @@ export const incidents = pgTable("incidents", {
   archivedAt: timestamp("archived_at"),
   
   // Метки времени
+  timeOfDay: varchar("time_of_day"), // 00:00-06:00, etc. (Can be derived but useful for explicit Form 5/7 stats)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Detailed victims table for Forms 5 and 7
+export const incidentVictims = pgTable("incident_victims", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").notNull(),
+
+  // Personal Info (Anonimized if needed)
+  fullName: varchar("full_name"),
+  gender: varchar("gender", { enum: ["male", "female"] }).notNull(),
+  ageGroup: varchar("age_group").notNull(), // child, adult, pensioner
+  age: integer("age"),
+
+  // Status and Type
+  status: varchar("status", { enum: ["dead", "injured", "saved"] }).notNull(),
+  victimType: varchar("victim_type", { enum: ["fire", "co_poisoning"] }).notNull(), // Fire (Form 5) or CO (Form 7)
+
+  // Details for Forms
+  socialStatus: varchar("social_status"), // worker, employee, pensioner, etc.
+  deathCause: varchar("death_cause"), // high_temp, smoke, collapse, etc.
+  deathPlace: varchar("death_place"), // on_site, hospital, en_route
+  condition: varchar("condition"), // alcohol, sleep, disability, etc.
+
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Packages table for workflow
@@ -173,7 +209,7 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
   packages: many(packages),
 }));
 
-export const incidentsRelations = relations(incidents, ({ one }) => ({
+export const incidentsRelations = relations(incidents, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [incidents.organizationId],
     references: [organizations.id],
@@ -185,6 +221,14 @@ export const incidentsRelations = relations(incidents, ({ one }) => ({
   package: one(packages, {
     fields: [incidents.packageId],
     references: [packages.id],
+  }),
+  victims: many(incidentVictims),
+}));
+
+export const incidentVictimsRelations = relations(incidentVictims, ({ one }) => ({
+  incident: one(incidents, {
+    fields: [incidentVictims.incidentId],
+    references: [incidents.id],
   }),
 }));
 
@@ -217,6 +261,11 @@ export const insertIncidentSchema = createInsertSchema(incidents).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertIncidentVictimSchema = createInsertSchema(incidentVictims).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertPackageSchema = createInsertSchema(packages).omit({
@@ -307,6 +356,9 @@ export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
 
 export type Incident = typeof incidents.$inferSelect;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
+
+export type IncidentVictim = typeof incidentVictims.$inferSelect;
+export type InsertIncidentVictim = z.infer<typeof insertIncidentVictimSchema>;
 
 export type Package = typeof packages.$inferSelect;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
