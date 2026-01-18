@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { incidents, type Incident, type InsertIncident } from "@shared/schema";
+import { incidents, incidentVictims, type Incident, type InsertIncident, type InsertIncidentVictim } from "@shared/schema";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
 
@@ -104,7 +104,13 @@ export class IncidentStorage {
       if (filters.includeSubOrgs) {
         const hierarchy = await orgStorage.getOrganizationHierarchy(filters.organizationId);
         const orgIds = hierarchy.map(o => o.id);
-        conditions.push(inArray(incidents.organizationId, orgIds));
+        if (orgIds.length > 0) {
+          conditions.push(inArray(incidents.organizationId, orgIds));
+        } else {
+          // If no organizations found (which shouldn't happen for a valid orgId),
+          // ensure we return nothing for safety
+          conditions.push(sql`1 = 0`);
+        }
       } else {
         conditions.push(eq(incidents.organizationId, filters.organizationId));
       }
@@ -356,6 +362,36 @@ export class IncidentStorage {
       .where(and(...baseConditions, eq(incidents.incidentType, "fire"), residentialFilter))
       .groupBy(incidents.locality);
 
+    // --- FORM 5 DETAILED STATS (Aggregated from incident_victims) ---
+    // This query joins incidents and incident_victims to get detailed breakdown for fire deaths/injuries
+    const form5Victims = await db
+      .select({
+         gender: incidentVictims.gender,
+         ageGroup: incidentVictims.ageGroup,
+         socialStatus: incidentVictims.socialStatus,
+         condition: incidentVictims.condition,
+         deathCause: incidentVictims.deathCause,
+         deathPlace: incidentVictims.deathPlace,
+         status: incidentVictims.status,
+         count: sql<number>`count(*)`
+      })
+      .from(incidentVictims)
+      .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
+      .where(and(
+         ...baseConditions,
+         eq(incidents.incidentType, "fire"),
+         or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
+      ))
+      .groupBy(
+         incidentVictims.gender,
+         incidentVictims.ageGroup,
+         incidentVictims.socialStatus,
+         incidentVictims.condition,
+         incidentVictims.deathCause,
+         incidentVictims.deathPlace,
+         incidentVictims.status
+      );
+
     const steppeTypes = ["steppe_fire", "steppe_smolder"] as const;
 
     const form6MonthlyRows = await db
@@ -394,6 +430,35 @@ export class IncidentStorage {
       .from(incidents)
       .where(and(...baseConditions, eq(incidents.incidentType, "co_nofire")))
       .groupBy(incidents.region);
+
+    // --- FORM 7 DETAILED STATS (Aggregated from incident_victims) ---
+    const form7Victims = await db
+      .select({
+         gender: incidentVictims.gender,
+         ageGroup: incidentVictims.ageGroup,
+         socialStatus: incidentVictims.socialStatus,
+         condition: incidentVictims.condition,
+         deathCause: incidentVictims.deathCause, // Here it maps to "Causes of CO violation" if needed, or just mapped similarly
+         deathPlace: incidentVictims.deathPlace,
+         status: incidentVictims.status,
+         count: sql<number>`count(*)`
+      })
+      .from(incidentVictims)
+      .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
+      .where(and(
+         ...baseConditions,
+         eq(incidents.incidentType, "co_nofire"),
+         or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
+      ))
+      .groupBy(
+         incidentVictims.gender,
+         incidentVictims.ageGroup,
+         incidentVictims.socialStatus,
+         incidentVictims.condition,
+         incidentVictims.deathCause,
+         incidentVictims.deathPlace,
+         incidentVictims.status
+      );
 
     const form7Totals = form7RegionRows.reduce(
       (acc, row) => ({
@@ -467,6 +532,12 @@ export class IncidentStorage {
           count: Number(row.count) || 0,
           damage: Number(row.damage) || 0,
         })),
+        details: {
+          social: this.aggregateLabelSeries(form5Victims, v => v.socialStatus || "unknown"),
+          causes: this.aggregateLabelSeries(form5Victims, v => v.deathCause || "unknown"),
+          conditions: this.aggregateLabelSeries(form5Victims, v => v.condition || "unknown"),
+          places: this.aggregateLabelSeries(form5Victims, v => v.deathPlace || "unknown"),
+        }
       },
       form6: {
         monthly: form6MonthlyRows.map((row) => ({
@@ -486,6 +557,12 @@ export class IncidentStorage {
           deaths: Number(row.deaths) || 0,
           injured: Number(row.injured) || 0,
         })),
+        details: {
+          social: this.aggregateLabelSeries(form7Victims, v => v.socialStatus || "unknown"),
+          conditions: this.aggregateLabelSeries(form7Victims, v => v.condition || "unknown"),
+          places: this.aggregateLabelSeries(form7Victims, v => v.deathPlace || "unknown"),
+          causes: this.aggregateLabelSeries(form7Victims, v => v.deathCause || "unknown"),
+        }
       },
     };
   }
@@ -495,19 +572,42 @@ export class IncidentStorage {
     return incident;
   }
 
-  async createIncident(incidentData: InsertIncident): Promise<Incident> {
-    const [incident] = await db.insert(incidents).values(incidentData as any).returning();
+  async createIncident(incidentData: InsertIncident & { victims?: InsertIncidentVictim[] }): Promise<Incident> {
+    const { victims, ...data } = incidentData;
+    const [incident] = await db.insert(incidents).values(data as any).returning();
+
+    if (victims && victims.length > 0) {
+      const victimsWithId = victims.map(v => ({ ...v, incidentId: incident.id }));
+      await db.insert(incidentVictims).values(victimsWithId);
+    }
+
     return incident as Incident;
   }
 
-  async updateIncident(id: string, incidentData: Partial<InsertIncident>): Promise<Incident> {
-    const updateData = { ...incidentData, updatedAt: new Date() };
+  async updateIncident(id: string, incidentData: Partial<InsertIncident> & { victims?: InsertIncidentVictim[] }): Promise<Incident> {
+    const { victims, ...data } = incidentData;
+    const updateData = { ...data, updatedAt: new Date() };
+
     const [incident] = await db
       .update(incidents)
       .set(updateData as any)
       .where(eq(incidents.id, id))
       .returning();
+
+    if (victims) {
+      // Replace all victims for simplicity (or we could smart diff, but this is safer for consistency)
+      await db.delete(incidentVictims).where(eq(incidentVictims.incidentId, id));
+      if (victims.length > 0) {
+        const victimsWithId = victims.map(v => ({ ...v, incidentId: incident.id }));
+        await db.insert(incidentVictims).values(victimsWithId);
+      }
+    }
+
     return incident as Incident;
+  }
+
+  async getIncidentVictims(incidentId: string) {
+    return await db.select().from(incidentVictims).where(eq(incidentVictims.incidentId, incidentId));
   }
 
   async deleteIncident(id: string): Promise<void> {
@@ -571,7 +671,11 @@ export class IncidentStorage {
       if (filters.includeSubOrgs) {
         const hierarchy = await orgStorage.getOrganizationHierarchy(filters.organizationId);
         const orgIds = hierarchy.map(o => o.id);
-        conditions.push(inArray(incidents.organizationId, orgIds));
+        if (orgIds.length > 0) {
+          conditions.push(inArray(incidents.organizationId, orgIds));
+        } else {
+          conditions.push(sql`1 = 0`);
+        }
       } else {
         conditions.push(eq(incidents.organizationId, filters.organizationId));
       }

@@ -241,6 +241,9 @@ export default function IncidentsJournal() {
       const url = qs ? `${ep}?${qs}` : ep;
 
       const response = await apiRequest("GET", url);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
       return response.json();
     },
     enabled: true,
