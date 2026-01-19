@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
-import { Users, Shield, Edit, Trash2, Plus, RefreshCw, AlertTriangle } from "lucide-react";
+import { Users, Shield, Edit, Trash2, Plus, RefreshCw, AlertTriangle, Download, Key } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 type RoleOption = "ALL" | "MCHS" | "DCHS" | "DISTRICT";
@@ -127,6 +127,63 @@ export default function AdminPanel() {
     }
   };
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest("POST", `/api/admin/users/${userId}/reset-password`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Пароль сброшен",
+        description: `Новый временный пароль: ${data.temporaryPassword}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось сбросить пароль",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleResetPassword = (userId: string, username: string) => {
+    if (confirm(`Сбросить пароль для пользователя ${username}?`)) {
+      resetPasswordMutation.mutate(userId);
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ["Логин", "ФИО", "Email", "Роль", "Регион", "Район", "Статус", "Последний вход", "Дата создания"];
+    const rows = filteredUsers.map((u: any) => [
+      u.username || "",
+      u.fullName || "",
+      u.email || "",
+      roleLabels[u.role as RoleOption] || u.role,
+      u.region || "",
+      u.district || "",
+      u.isActive ? "Активен" : "Заблокирован",
+      formatDate(u.lastLoginAt),
+      formatDate(u.createdAt),
+    ]);
+    
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `users_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    
+    toast({
+      title: "Экспорт выполнен",
+      description: `Экспортировано ${filteredUsers.length} пользователей`,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -155,14 +212,25 @@ export default function AdminPanel() {
           <h2 className="text-2xl font-bold text-foreground">Административная панель</h2>
           <p className="text-muted-foreground">Управление пользователями системы МЧС РК</p>
         </div>
-        <Button 
-          onClick={() => setShowUserForm(true)}
-          className="gap-2"
-          data-testid="button-add-user"
-        >
-          <Plus className="w-4 h-4" />
-          Добавить пользователя
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleExportCSV}
+            className="gap-2"
+            data-testid="button-export-csv"
+          >
+            <Download className="w-4 h-4" />
+            Экспорт CSV
+          </Button>
+          <Button 
+            onClick={() => setShowUserForm(true)}
+            className="gap-2"
+            data-testid="button-add-user"
+          >
+            <Plus className="w-4 h-4" />
+            Добавить пользователя
+          </Button>
+        </div>
       </div>
 
       {/* Статистика */}
@@ -285,6 +353,7 @@ export default function AdminPanel() {
                         <th className="p-3 font-medium">Пользователь</th>
                         <th className="p-3 font-medium">Роль</th>
                         <th className="p-3 font-medium">Регион</th>
+                        <th className="p-3 font-medium">Последний вход</th>
                         <th className="p-3 font-medium">Статус</th>
                         <th className="p-3 font-medium">Действия</th>
                       </tr>
@@ -322,6 +391,11 @@ export default function AdminPanel() {
                             </div>
                           </td>
                           <td className="p-3">
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(user.lastLoginAt)}
+                            </span>
+                          </td>
+                          <td className="p-3">
                             <Badge
                               className={user.isActive ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}
                             >
@@ -329,7 +403,7 @@ export default function AdminPanel() {
                             </Badge>
                           </td>
                           <td className="p-3">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -338,6 +412,7 @@ export default function AdminPanel() {
                                   setEditingUser(user);
                                   setShowUserForm(true);
                                 }}
+                                title="Редактировать"
                                 data-testid={`button-edit-${user.id}`}
                               >
                                 <Edit className="w-4 h-4" />
@@ -347,9 +422,23 @@ export default function AdminPanel() {
                                 size="sm"
                                 onClick={(event) => {
                                   event.stopPropagation();
+                                  handleResetPassword(user.id, user.username);
+                                }}
+                                disabled={resetPasswordMutation.isPending}
+                                title="Сбросить пароль"
+                                data-testid={`button-reset-password-${user.id}`}
+                              >
+                                <Key className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
                                   handleDeleteUser(user.id);
                                 }}
                                 disabled={deleteUserMutation.isPending}
+                                title="Удалить"
                                 data-testid={`button-delete-${user.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -414,9 +503,15 @@ export default function AdminPanel() {
                       <p className="text-xs text-muted-foreground">Регион / Район</p>
                       <p>{selectedUser.region || "—"} / {selectedUser.district || "—"}</p>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Дата создания</p>
-                      <p>{formatDate(selectedUser.createdAt)}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Дата создания</p>
+                        <p>{formatDate(selectedUser.createdAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Последний вход</p>
+                        <p>{formatDate(selectedUser.lastLoginAt)}</p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {selectedUser.mustChangeOnFirstLogin && <Badge variant="outline">Смена пароля</Badge>}

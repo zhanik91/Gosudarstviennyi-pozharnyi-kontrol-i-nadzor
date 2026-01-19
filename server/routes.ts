@@ -66,6 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   adminRouter.post('/users', adminController.createUser);
   adminRouter.put('/users/:id', adminController.updateUser);
   adminRouter.delete('/users/:id', adminController.deleteUser);
+  adminRouter.post('/users/:id/reset-password', adminController.resetPassword);
   app.use('/api/admin', adminRouter);
 
   // === Статистика ===

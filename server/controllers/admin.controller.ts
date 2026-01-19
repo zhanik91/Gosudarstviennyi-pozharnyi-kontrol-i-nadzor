@@ -125,6 +125,43 @@ export class AdminController {
       res.status(500).json({ message: "Ошибка удаления пользователя" });
     }
   }
+
+  // Сбросить пароль пользователя
+  async resetPassword(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (req.user?.id === id) {
+        return res.status(400).json({ message: "Нельзя сбросить свой пароль через этот метод" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "Пользователь не найден" });
+      }
+
+      // Генерируем временный пароль
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+      const temporaryPassword = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+      
+      const hashedPassword = await hashPassword(temporaryPassword);
+      
+      await storage.updateUser(id, {
+        passwordHash: hashedPassword,
+        mustChangeOnFirstLogin: true,
+        updatedAt: new Date()
+      });
+
+      res.json({ 
+        message: "Пароль успешно сброшен",
+        temporaryPassword,
+        username: user.username
+      });
+    } catch (error) {
+      console.error('Ошибка сброса пароля:', error);
+      res.status(500).json({ message: "Ошибка сброса пароля" });
+    }
+  }
 }
 
 export const adminController = new AdminController();

@@ -56,6 +56,7 @@ export const users = pgTable("users", {
   orgUnitId: varchar("org_unit_id"),
   mustChangeOnFirstLogin: boolean("must_change_on_first_login").notNull().default(true),
   isActive: boolean("is_active").notNull().default(true),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

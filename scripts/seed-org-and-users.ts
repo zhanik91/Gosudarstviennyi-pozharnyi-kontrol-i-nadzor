@@ -1,22 +1,15 @@
 import { db } from "../server/storage/db";
 import { orgUnits, users } from "@shared/schema";
 import XLSX from "xlsx";
- codex/implement-organizational-structure-and-rbac-6zbcx4
-import { scrypt, randomBytes } from "crypto";
-import { promisify } from "util";
-
-import bcrypt from "bcryptjs";
- main
+import { scrypt, randomBytes } from "node:crypto";
+import { promisify } from "node:util";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 
 const DEFAULT_FILE_NAMES = ["generated_accounts.csv", "generated_accounts.xlsx"];
 const MCHS_NAME = "МЧС Республики Казахстан";
- codex/implement-organizational-structure-and-rbac-6zbcx4
 const scryptAsync = promisify(scrypt);
-
- main
 
 type AccountRow = {
   level?: string;
@@ -52,15 +45,12 @@ function toBoolean(value: AccountRow["must_change_on_first_login"]) {
   return true;
 }
 
- codex/implement-organizational-structure-and-rbac-6zbcx4
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
-
- main
 async function ensureOrgUnit(params: {
   type: "MCHS" | "DCHS" | "DISTRICT";
   name: string;
@@ -200,11 +190,7 @@ async function main() {
       if (!tempPassword) {
         throw new Error(`Отсутствует временный пароль для ${username}`);
       }
- codex/implement-organizational-structure-and-rbac-6zbcx4
       const passwordHash = await hashPassword(tempPassword);
-
-      const passwordHash = await bcrypt.hash(tempPassword, 12);
- main
       await db.insert(users).values({
         username,
         passwordHash,
@@ -232,11 +218,7 @@ async function main() {
       if (updatePasswords) {
         const tempPassword = String(row.temp_password ?? "");
         if (tempPassword) {
- codex/implement-organizational-structure-and-rbac-6zbcx4
           updates.passwordHash = await hashPassword(tempPassword);
-
-          updates.passwordHash = await bcrypt.hash(tempPassword, 12);
- main
           createdUsers.push({ username, password: tempPassword });
         }
       }

@@ -4,14 +4,18 @@ import { type Express } from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
-import bcrypt from "bcryptjs";
+import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
+
+const scryptAsync = promisify(scrypt);
 
 export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 12);
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
- codex/implement-organizational-structure-and-rbac-6zbcx4
   const [hashed, salt] = stored.split(".");
   if (!hashed || !salt) {
     return false;
@@ -19,9 +23,6 @@ async function comparePasswords(supplied: string, stored: string) {
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
-
-  return bcrypt.compare(supplied, stored);
- main
 }
 
 export function setupLocalAuth(app: Express) {
@@ -124,8 +125,19 @@ export function setupLocalAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+  app.post("/api/login", passport.authenticate("local"), async (req, res) => {
     const user = req.user as any;
+    
+    // Обновляем время последнего входа
+    try {
+      await storage.updateUser(user.id, {
+        lastLoginAt: new Date(),
+        updatedAt: new Date()
+      });
+    } catch (e) {
+      console.error("Ошибка обновления времени входа:", e);
+    }
+    
     res.status(200).json({
       id: user.id,
       username: user.username,
