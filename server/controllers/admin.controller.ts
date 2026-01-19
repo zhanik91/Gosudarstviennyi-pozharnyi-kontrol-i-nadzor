@@ -26,7 +26,18 @@ export class AdminController {
   // Создать нового пользователя
   async createUser(req: Request, res: Response) {
     try {
-      const { username, password, fullName, role, region, district, isActive = true, orgUnitId } = req.body;
+      const {
+        username,
+        password,
+        fullName,
+        role,
+        region,
+        district,
+        isActive = true,
+        orgUnitId,
+        email,
+        mustChangeOnFirstLogin = true
+      } = req.body;
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
@@ -39,12 +50,13 @@ export class AdminController {
         username,
         passwordHash: hashedPassword,
         fullName,
+        email,
         role: role as "MCHS" | "DCHS" | "DISTRICT",
         region,
         district: district || "",
         isActive,
         orgUnitId: orgUnitId ?? null,
-        mustChangeOnFirstLogin: true,
+        mustChangeOnFirstLogin,
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -60,11 +72,22 @@ export class AdminController {
   async updateUser(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { username, fullName, role, region, district, isActive, orgUnitId, mustChangeOnFirstLogin } = req.body;
+      const {
+        username,
+        fullName,
+        role,
+        region,
+        district,
+        isActive,
+        orgUnitId,
+        mustChangeOnFirstLogin,
+        email
+      } = req.body;
 
       const user = await storage.updateUser(id, {
         username,
         fullName,
+        email,
         role: role as "MCHS" | "DCHS" | "DISTRICT",
         region,
         district,
