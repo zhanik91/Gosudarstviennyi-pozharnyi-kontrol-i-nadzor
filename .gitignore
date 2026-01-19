@@ -22,3 +22,7 @@ vite.config.ts.*
 .env.development
 .env.production
 .env.test
+
+# Generated account files
+/generated_accounts.*
+*passwords*

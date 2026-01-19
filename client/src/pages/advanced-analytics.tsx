@@ -23,10 +23,10 @@ const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'
 
 export default function AdvancedAnalytics() {
   const [period, setPeriod] = useState('2024');
-  const [organizationId, setOrganizationId] = useState('');
+  const [orgUnitId, setOrgUnitId] = useState('');
 
   const { data: analytics, isLoading, error } = useQuery({
-    queryKey: ['/api/analytics/advanced', { period, organizationId }],
+    queryKey: ['/api/analytics/advanced', { period, orgUnitId }],
     retry: 2
   });
 

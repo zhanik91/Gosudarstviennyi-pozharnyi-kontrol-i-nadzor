@@ -1,14 +1,14 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
+import { toScopeUser } from "../services/authz";
 
 export class ReportController {
 
   // Получение статистических отчетов с проверкой организационной области
   async getReports(req: Request, res: Response) {
     try {
-      const organizations = await storage.getOrganizations();
-      // Use user's ID as fallback, matching standard auth behavior
-      const orgId = (req.query.orgId as string) || req.user?.id || req.user?.username;
+      const orgUnits = await storage.getOrganizations();
+      const orgId = (req.query.orgId as string) || req.user?.orgUnitId;
       const includeChildren = req.query.includeChildren === 'true';
       const period = req.query.period as string;
       const form = req.query.form as string;
@@ -17,13 +17,16 @@ export class ReportController {
       const { assertOrgScope, assertTreeAccess } = await import('../services/authz');
 
       try {
-        // Use organizationId from the authenticated user object
-        const userOrgId = req.user?.organizationId || 'mcs-rk';
-
-        assertOrgScope(organizations, userOrgId, orgId);
+        // Use orgUnitId from the authenticated user object
+        const userOrgId = req.user?.orgUnitId;
+        if (!userOrgId) {
+          return res.status(400).json({ ok: false, msg: 'org unit required' });
+        }
+        const resolvedOrgId = orgId || userOrgId;
+        assertOrgScope(orgUnits, userOrgId, resolvedOrgId);
 
         if (includeChildren) {
-          assertTreeAccess(req.user?.role || 'editor');
+          assertTreeAccess(req.user?.role || 'DISTRICT');
         }
       } catch (error: any) {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
@@ -31,10 +34,11 @@ export class ReportController {
 
       // Получение данных отчета
       const reportData = await storage.getReportData({
-        orgId,
+        orgId: orgId || req.user?.orgUnitId,
         period,
         form,
-        includeChildren
+        includeChildren,
+        scopeUser: toScopeUser(req.user),
       });
 
       res.json({ ok: true, data: reportData });
@@ -64,15 +68,18 @@ export class ReportController {
   // Валидация отчетов
   async validateReports(req: Request, res: Response) {
     try {
-      const organizations = await storage.getOrganizations();
-      const orgId = (req.query.orgId as string) || req.user?.organizationId; // Improved from legacy claims.sub
+      const orgUnits = await storage.getOrganizations();
+      const orgId = (req.query.orgId as string) || req.user?.orgUnitId;
       const period = req.query.period as string;
 
       // Проверка доступа
       const { assertOrgScope } = await import('../services/authz');
 
       try {
-        assertOrgScope(organizations, req.user?.organizationId || 'mcs-rk', orgId);
+        if (!req.user?.orgUnitId) {
+          return res.status(400).json({ ok: false, msg: 'org unit required' });
+        }
+        assertOrgScope(orgUnits, req.user?.orgUnitId, orgId);
       } catch (error: any) {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
       }

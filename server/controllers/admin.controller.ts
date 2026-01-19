@@ -6,7 +6,7 @@ export class AdminController {
 
   // Middleware для проверки прав администратора
   requireAdmin(req: Request, res: Response, next: NextFunction) {
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    if (!req.isAuthenticated() || req.user?.role !== 'MCHS') {
       return res.status(403).json({ message: "Недостаточно прав доступа" });
     }
     next();
@@ -26,7 +26,7 @@ export class AdminController {
   // Создать нового пользователя
   async createUser(req: Request, res: Response) {
     try {
-      const { username, password, fullName, role, region, district, isActive = true } = req.body;
+      const { username, password, fullName, role, region, district, isActive = true, orgUnitId } = req.body;
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
@@ -37,13 +37,14 @@ export class AdminController {
 
       const user = await storage.createUser({
         username,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         fullName,
-        role: role as "admin" | "editor" | "reviewer" | "approver",
+        role: role as "MCHS" | "DCHS" | "DISTRICT",
         region,
         district: district || "",
         isActive,
-        organizationId: null,
+        orgUnitId: orgUnitId ?? null,
+        mustChangeOnFirstLogin: true,
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -59,15 +60,17 @@ export class AdminController {
   async updateUser(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { username, fullName, role, region, district, isActive } = req.body;
+      const { username, fullName, role, region, district, isActive, orgUnitId, mustChangeOnFirstLogin } = req.body;
 
       const user = await storage.updateUser(id, {
         username,
         fullName,
-        role: role as "admin" | "editor" | "reviewer" | "approver",
+        role: role as "MCHS" | "DCHS" | "DISTRICT",
         region,
         district,
         isActive,
+        orgUnitId,
+        mustChangeOnFirstLogin,
         updatedAt: new Date()
       });
 

@@ -1,17 +1,17 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
-import { insertOrganizationSchema } from "@shared/schema";
+import { insertOrgUnitSchema } from "@shared/schema";
 
 export class OrganizationController {
 
   // Получить список организаций
   async getOrganizations(req: Request, res: Response) {
     try {
-      const organizations = await storage.getOrganizations();
-      res.json(organizations);
+      const orgUnits = await storage.getOrganizations();
+      res.json(orgUnits);
     } catch (error) {
-      console.error("Error fetching organizations:", error);
-      res.status(500).json({ message: "Failed to fetch organizations" });
+      console.error("Error fetching orgUnits:", error);
+      res.status(500).json({ message: "Failed to fetch orgUnits" });
     }
   }
 
@@ -20,11 +20,11 @@ export class OrganizationController {
     try {
       const userId = req.user?.id || req.user?.username;
       const user = await storage.getUser(userId);
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'MCHS') {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
-      const orgData = insertOrganizationSchema.parse(req.body);
+      const orgData = insertOrgUnitSchema.parse(req.body);
       const organization = await storage.createOrganization(orgData);
 
       // Audit log

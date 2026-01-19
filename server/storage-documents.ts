@@ -9,7 +9,7 @@ export interface DocumentStorage {
   createDocument(document: InsertDocument): Promise<Document>;
   getDocument(id: string): Promise<Document | undefined>;
   getDocuments(filters?: {
-    organizationId?: string;
+    orgUnitId?: string;
     documentType?: string;
     status?: string;
     period?: string;
@@ -19,7 +19,7 @@ export interface DocumentStorage {
 
   // Теги
   createDocumentTag(tag: InsertDocumentTag): Promise<any>;
-  getDocumentTags(organizationId: string): Promise<any[]>;
+  getDocumentTags(orgUnitId: string): Promise<any[]>;
 
   // Комментарии
   createDocumentComment(comment: InsertDocumentComment): Promise<any>;

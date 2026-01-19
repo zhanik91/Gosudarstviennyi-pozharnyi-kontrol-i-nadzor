@@ -1,6 +1,15 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { insertPackageSchema } from "@shared/schema";
+import { toScopeUser } from "../services/authz";
+
+async function canAccessOrgUnit(user: any, orgUnitId?: string | null) {
+  if (!user || !orgUnitId) return false;
+  if (user.role === "MCHS") return true;
+  if (user.role === "DISTRICT") return user.orgUnitId === orgUnitId;
+  const hierarchy = await storage.getOrganizationHierarchy(user.orgUnitId);
+  return hierarchy.some((org) => org.id === orgUnitId);
+}
 
 export class PackageController {
 
@@ -9,15 +18,14 @@ export class PackageController {
     try {
       const user = await storage.getUser(req.user?.id || req.user?.username);
       const filters: any = {};
+      const scopeUser = toScopeUser(user);
 
       if (req.query.status) filters.status = req.query.status as string;
       if (req.query.period) filters.period = req.query.period as string;
+      if (scopeUser) filters.scopeUser = scopeUser;
 
-      // Apply organization-based filtering
-      if (user?.role !== 'admin' && user?.organizationId) {
-        filters.organizationId = user.organizationId;
-      } else if (req.query.organizationId) {
-        filters.organizationId = req.query.organizationId as string;
+      if (user?.role === "MCHS" && req.query.orgUnitId) {
+        filters.orgUnitId = req.query.orgUnitId as string;
       }
 
       const packages = await storage.getPackages(filters);
@@ -32,13 +40,17 @@ export class PackageController {
   async createPackage(req: Request, res: Response) {
     try {
       const user = await storage.getUser(req.user?.id || req.user?.username);
-      if (!user?.organizationId) {
+      const orgUnitId =
+        user?.role === "MCHS" && req.body.orgUnitId
+          ? req.body.orgUnitId
+          : user?.orgUnitId;
+      if (!orgUnitId) {
         return res.status(400).json({ message: "User must be assigned to an organization" });
       }
 
       const packageData = insertPackageSchema.parse({
         ...req.body,
-        organizationId: user.organizationId,
+        orgUnitId,
       });
 
       const pkg = await storage.createPackage(packageData);
@@ -69,7 +81,8 @@ export class PackageController {
         return res.status(404).json({ message: "Package not found" });
       }
 
-      if (pkg.organizationId !== user?.organizationId && user?.role !== 'admin') {
+      const canAccess = await canAccessOrgUnit(user, pkg.orgUnitId);
+      if (!canAccess) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
@@ -98,7 +111,7 @@ export class PackageController {
   async approvePackage(req: Request, res: Response) {
     try {
       const user = await storage.getUser(req.user?.id || req.user?.username);
-      if (!['reviewer', 'approver', 'admin'].includes(user?.role || '')) {
+      if (!['MCHS', 'DCHS'].includes(user?.role || '')) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
@@ -136,7 +149,7 @@ export class PackageController {
   async rejectPackage(req: Request, res: Response) {
     try {
       const user = await storage.getUser(req.user?.id || req.user?.username);
-      if (!['reviewer', 'approver', 'admin'].includes(user?.role || '')) {
+      if (!['MCHS', 'DCHS'].includes(user?.role || '')) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
@@ -176,11 +189,15 @@ export class PackageController {
     try {
       const user = await storage.getUser(req.user?.id || req.user?.username);
 
-      if (!['reviewer', 'approver', 'admin'].includes(user?.role || '')) {
+      if (!['MCHS', 'DCHS'].includes(user?.role || '')) {
         return res.status(403).json({ ok: false, msg: 'Insufficient permissions' });
       }
 
       const { period, orgId } = req.body;
+      const canAccess = await canAccessOrgUnit(user, orgId);
+      if (!canAccess) {
+        return res.status(403).json({ ok: false, msg: "Недостаточно прав доступа" });
+      }
 
       const approvedPackages = await storage.getApprovedPackages(orgId, period);
 

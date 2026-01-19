@@ -2,9 +2,15 @@ import { db } from "./db";
 import { incidents, incidentVictims, type Incident, type InsertIncident, type InsertIncidentVictim } from "@shared/schema";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
+import { applyScopeCondition } from "../services/authz";
 
 // Helper to avoid circular dependency if possible, or just instantiate locally
 const orgStorage = new OrganizationStorage();
+
+type ScopeUser = {
+  role: "MCHS" | "DCHS" | "DISTRICT";
+  orgUnitId?: string | null;
+};
 
 export class IncidentStorage {
   private incidentTypeLabels: Record<string, string> = {
@@ -61,18 +67,26 @@ export class IncidentStorage {
   }
 
   private async getOrganizationConditions(params: {
-    organizationId?: string;
+    orgUnitId?: string;
     includeSubOrgs?: boolean;
+    scopeUser?: ScopeUser;
   }) {
     const conditions: any[] = [];
 
-    if (params.organizationId) {
+    if (params.orgUnitId) {
       if (params.includeSubOrgs) {
-        const hierarchy = await orgStorage.getOrganizationHierarchy(params.organizationId);
+        const hierarchy = await orgStorage.getOrganizationHierarchy(params.orgUnitId);
         const orgIds = hierarchy.map((org) => org.id);
-        conditions.push(inArray(incidents.organizationId, orgIds));
+        conditions.push(inArray(incidents.orgUnitId, orgIds));
       } else {
-        conditions.push(eq(incidents.organizationId, params.organizationId));
+        conditions.push(eq(incidents.orgUnitId, params.orgUnitId));
+      }
+    }
+
+    if (params.scopeUser) {
+      const scopeCondition = await applyScopeCondition(params.scopeUser, incidents.orgUnitId);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
       }
     }
 
@@ -94,25 +108,26 @@ export class IncidentStorage {
   }
 
   async getIncidents(filters?: {
-    organizationId?: string;
+    orgUnitId?: string;
     period?: string;
     includeSubOrgs?: boolean;
+    scopeUser?: ScopeUser;
   }): Promise<Incident[]> {
-    const conditions: ReturnType<typeof eq>[] = [];
+    const conditions: any[] = [];
 
-    if (filters?.organizationId) {
+    if (filters?.orgUnitId) {
       if (filters.includeSubOrgs) {
-        const hierarchy = await orgStorage.getOrganizationHierarchy(filters.organizationId);
+        const hierarchy = await orgStorage.getOrganizationHierarchy(filters.orgUnitId);
         const orgIds = hierarchy.map(o => o.id);
         if (orgIds.length > 0) {
-          conditions.push(inArray(incidents.organizationId, orgIds));
+          conditions.push(inArray(incidents.orgUnitId, orgIds));
         } else {
           // If no organizations found (which shouldn't happen for a valid orgId),
           // ensure we return nothing for safety
           conditions.push(sql`1 = 0`);
         }
       } else {
-        conditions.push(eq(incidents.organizationId, filters.organizationId));
+        conditions.push(eq(incidents.orgUnitId, filters.orgUnitId));
       }
     }
 
@@ -122,6 +137,13 @@ export class IncidentStorage {
       const endDate = new Date(parseInt(year), parseInt(month), 0);
       conditions.push(gte(incidents.dateTime, startDate));
       conditions.push(lte(incidents.dateTime, endDate));
+    }
+
+    if (filters?.scopeUser) {
+      const scopeCondition = await applyScopeCondition(filters.scopeUser, incidents.orgUnitId);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
     }
 
     if (conditions.length > 0) {
@@ -134,11 +156,12 @@ export class IncidentStorage {
   }
 
   async getSimpleAnalytics(params: {
-    organizationId?: string;
+    orgUnitId?: string;
     period?: string;
     periodFrom?: string;
     periodTo?: string;
     includeSubOrgs?: boolean;
+    scopeUser?: ScopeUser;
   }): Promise<{
     regions: Array<{
       region: string;
@@ -211,11 +234,12 @@ export class IncidentStorage {
   }
 
   async getFormAnalytics(params: {
-    organizationId?: string;
+    orgUnitId?: string;
     period?: string;
     periodFrom?: string;
     periodTo?: string;
     includeSubOrgs?: boolean;
+    scopeUser?: ScopeUser;
   }) {
     const orgConditions = await this.getOrganizationConditions(params);
     const currentPeriod = this.getDateRange({
@@ -614,16 +638,25 @@ export class IncidentStorage {
     await db.delete(incidents).where(eq(incidents.id, id));
   }
 
-  async getIncidentStats(organizationId: string, period?: string): Promise<{
+  async getIncidentStats(params: {
+    orgUnitId?: string;
+    period?: string;
+    includeSubOrgs?: boolean;
+    scopeUser?: ScopeUser;
+  }): Promise<{
     totalIncidents: number;
     totalDeaths: number;
     totalInjured: number;
     totalDamage: number;
   }> {
-    const conditions = [eq(incidents.organizationId, organizationId)];
+    const conditions = await this.getOrganizationConditions({
+      orgUnitId: params.orgUnitId,
+      includeSubOrgs: params.includeSubOrgs,
+      scopeUser: params.scopeUser,
+    });
 
-    if (period) {
-      const [year, month] = period.split('-');
+    if (params.period) {
+      const [year, month] = params.period.split('-');
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
       const endDate = new Date(parseInt(year), parseInt(month), 0);
       conditions.push(gte(incidents.dateTime, startDate));
@@ -637,8 +670,11 @@ export class IncidentStorage {
         totalInjured: sql<number>`sum(${incidents.injuredTotal})`,
         totalDamage: sql<number>`sum(${incidents.damage})`,
       })
-      .from(incidents)
-      .where(and(...conditions));
+      .from(incidents);
+
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
+    }
 
     const [result] = await query;
 
@@ -667,17 +703,17 @@ export class IncidentStorage {
       );
     }
 
-    if (filters.organizationId) {
+    if (filters.orgUnitId) {
       if (filters.includeSubOrgs) {
-        const hierarchy = await orgStorage.getOrganizationHierarchy(filters.organizationId);
+        const hierarchy = await orgStorage.getOrganizationHierarchy(filters.orgUnitId);
         const orgIds = hierarchy.map(o => o.id);
         if (orgIds.length > 0) {
-          conditions.push(inArray(incidents.organizationId, orgIds));
+          conditions.push(inArray(incidents.orgUnitId, orgIds));
         } else {
           conditions.push(sql`1 = 0`);
         }
       } else {
-        conditions.push(eq(incidents.organizationId, filters.organizationId));
+        conditions.push(eq(incidents.orgUnitId, filters.orgUnitId));
       }
     }
 
@@ -697,6 +733,13 @@ export class IncidentStorage {
       }
     }
 
+    if (filters.scopeUser) {
+      const scopeCondition = await applyScopeCondition(filters.scopeUser, incidents.orgUnitId);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+    }
+
     if (conditions.length > 0) {
       const result = await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.dateTime)).limit(100);
       return result as any[];
@@ -708,36 +751,57 @@ export class IncidentStorage {
 
   // Advanced Analytics (Charts/Maps)
   async getAdvancedAnalytics(params: any): Promise<any> {
-    const { period, organizationId } = params;
+    const { period, orgUnitId, includeSubOrgs, scopeUser } = params;
+    const scopeConditions = await this.getOrganizationConditions({
+      orgUnitId,
+      includeSubOrgs,
+      scopeUser,
+    });
 
     // Статистика по типам происшествий
-    const incidentTypes = await db.select({
+    const incidentTypesQuery = db.select({
       type: incidents.incidentType,
       count: sql<number>`count(*)`,
       damage: sql<number>`sum(damage)`
     })
-    .from(incidents)
-    .groupBy(incidents.incidentType);
+    .from(incidents);
+
+    if (scopeConditions.length > 0) {
+      incidentTypesQuery.where(and(...scopeConditions));
+    }
+
+    const incidentTypes = await incidentTypesQuery.groupBy(incidents.incidentType);
 
     // Статистика по регионам
-    const regionStats = await db.select({
+    const regionStatsQuery = db.select({
       region: incidents.region,
       count: sql<number>`count(*)`,
       deaths: sql<number>`sum(deaths_total)`,
       damage: sql<number>`sum(damage)`
     })
-    .from(incidents)
-    .groupBy(incidents.region);
+    .from(incidents);
+
+    if (scopeConditions.length > 0) {
+      regionStatsQuery.where(and(...scopeConditions));
+    }
+
+    const regionStats = await regionStatsQuery.groupBy(incidents.region);
 
     // Временная динамика
-    const monthlyStats = await db.select({
+    const monthlyStatsQuery = db.select({
       month: sql<string>`to_char(date_time, 'YYYY-MM')`,
       count: sql<number>`count(*)`,
       damage: sql<number>`sum(damage)`
     })
-    .from(incidents)
-    .groupBy(sql`to_char(date_time, 'YYYY-MM')`)
-    .orderBy(sql`to_char(date_time, 'YYYY-MM')`);
+    .from(incidents);
+
+    if (scopeConditions.length > 0) {
+      monthlyStatsQuery.where(and(...scopeConditions));
+    }
+
+    const monthlyStats = await monthlyStatsQuery
+      .groupBy(sql`to_char(date_time, 'YYYY-MM')`)
+      .orderBy(sql`to_char(date_time, 'YYYY-MM')`);
 
     return {
       incidentTypes,
@@ -757,6 +821,7 @@ export class IncidentStorage {
     period?: string;
     form?: string;
     includeChildren?: boolean;
+    scopeUser?: ScopeUser;
   }): Promise<any> {
     const conditions = [];
     const ospIncidentTypes = ['fire', 'steppe_fire'] as const;
@@ -764,9 +829,9 @@ export class IncidentStorage {
     if (params.includeChildren) {
       const hierarchy = await orgStorage.getOrganizationHierarchy(params.orgId);
       const orgIds = hierarchy.map(o => o.id);
-      conditions.push(inArray(incidents.organizationId, orgIds));
+      conditions.push(inArray(incidents.orgUnitId, orgIds));
     } else {
-      conditions.push(eq(incidents.organizationId, params.orgId));
+      conditions.push(eq(incidents.orgUnitId, params.orgId));
     }
 
     if (params.period) {
@@ -779,6 +844,13 @@ export class IncidentStorage {
 
     if (params.form === '1-osp') {
       conditions.push(inArray(incidents.incidentType, ospIncidentTypes));
+    }
+
+    if (params.scopeUser) {
+      const scopeCondition = await applyScopeCondition(params.scopeUser, incidents.orgUnitId);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
     }
 
     const query = db

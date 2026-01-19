@@ -145,6 +145,9 @@ export default function Header() {
   const { user } = useAuth();
 
   if (!user) return null;
+  const navGroupsForUser = navGroups.filter(
+    (group) => group.label !== "Администрирование" || (user as any)?.role === "MCHS"
+  );
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/85 text-slate-100 backdrop-blur supports-[backdrop-filter]:bg-slate-950/75 shadow-lg">
@@ -164,7 +167,7 @@ export default function Header() {
 
           <NavigationMenu className="hidden flex-1 lg:flex">
             <NavigationMenuList className="ml-4 gap-1">
-              {navGroups.map((group) => (
+              {navGroupsForUser.map((group) => (
                 <NavigationMenuItem key={group.label}>
                   <NavigationMenuTrigger className="bg-transparent text-sm font-medium text-slate-100 transition-colors duration-200 hover:bg-primary/20 focus:bg-primary/25">
                     {group.label}
@@ -195,7 +198,7 @@ export default function Header() {
 
           <div className="flex flex-1 justify-center lg:hidden">
             <div className="flex w-full items-center gap-2 overflow-x-auto rounded-lg border border-slate-700/60 bg-slate-800/70 px-2 py-1 text-sm text-slate-100 shadow-sm">
-              {navGroups
+              {navGroupsForUser
                 .flatMap((group) => group.items)
                 .slice(0, 4)
                 .map((item) => (

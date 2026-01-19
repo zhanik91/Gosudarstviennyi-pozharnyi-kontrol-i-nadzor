@@ -19,7 +19,7 @@ export default function AdminPanel() {
   const [editingUser, setEditingUser] = useState<any>(null);
 
   // Проверка прав администратора
-  if ((user as any)?.role !== 'admin') {
+  if ((user as any)?.role !== 'MCHS') {
     return (
       <div className="p-8">
         <ErrorDisplay
@@ -115,12 +115,12 @@ export default function AdminPanel() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Администраторы</CardTitle>
+            <CardTitle className="text-sm font-medium">МЧС</CardTitle>
             <Shield className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter((u: any) => u.role === 'admin').length}
+              {users.filter((u: any) => u.role === 'MCHS').length}
             </div>
             <p className="text-xs text-muted-foreground">с правами админа</p>
           </CardContent>
@@ -166,14 +166,14 @@ export default function AdminPanel() {
                     <td className="p-3 font-mono">{user.username}</td>
                     <td className="p-3">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                        user.role === 'approver' ? 'bg-blue-100 text-blue-800' :
-                        user.role === 'reviewer' ? 'bg-green-100 text-green-800' :
+                        user.role === 'MCHS' ? 'bg-purple-100 text-purple-800' :
+                        user.role === 'DCHS' ? 'bg-blue-100 text-blue-800' :
+                        user.role === 'DISTRICT' ? 'bg-green-100 text-green-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {user.role === 'admin' ? 'Администратор' :
-                         user.role === 'approver' ? 'Утверждающий' :
-                         user.role === 'reviewer' ? 'Проверяющий' : 'Редактор'}
+                        {user.role === 'MCHS' ? 'МЧС' :
+                         user.role === 'DCHS' ? 'ДЧС' :
+                         user.role === 'DISTRICT' ? 'Район' : 'Неизвестно'}
                       </span>
                     </td>
                     <td className="p-3">{user.region}</td>
@@ -248,7 +248,7 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
     username: user?.username || "",
     fullName: user?.fullName || "",
     password: "",
-    role: user?.role || "editor",
+    role: user?.role || "DISTRICT",
     region: user?.region || "",
     district: user?.district || "",
     isActive: user?.isActive ?? true,
@@ -330,10 +330,9 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="editor">Редактор</SelectItem>
-                  <SelectItem value="reviewer">Проверяющий</SelectItem>
-                  <SelectItem value="approver">Утверждающий</SelectItem>
-                  <SelectItem value="admin">Администратор</SelectItem>
+                  <SelectItem value="DISTRICT">Район</SelectItem>
+                  <SelectItem value="DCHS">ДЧС</SelectItem>
+                  <SelectItem value="MCHS">МЧС</SelectItem>
                 </SelectContent>
               </Select>
             </div>
