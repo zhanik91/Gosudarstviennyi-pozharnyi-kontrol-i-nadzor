@@ -34,6 +34,21 @@ const ospIncidentSchema = insertIncidentSchema
     city: z.string().optional(),
     damage: z.union([z.number(), z.string()]).optional(),
     savedProperty: z.union([z.number(), z.string()]).optional(),
+    steppeArea: z.union([z.number(), z.string()]).optional(),
+    steppeDamage: z.union([z.number(), z.string()]).optional(),
+    steppeExtinguishedArea: z.union([z.number(), z.string()]).optional(),
+    steppeExtinguishedDamage: z.union([z.number(), z.string()]).optional(),
+    steppePeopleTotal: z.union([z.number(), z.string()]).optional(),
+    steppePeopleDead: z.union([z.number(), z.string()]).optional(),
+    steppePeopleInjured: z.union([z.number(), z.string()]).optional(),
+    steppeAnimalsTotal: z.union([z.number(), z.string()]).optional(),
+    steppeAnimalsDead: z.union([z.number(), z.string()]).optional(),
+    steppeAnimalsInjured: z.union([z.number(), z.string()]).optional(),
+    steppeExtinguishedTotal: z.union([z.number(), z.string()]).optional(),
+    steppeGarrisonPeople: z.union([z.number(), z.string()]).optional(),
+    steppeGarrisonUnits: z.union([z.number(), z.string()]).optional(),
+    steppeMchsPeople: z.union([z.number(), z.string()]).optional(),
+    steppeMchsUnits: z.union([z.number(), z.string()]).optional(),
     // New fields
     victims: z.array(insertIncidentVictimSchema.omit({ id: true, incidentId: true, createdAt: true })).optional(),
     buildingDetails: z.record(z.any()).optional(),
@@ -127,6 +142,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
   
   const [selectedIncidentType, setSelectedIncidentType] = useState("fire");
   const [selectedRegion, setSelectedRegion] = useState((user as any)?.region || "");
+  const isSteppeIncident = ["steppe_fire", "steppe_smolder"].includes(selectedIncidentType);
 
   const form = useForm<OSPIncidentFormData>({
     resolver: zodResolver(ospIncidentSchema),
@@ -146,6 +162,21 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
       causeCode: "",
       objectType: "",
       objectCode: "",
+      steppeArea: 0,
+      steppeDamage: 0,
+      steppePeopleTotal: 0,
+      steppePeopleDead: 0,
+      steppePeopleInjured: 0,
+      steppeAnimalsTotal: 0,
+      steppeAnimalsDead: 0,
+      steppeAnimalsInjured: 0,
+      steppeExtinguishedTotal: 0,
+      steppeExtinguishedArea: 0,
+      steppeExtinguishedDamage: 0,
+      steppeGarrisonPeople: 0,
+      steppeGarrisonUnits: 0,
+      steppeMchsPeople: 0,
+      steppeMchsUnits: 0,
     },
   });
 
@@ -184,6 +215,12 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
     }
   }, [user, form]);
 
+  useEffect(() => {
+    if (!isSteppeIncident && activeTab === "steppe") {
+      setActiveTab("general");
+    }
+  }, [activeTab, isSteppeIncident]);
+
   const normalizeCurrency = (value?: string | number) => {
     if (value === undefined || value === null || value === "") return "0";
     const numericValue = typeof value === "number" ? value : parseFloat(value.toString().replace(",", "."));
@@ -197,6 +234,10 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
         dateTime: new Date(data.dateTime).toISOString(),
         damage: normalizeCurrency(data.damage),
         savedProperty: normalizeCurrency(data.savedProperty),
+        steppeArea: normalizeCurrency(data.steppeArea),
+        steppeDamage: normalizeCurrency(data.steppeDamage),
+        steppeExtinguishedArea: normalizeCurrency(data.steppeExtinguishedArea),
+        steppeExtinguishedDamage: normalizeCurrency(data.steppeExtinguishedDamage),
         // Ensure victims have correct types if needed (zod handles parsing mostly)
       };
       
@@ -225,7 +266,23 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
         city: (user as any)?.district || "",
         description: "",
         victims: [],
+        steppeArea: 0,
+        steppeDamage: 0,
+        steppePeopleTotal: 0,
+        steppePeopleDead: 0,
+        steppePeopleInjured: 0,
+        steppeAnimalsTotal: 0,
+        steppeAnimalsDead: 0,
+        steppeAnimalsInjured: 0,
+        steppeExtinguishedTotal: 0,
+        steppeExtinguishedArea: 0,
+        steppeExtinguishedDamage: 0,
+        steppeGarrisonPeople: 0,
+        steppeGarrisonUnits: 0,
+        steppeMchsPeople: 0,
+        steppeMchsUnits: 0,
       });
+      setSelectedIncidentType("fire");
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
@@ -269,10 +326,11 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className={`grid w-full ${isSteppeIncident ? "grid-cols-4" : "grid-cols-3"}`}>
                 <TabsTrigger value="general">Общие сведения</TabsTrigger>
                 <TabsTrigger value="victims">Пострадавшие ({victimFields.length})</TabsTrigger>
                 <TabsTrigger value="details">Детали объекта</TabsTrigger>
+                {isSteppeIncident && <TabsTrigger value="steppe">Степной пожар</TabsTrigger>}
               </TabsList>
 
               <TabsContent value="general" className="space-y-4 pt-4">
@@ -619,6 +677,314 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                     * Дополнительные поля для скота и строений будут добавлены в следующем обновлении.
                   </div>
               </TabsContent>
+
+              {isSteppeIncident && (
+                <TabsContent value="steppe" className="space-y-6 pt-4">
+                  <div>
+                    <h4 className="text-base font-semibold text-foreground mb-2">Основные показатели</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="steppeArea"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Площадь, пройденная огнем (га)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeDamage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ущерб (тыс. тг)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-semibold text-foreground mb-2">Пострадавшие люди</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="steppePeopleTotal"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Всего</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppePeopleDead"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Погибло</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppePeopleInjured"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Травмировано</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-semibold text-foreground mb-2">Пострадавшие животные (голов)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="steppeAnimalsTotal"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Всего</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeAnimalsDead"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Погибло</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeAnimalsInjured"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Травмировано</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-semibold text-foreground mb-2">Ликвидация</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="steppeExtinguishedTotal"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ликвидировано (кол-во)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeExtinguishedArea"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ликвидировано (площадь, га)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeExtinguishedDamage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ликвидировано (ущерб, тыс. тг)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-semibold text-foreground mb-2">Силы и средства</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="steppeGarrisonPeople"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Гарнизон (людей)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeGarrisonUnits"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Гарнизон (техника)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeMchsPeople"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>МЧС РК (людей)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="steppeMchsUnits"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>МЧС РК (техника)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value, 10))
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
             </Tabs>
 
             <div className="flex gap-3 pt-4 border-t border-border mt-6">

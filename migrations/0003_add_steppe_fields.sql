@@ -1,0 +1,16 @@
+ALTER TABLE "incidents"
+  ADD COLUMN IF NOT EXISTS "steppe_area" decimal(15, 2) DEFAULT '0',
+  ADD COLUMN IF NOT EXISTS "steppe_damage" decimal(15, 2) DEFAULT '0',
+  ADD COLUMN IF NOT EXISTS "steppe_people_total" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_people_dead" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_people_injured" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_animals_total" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_animals_dead" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_animals_injured" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_extinguished_total" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_extinguished_area" decimal(15, 2) DEFAULT '0',
+  ADD COLUMN IF NOT EXISTS "steppe_extinguished_damage" decimal(15, 2) DEFAULT '0',
+  ADD COLUMN IF NOT EXISTS "steppe_garrison_people" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_garrison_units" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_mchs_people" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "steppe_mchs_units" integer DEFAULT 0;

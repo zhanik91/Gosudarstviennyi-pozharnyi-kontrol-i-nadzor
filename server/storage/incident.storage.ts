@@ -427,6 +427,21 @@ export class IncidentStorage {
       .select({
         month: sql<string>`to_char(date_time, 'YYYY-MM')`,
         count: sql<number>`count(*)`,
+        steppeArea: sql<number>`sum(steppe_area)`,
+        steppeDamage: sql<number>`sum(steppe_damage)`,
+        peopleTotal: sql<number>`sum(steppe_people_total)`,
+        peopleDead: sql<number>`sum(steppe_people_dead)`,
+        peopleInjured: sql<number>`sum(steppe_people_injured)`,
+        animalsTotal: sql<number>`sum(steppe_animals_total)`,
+        animalsDead: sql<number>`sum(steppe_animals_dead)`,
+        animalsInjured: sql<number>`sum(steppe_animals_injured)`,
+        extinguishedTotal: sql<number>`sum(steppe_extinguished_total)`,
+        extinguishedArea: sql<number>`sum(steppe_extinguished_area)`,
+        extinguishedDamage: sql<number>`sum(steppe_extinguished_damage)`,
+        garrisonPeople: sql<number>`sum(steppe_garrison_people)`,
+        garrisonUnits: sql<number>`sum(steppe_garrison_units)`,
+        mchsPeople: sql<number>`sum(steppe_mchs_people)`,
+        mchsUnits: sql<number>`sum(steppe_mchs_units)`,
       })
       .from(incidents)
       .where(
@@ -444,6 +459,21 @@ export class IncidentStorage {
       .select({
         region: incidents.region,
         count: sql<number>`count(*)`,
+        steppeArea: sql<number>`sum(steppe_area)`,
+        steppeDamage: sql<number>`sum(steppe_damage)`,
+        peopleTotal: sql<number>`sum(steppe_people_total)`,
+        peopleDead: sql<number>`sum(steppe_people_dead)`,
+        peopleInjured: sql<number>`sum(steppe_people_injured)`,
+        animalsTotal: sql<number>`sum(steppe_animals_total)`,
+        animalsDead: sql<number>`sum(steppe_animals_dead)`,
+        animalsInjured: sql<number>`sum(steppe_animals_injured)`,
+        extinguishedTotal: sql<number>`sum(steppe_extinguished_total)`,
+        extinguishedArea: sql<number>`sum(steppe_extinguished_area)`,
+        extinguishedDamage: sql<number>`sum(steppe_extinguished_damage)`,
+        garrisonPeople: sql<number>`sum(steppe_garrison_people)`,
+        garrisonUnits: sql<number>`sum(steppe_garrison_units)`,
+        mchsPeople: sql<number>`sum(steppe_mchs_people)`,
+        mchsUnits: sql<number>`sum(steppe_mchs_units)`,
       })
       .from(incidents)
       .where(and(...baseConditions, inArray(incidents.incidentType, steppeTypes)))
@@ -572,10 +602,40 @@ export class IncidentStorage {
         monthly: form6MonthlyRows.map((row) => ({
           month: row.month,
           count: Number(row.count) || 0,
+          steppeArea: Number(row.steppeArea) || 0,
+          steppeDamage: Number(row.steppeDamage) || 0,
+          peopleTotal: Number(row.peopleTotal) || 0,
+          peopleDead: Number(row.peopleDead) || 0,
+          peopleInjured: Number(row.peopleInjured) || 0,
+          animalsTotal: Number(row.animalsTotal) || 0,
+          animalsDead: Number(row.animalsDead) || 0,
+          animalsInjured: Number(row.animalsInjured) || 0,
+          extinguishedTotal: Number(row.extinguishedTotal) || 0,
+          extinguishedArea: Number(row.extinguishedArea) || 0,
+          extinguishedDamage: Number(row.extinguishedDamage) || 0,
+          garrisonPeople: Number(row.garrisonPeople) || 0,
+          garrisonUnits: Number(row.garrisonUnits) || 0,
+          mchsPeople: Number(row.mchsPeople) || 0,
+          mchsUnits: Number(row.mchsUnits) || 0,
         })),
         regions: form6RegionRows.map((row) => ({
           label: row.region ?? "Не указан",
           count: Number(row.count) || 0,
+          steppeArea: Number(row.steppeArea) || 0,
+          steppeDamage: Number(row.steppeDamage) || 0,
+          peopleTotal: Number(row.peopleTotal) || 0,
+          peopleDead: Number(row.peopleDead) || 0,
+          peopleInjured: Number(row.peopleInjured) || 0,
+          animalsTotal: Number(row.animalsTotal) || 0,
+          animalsDead: Number(row.animalsDead) || 0,
+          animalsInjured: Number(row.animalsInjured) || 0,
+          extinguishedTotal: Number(row.extinguishedTotal) || 0,
+          extinguishedArea: Number(row.extinguishedArea) || 0,
+          extinguishedDamage: Number(row.extinguishedDamage) || 0,
+          garrisonPeople: Number(row.garrisonPeople) || 0,
+          garrisonUnits: Number(row.garrisonUnits) || 0,
+          mchsPeople: Number(row.mchsPeople) || 0,
+          mchsUnits: Number(row.mchsUnits) || 0,
         })),
       },
       form7: {
@@ -876,6 +936,21 @@ export class IncidentStorage {
         savedProperty: incidents.savedProperty,
         livestockLost: incidents.livestockLost,
         destroyedItems: incidents.destroyedItems,
+        steppeArea: incidents.steppeArea,
+        steppeDamage: incidents.steppeDamage,
+        steppePeopleTotal: incidents.steppePeopleTotal,
+        steppePeopleDead: incidents.steppePeopleDead,
+        steppePeopleInjured: incidents.steppePeopleInjured,
+        steppeAnimalsTotal: incidents.steppeAnimalsTotal,
+        steppeAnimalsDead: incidents.steppeAnimalsDead,
+        steppeAnimalsInjured: incidents.steppeAnimalsInjured,
+        steppeExtinguishedTotal: incidents.steppeExtinguishedTotal,
+        steppeExtinguishedArea: incidents.steppeExtinguishedArea,
+        steppeExtinguishedDamage: incidents.steppeExtinguishedDamage,
+        steppeGarrisonPeople: incidents.steppeGarrisonPeople,
+        steppeGarrisonUnits: incidents.steppeGarrisonUnits,
+        steppeMchsPeople: incidents.steppeMchsPeople,
+        steppeMchsUnits: incidents.steppeMchsUnits,
       })
       .from(incidents)
       .where(and(...conditions));
@@ -1288,14 +1363,37 @@ export class IncidentStorage {
 
           const addIncident = (rowKey: string, incident: (typeof incidentRows)[number]) => {
             const existing = map.get(rowKey) ?? blank();
-            const damageValue = Number(incident.damage || 0);
-            const deathsValue = Number(incident.deathsTotal || 0);
-            const injuriesValue = Number(incident.injuredTotal || 0);
+            const areaValue = Number(incident.steppeArea || 0);
+            const damageValue = Number(incident.steppeDamage || 0);
+            const peopleDead = Number(incident.steppePeopleDead || 0);
+            const peopleInjured = Number(incident.steppePeopleInjured || 0);
+            const peopleTotal = Number(incident.steppePeopleTotal || 0) || peopleDead + peopleInjured;
+            const animalsDead = Number(incident.steppeAnimalsDead || 0);
+            const animalsInjured = Number(incident.steppeAnimalsInjured || 0);
+            const animalsTotal = Number(incident.steppeAnimalsTotal || 0) || animalsDead + animalsInjured;
+            const extinguishedTotal = Number(incident.steppeExtinguishedTotal || 0);
+            const extinguishedArea = Number(incident.steppeExtinguishedArea || 0);
+            const extinguishedDamage = Number(incident.steppeExtinguishedDamage || 0);
+            const garrisonPeople = Number(incident.steppeGarrisonPeople || 0);
+            const garrisonUnits = Number(incident.steppeGarrisonUnits || 0);
+            const mchsPeople = Number(incident.steppeMchsPeople || 0);
+            const mchsUnits = Number(incident.steppeMchsUnits || 0);
             existing.fires_count += 1;
+            existing.steppe_area += areaValue;
             existing.damage_total += damageValue;
-            existing.people_dead += deathsValue;
-            existing.people_injured += injuriesValue;
-            existing.people_total += deathsValue + injuriesValue;
+            existing.people_dead += peopleDead;
+            existing.people_injured += peopleInjured;
+            existing.people_total += peopleTotal;
+            existing.animals_dead += animalsDead;
+            existing.animals_injured += animalsInjured;
+            existing.animals_total += animalsTotal;
+            existing.extinguished_total += extinguishedTotal;
+            existing.extinguished_area += extinguishedArea;
+            existing.extinguished_damage += extinguishedDamage;
+            existing.garrison_people += garrisonPeople;
+            existing.garrison_units += garrisonUnits;
+            existing.mchs_people += mchsPeople;
+            existing.mchs_units += mchsUnits;
             map.set(rowKey, existing);
           };
 
@@ -1443,34 +1541,36 @@ export class IncidentStorage {
     includeChildren?: boolean;
     scopeUser?: ScopeUser;
   }): Promise<any> {
-    const conditions = [];
+    const baseConditions = [];
     const ospIncidentTypes = ['fire', 'steppe_fire'] as const;
+    const steppeTypes = ['steppe_fire', 'steppe_smolder'] as const;
 
     if (params.includeChildren) {
       const hierarchy = await orgStorage.getOrganizationHierarchy(params.orgId);
       const orgIds = hierarchy.map(o => o.id);
-      conditions.push(inArray(incidents.orgUnitId, orgIds));
+      baseConditions.push(inArray(incidents.orgUnitId, orgIds));
     } else {
-      conditions.push(eq(incidents.orgUnitId, params.orgId));
+      baseConditions.push(eq(incidents.orgUnitId, params.orgId));
     }
 
     if (params.period) {
       const [year, month] = params.period.split('-');
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
       const endDate = new Date(parseInt(year), parseInt(month), 0);
-      conditions.push(gte(incidents.dateTime, startDate));
-      conditions.push(lte(incidents.dateTime, endDate));
-    }
-
-    if (params.form === '1-osp') {
-      conditions.push(inArray(incidents.incidentType, ospIncidentTypes));
+      baseConditions.push(gte(incidents.dateTime, startDate));
+      baseConditions.push(lte(incidents.dateTime, endDate));
     }
 
     if (params.scopeUser) {
       const scopeCondition = applyScopeCondition(params.scopeUser, incidents.region, incidents.city);
       if (scopeCondition) {
-        conditions.push(scopeCondition);
+        baseConditions.push(scopeCondition);
       }
+    }
+
+    const ospConditions = [...baseConditions];
+    if (params.form === '1-osp') {
+      ospConditions.push(inArray(incidents.incidentType, ospIncidentTypes));
     }
 
     const query = db
@@ -1488,9 +1588,54 @@ export class IncidentStorage {
         ruralDamage: sql<number>`sum(damage) filter (where locality = 'rural')`,
       })
       .from(incidents)
-      .where(and(...conditions));
+      .where(and(...ospConditions));
 
     const [result] = await query;
+
+    const steppeBase = [...baseConditions, inArray(incidents.incidentType, steppeTypes)];
+    const [steppeTotals] = await db
+      .select({
+        firesCount: sql<number>`count(*)`,
+        areaTotal: sql<number>`sum(steppe_area)`,
+        damageTotal: sql<number>`sum(steppe_damage)`,
+        peopleTotal: sql<number>`sum(steppe_people_total)`,
+        peopleDead: sql<number>`sum(steppe_people_dead)`,
+        peopleInjured: sql<number>`sum(steppe_people_injured)`,
+        animalsTotal: sql<number>`sum(steppe_animals_total)`,
+        animalsDead: sql<number>`sum(steppe_animals_dead)`,
+        animalsInjured: sql<number>`sum(steppe_animals_injured)`,
+        extinguishedTotal: sql<number>`sum(steppe_extinguished_total)`,
+        extinguishedArea: sql<number>`sum(steppe_extinguished_area)`,
+        extinguishedDamage: sql<number>`sum(steppe_extinguished_damage)`,
+        garrisonPeople: sql<number>`sum(steppe_garrison_people)`,
+        garrisonUnits: sql<number>`sum(steppe_garrison_units)`,
+        mchsPeople: sql<number>`sum(steppe_mchs_people)`,
+        mchsUnits: sql<number>`sum(steppe_mchs_units)`,
+      })
+      .from(incidents)
+      .where(and(...steppeBase, eq(incidents.incidentType, "steppe_fire")));
+
+    const [ignitionTotals] = await db
+      .select({
+        firesCount: sql<number>`count(*)`,
+        areaTotal: sql<number>`sum(steppe_area)`,
+        damageTotal: sql<number>`sum(steppe_damage)`,
+        peopleTotal: sql<number>`sum(steppe_people_total)`,
+        peopleDead: sql<number>`sum(steppe_people_dead)`,
+        peopleInjured: sql<number>`sum(steppe_people_injured)`,
+        animalsTotal: sql<number>`sum(steppe_animals_total)`,
+        animalsDead: sql<number>`sum(steppe_animals_dead)`,
+        animalsInjured: sql<number>`sum(steppe_animals_injured)`,
+        extinguishedTotal: sql<number>`sum(steppe_extinguished_total)`,
+        extinguishedArea: sql<number>`sum(steppe_extinguished_area)`,
+        extinguishedDamage: sql<number>`sum(steppe_extinguished_damage)`,
+        garrisonPeople: sql<number>`sum(steppe_garrison_people)`,
+        garrisonUnits: sql<number>`sum(steppe_garrison_units)`,
+        mchsPeople: sql<number>`sum(steppe_mchs_people)`,
+        mchsUnits: sql<number>`sum(steppe_mchs_units)`,
+      })
+      .from(incidents)
+      .where(and(...steppeBase, eq(incidents.incidentType, "steppe_smolder")));
 
     return {
       orgId: params.orgId,
@@ -1508,7 +1653,41 @@ export class IncidentStorage {
         totalDamage: Number(result.totalDamage) || 0,
         cityDamage: Number(result.cityDamage) || 0,
         ruralDamage: Number(result.ruralDamage) || 0,
-      }
+      },
+      sspz: {
+        totalFires: Number(steppeTotals?.firesCount) || 0,
+        totalArea: Number(steppeTotals?.areaTotal) || 0,
+        totalDamage: Number(steppeTotals?.damageTotal) || 0,
+        peopleTotal: Number(steppeTotals?.peopleTotal) || 0,
+        peopleDead: Number(steppeTotals?.peopleDead) || 0,
+        peopleInjured: Number(steppeTotals?.peopleInjured) || 0,
+        animalsTotal: Number(steppeTotals?.animalsTotal) || 0,
+        animalsDead: Number(steppeTotals?.animalsDead) || 0,
+        animalsInjured: Number(steppeTotals?.animalsInjured) || 0,
+        extinguishedTotal: Number(steppeTotals?.extinguishedTotal) || 0,
+        extinguishedArea: Number(steppeTotals?.extinguishedArea) || 0,
+        extinguishedDamage: Number(steppeTotals?.extinguishedDamage) || 0,
+        garrisonPeople: Number(steppeTotals?.garrisonPeople) || 0,
+        garrisonUnits: Number(steppeTotals?.garrisonUnits) || 0,
+        mchsPeople: Number(steppeTotals?.mchsPeople) || 0,
+        mchsUnits: Number(steppeTotals?.mchsUnits) || 0,
+        totalIgnitions: Number(ignitionTotals?.firesCount) || 0,
+        ignitionArea: Number(ignitionTotals?.areaTotal) || 0,
+        ignitionDamage: Number(ignitionTotals?.damageTotal) || 0,
+        ignitionPeopleTotal: Number(ignitionTotals?.peopleTotal) || 0,
+        ignitionPeopleDead: Number(ignitionTotals?.peopleDead) || 0,
+        ignitionPeopleInjured: Number(ignitionTotals?.peopleInjured) || 0,
+        ignitionAnimalsTotal: Number(ignitionTotals?.animalsTotal) || 0,
+        ignitionAnimalsDead: Number(ignitionTotals?.animalsDead) || 0,
+        ignitionAnimalsInjured: Number(ignitionTotals?.animalsInjured) || 0,
+        ignitionExtinguishedTotal: Number(ignitionTotals?.extinguishedTotal) || 0,
+        ignitionExtinguishedArea: Number(ignitionTotals?.extinguishedArea) || 0,
+        ignitionExtinguishedDamage: Number(ignitionTotals?.extinguishedDamage) || 0,
+        ignitionGarrisonPeople: Number(ignitionTotals?.garrisonPeople) || 0,
+        ignitionGarrisonUnits: Number(ignitionTotals?.garrisonUnits) || 0,
+        ignitionMchsPeople: Number(ignitionTotals?.mchsPeople) || 0,
+        ignitionMchsUnits: Number(ignitionTotals?.mchsUnits) || 0,
+      },
     };
   }
 }
