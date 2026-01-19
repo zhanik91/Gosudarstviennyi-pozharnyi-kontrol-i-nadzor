@@ -315,9 +315,11 @@ export default function IncidentsJournal() {
       selectedData
         .map(
           (incident: Incident) =>
-            `${incident.dateTime},${incident.incidentType},${incident.address},${incident.cause},${
-              incident.damage || 0
-            },${incident.deathsTotal || 0},${incident.injuredTotal || 0}`
+            `${incident.dateTime},${incident.incidentType},${incident.address},${formatCodeLabel(
+              incident.causeCode,
+              incident.cause,
+              ""
+            )},${incident.damage || 0},${incident.deathsTotal || 0},${incident.injuredTotal || 0}`
         )
         .join("\n");
 
@@ -418,9 +420,11 @@ export default function IncidentsJournal() {
             "ru-RU"
           )},${formatLocality(incident.locality)},${formatIncidentType(
             incident.incidentType
-          )},${incident.address},${incident.cause},${incident.objectType || ""},${
-            incident.damage || 0
-          },${incident.deathsTotal || 0},${incident.deathsChildren || 0},${
+          )},${incident.address},${formatCodeLabel(incident.causeCode, incident.cause, "")},${formatCodeLabel(
+            incident.objectCode,
+            incident.objectType,
+            ""
+          )},${incident.damage || 0},${incident.deathsTotal || 0},${incident.deathsChildren || 0},${
             incident.injuredTotal || 0
           },${incident.savedPeopleTotal || 0},${incident.savedProperty || 0}`;
         })
@@ -472,6 +476,15 @@ export default function IncidentsJournal() {
       rural: "Сельская местность",
     };
     return localities[locality] || locality;
+  };
+
+  const formatCodeLabel = (
+    code?: string | null,
+    label?: string | null,
+    emptyValue = "—"
+  ) => {
+    if (code && label) return `${code} - ${label}`;
+    return label || code || emptyValue;
   };
 
   const totals = incidents.reduce(
@@ -740,10 +753,10 @@ export default function IncidentsJournal() {
                           {incident.address}
                         </td>
                         <td className="p-2 border-r border-border text-muted-foreground">
-                          {incident.cause || "—"}
+                          {formatCodeLabel(incident.causeCode, incident.cause)}
                         </td>
                         <td className="p-2 border-r border-border text-muted-foreground">
-                          {incident.objectType || "—"}
+                          {formatCodeLabel(incident.objectCode, incident.objectType)}
                         </td>
                         <td className="p-2 border-r border-border text-right text-foreground font-mono">
                           {incident.damage ? parseFloat(incident.damage).toFixed(1) : "0.0"}

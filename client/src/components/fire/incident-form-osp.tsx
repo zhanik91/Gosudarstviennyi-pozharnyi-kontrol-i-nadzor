@@ -142,6 +142,10 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
       victims: [],
       deathsTotal: 0,
       injuredTotal: 0,
+      cause: "",
+      causeCode: "",
+      objectType: "",
+      objectCode: "",
     },
   });
 
@@ -393,14 +397,21 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="cause"
+                        name="causeCode"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Причина</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    const selected = CAUSES.find((cause) => cause.code === value);
+                                    form.setValue("cause", selected?.label || "");
+                                  }}
+                                  value={field.value ?? ""}
+                                >
                                     <FormControl><SelectTrigger><SelectValue placeholder="Причина" /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        {CAUSES.map(c => <SelectItem key={c.code} value={c.label}>{c.code} - {c.label}</SelectItem>)}
+                                        {CAUSES.map(c => <SelectItem key={c.code} value={c.code}>{c.code} - {c.label}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </FormItem>
@@ -408,14 +419,21 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                       />
                        <FormField
                         control={form.control}
-                        name="objectType"
+                        name="objectCode"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Объект</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    const selected = OBJECT_TYPES.find((type) => type.code === value);
+                                    form.setValue("objectType", selected?.label || "");
+                                  }}
+                                  value={field.value ?? ""}
+                                >
                                     <FormControl><SelectTrigger><SelectValue placeholder="Объект" /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        {OBJECT_TYPES.map(o => <SelectItem key={o.code} value={o.label}>{o.code} - {o.label}</SelectItem>)}
+                                        {OBJECT_TYPES.map(o => <SelectItem key={o.code} value={o.code}>{o.code} - {o.label}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </FormItem>
