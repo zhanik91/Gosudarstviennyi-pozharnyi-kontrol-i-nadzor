@@ -143,7 +143,7 @@ export const incidents = pgTable("incidents", {
   archivedAt: timestamp("archived_at"),
   
   // Метки времени
-  timeOfDay: varchar("time_of_day"), // 00:00-06:00, etc. (Can be derived but useful for explicit Form 5/7 stats)
+  timeOfDay: varchar("time_of_day"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
