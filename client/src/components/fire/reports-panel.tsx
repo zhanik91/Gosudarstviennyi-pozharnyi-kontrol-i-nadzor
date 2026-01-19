@@ -14,21 +14,88 @@ export default function ReportsPanel() {
     message: string;
   }>>([]);
 
-  const handleGenerate = () => {
-    // Simulate report generation
-    setValidationResults([
-      { type: 'success', message: 'Баланс 1-ОСП корректен' },
-      { type: 'warning', message: 'Предупреждение: ОВСР "в т.ч." больше "всего" в 2 записях' },
-      { type: 'error', message: 'Ошибка: Не заполнены обязательные поля в инциденте #247' }
-    ]);
+  const handleGenerate = async () => {
+    if (!period) {
+      setValidationResults([{ type: 'error', message: 'Укажите период для формирования отчёта.' }]);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({
+        period,
+        includeChildren: String(includeOrgTree),
+      });
+      const response = await fetch(`/api/reports?${params.toString()}`);
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.ok) {
+        setValidationResults([
+          { type: 'error', message: payload?.msg ?? 'Не удалось получить данные отчёта.' },
+        ]);
+        return;
+      }
+
+      const reportData = payload?.data;
+      const sections = [reportData?.osp, reportData?.sspz].filter(Boolean) as Array<Record<string, unknown>>;
+      const hasData = sections.some((section) =>
+        Object.values(section).some((value) => Number(value) > 0)
+      );
+
+      if (!reportData || !hasData) {
+        setValidationResults([
+          { type: 'warning', message: 'За выбранный период нет данных для формирования отчётов.' },
+        ]);
+        return;
+      }
+
+      setValidationResults([{ type: 'success', message: 'Отчёты сформированы, данные загружены.' }]);
+    } catch (error) {
+      setValidationResults([{ type: 'error', message: 'Ошибка при обращении к API отчётов.' }]);
+    }
   };
 
-  const handleCheck = () => {
-    // Simulate validation check
-    setValidationResults([
-      { type: 'success', message: 'Все обязательные поля заполнены' },
-      { type: 'warning', message: 'Найдено 3 предупреждения в данных' }
-    ]);
+  const handleCheck = async () => {
+    if (!period) {
+      setValidationResults([{ type: 'error', message: 'Укажите период для проверки отчётов.' }]);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({
+        period,
+        includeChildren: String(includeOrgTree),
+      });
+      const response = await fetch(`/api/reports/validate?${params.toString()}`);
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.ok) {
+        setValidationResults([
+          { type: 'error', message: payload?.msg ?? 'Не удалось выполнить проверку отчётов.' },
+        ]);
+        return;
+      }
+
+      const errors = Array.isArray(payload?.errors) ? payload.errors : [];
+
+      if (errors.length === 0) {
+        setValidationResults([{ type: 'success', message: 'Ошибок и предупреждений не найдено.' }]);
+        return;
+      }
+
+      setValidationResults(
+        errors.map((error: { form?: string; section?: string; description?: string; severity?: string }) => {
+          const prefix = [error.form, error.section].filter(Boolean).join(' · ');
+          const message = prefix ? `${prefix}: ${error.description ?? 'Проблема в данных.'}` : error.description;
+          const type = error.severity === 'error' ? 'error' : error.severity === 'warning' ? 'warning' : 'success';
+          return {
+            type,
+            message: message ?? 'Обнаружена проблема в данных.',
+          };
+        })
+      );
+    } catch (error) {
+      setValidationResults([{ type: 'error', message: 'Ошибка при обращении к API проверки.' }]);
+    }
   };
 
   const reportTypes = [
