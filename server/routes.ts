@@ -53,6 +53,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === Отчеты ===
   app.get('/api/reports', isAuthenticated, reportController.getReports);
+  app.post('/api/reports', isAuthenticated, reportController.saveReport);
+  app.put('/api/reports', isAuthenticated, reportController.saveReport);
   app.get('/api/stats/dashboard', reportController.getDashboardStats);
   app.get('/api/reports/validate', isAuthenticated, reportController.validateReports);
 

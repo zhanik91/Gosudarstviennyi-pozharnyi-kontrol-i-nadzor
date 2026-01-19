@@ -43,6 +43,10 @@ export const packageStatusEnum = pgEnum('package_status', [
   'draft', 'submitted', 'under_review', 'approved', 'rejected'
 ]);
 
+export const reportFormStatusEnum = pgEnum('report_form_status', [
+  'draft', 'submitted'
+]);
+
 // Users table for local authentication (МЧС РК)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -203,6 +207,20 @@ export const packages = pgTable("packages", {
   index("packages_org_unit_id_idx").on(table.orgUnitId),
 ]);
 
+export const reportForms = pgTable("report_forms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orgUnitId: varchar("org_unit_id").notNull(),
+  period: varchar("period").notNull(),
+  form: varchar("form").notNull(),
+  data: jsonb("data").notNull(),
+  status: reportFormStatusEnum("status").notNull().default('draft'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("report_forms_org_unit_id_idx").on(table.orgUnitId),
+  uniqueIndex("report_forms_org_period_form_key").on(table.orgUnitId, table.period, table.form),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   orgUnit: one(orgUnits, {
@@ -288,9 +306,17 @@ export const insertPackageSchema = createInsertSchema(packages).omit({
   updatedAt: true,
 });
 
+export const insertReportFormSchema = createInsertSchema(reportForms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type ReportForm = typeof reportForms.$inferSelect;
+export type InsertReportForm = typeof reportForms.$inferInsert;
 
 export const loginSchema = z.object({
   username: z.string().min(1, "Логин обязателен"),
