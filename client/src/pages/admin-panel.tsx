@@ -57,7 +57,9 @@ export default function AdminPanel() {
   const [regionFilter, setRegionFilter] = useState("ALL");
 
   // Проверка прав администратора
-  if ((user as any)?.role !== 'MCHS') {
+  const userRole = (user as any)?.role;
+  const isAdmin = userRole === 'MCHS' || userRole === 'admin';
+  if (!isAdmin) {
     return (
       <div className="p-8">
         <ErrorDisplay
