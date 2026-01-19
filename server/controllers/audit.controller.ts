@@ -5,7 +5,7 @@ export class AuditController {
   async getLogs(req: Request, res: Response) {
     try {
       const user = await storage.getUser(req.user?.id || req.user?.username);
-      if (user?.role !== 'MCHS') {
+      if (user?.role !== 'MCHS' && user?.role !== 'admin') {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
       const filters: any = {};

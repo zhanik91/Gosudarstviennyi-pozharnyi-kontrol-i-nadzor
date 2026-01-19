@@ -145,8 +145,9 @@ export default function Header() {
   const { user } = useAuth();
 
   if (!user) return null;
+  const isAdmin = (user as any)?.role === "MCHS" || (user as any)?.role === "admin";
   const navGroupsForUser = navGroups.filter(
-    (group) => group.label !== "Администрирование" || (user as any)?.role === "MCHS"
+    (group) => group.label !== "Администрирование" || isAdmin
   );
 
   return (
@@ -276,7 +277,7 @@ export default function Header() {
                     </div>
                   </Link>
                 </DropdownMenuItem>
-                {((user as any)?.role === "MCHS") && (
+                {(isAdmin) && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>

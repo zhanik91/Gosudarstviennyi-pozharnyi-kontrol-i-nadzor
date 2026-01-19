@@ -20,7 +20,7 @@ export class OrganizationController {
     try {
       const userId = req.user?.id || req.user?.username;
       const user = await storage.getUser(userId);
-      if (user?.role !== 'MCHS') {
+      if (user?.role !== 'MCHS' && user?.role !== 'admin') {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 

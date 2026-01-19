@@ -7,7 +7,8 @@ export class AdminController {
 
   // Middleware для проверки прав администратора
   requireAdmin(req: Request, res: Response, next: NextFunction) {
-    if (!req.isAuthenticated() || req.user?.role !== 'MCHS') {
+    const role = (req.user as any)?.role;
+    if (!req.isAuthenticated() || (role !== 'MCHS' && role !== 'admin')) {
       return res.status(403).json({ message: "Недостаточно прав доступа" });
     }
     next();

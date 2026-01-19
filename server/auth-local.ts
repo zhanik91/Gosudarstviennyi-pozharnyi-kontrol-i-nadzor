@@ -85,10 +85,11 @@ export function setupLocalAuth(app: Express) {
   // Маршруты аутентификации
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, fullName, region, role = 'DISTRICT' } = req.body;
+      const { username, password, fullName, region, role: newUserRole = 'DISTRICT' } = req.body;
       
       // Проверяем права администратора
-      if (!req.isAuthenticated() || (req.user as any)?.role !== 'MCHS') {
+      const currentUserRole = (req.user as any)?.role;
+      if (!req.isAuthenticated() || (currentUserRole !== 'MCHS' && currentUserRole !== 'admin')) {
         return res.status(403).json({ message: "Только администратор может создавать пользователей" });
       }
 
@@ -104,7 +105,7 @@ export function setupLocalAuth(app: Express) {
         fullName,
         region,
         district: "",
-        role,
+        role: newUserRole,
         orgUnitId: null,
         mustChangeOnFirstLogin: true,
         isActive: true,
@@ -219,7 +220,8 @@ export function setupLocalAuth(app: Express) {
   // Получение списка пользователей (только для админа)
   app.get("/api/users", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user as any)?.role !== 'MCHS') {
+      const userRole = (req.user as any)?.role;
+      if (!req.isAuthenticated() || (userRole !== 'MCHS' && userRole !== 'admin')) {
         return res.status(403).json({ message: "Доступ запрещен" });
       }
 
@@ -244,7 +246,8 @@ export function setupLocalAuth(app: Express) {
   // Деактивация пользователя (только для админа)
   app.put("/api/users/:id/deactivate", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user as any)?.role !== 'MCHS') {
+      const adminRole = (req.user as any)?.role;
+      if (!req.isAuthenticated() || (adminRole !== 'MCHS' && adminRole !== 'admin')) {
         return res.status(403).json({ message: "Доступ запрещен" });
       }
 
