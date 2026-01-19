@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, Search, FileDown, Filter, Plus } from "lucide-react";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
 import type { Incident } from "@shared/schema";
+import * as XLSX from "xlsx";
 import IncidentFormOSP from "./incident-form-osp";
 import BulkEditModal from "./bulk-edit-modal";
 import EmailNotificationModal from "./email-notification-modal";
@@ -23,6 +24,169 @@ const monthLabel = (year: number, month: number) =>
     month: "long",
     year: "numeric",
   });
+
+type ImportedIncident = {
+  rowNumber: number;
+  dateTime?: string;
+  incidentType?: string;
+  address?: string;
+  cause?: string;
+  damage?: number;
+  deathsTotal?: number;
+  injuredTotal?: number;
+  region?: string;
+  city?: string;
+  locality?: string;
+  description?: string;
+};
+
+const parseCsvLine = (line: string) => {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+};
+
+const normalizeHeader = (value: string) => value.trim().toLowerCase();
+
+const headerMap: Record<string, keyof ImportedIncident> = {
+  дата: "dateTime",
+  "дата и время": "dateTime",
+  "дата/время": "dateTime",
+  тип: "incidentType",
+  "тип события": "incidentType",
+  адрес: "address",
+  причина: "cause",
+  ущерб: "damage",
+  погибшие: "deathsTotal",
+  травмированные: "injuredTotal",
+  регион: "region",
+  "город/район": "city",
+  город: "city",
+  район: "city",
+  местность: "locality",
+  описание: "description",
+};
+
+const normalizeIncidentType = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+  const map: Record<string, string> = {
+    пожар: "fire",
+    "случай горения": "nonfire",
+    "степной пожар": "steppe_fire",
+    "степное загорание": "steppe_smolder",
+    "отравление co": "co_nofire",
+    "отравление со": "co_nofire",
+    "co": "co_nofire",
+  };
+  return map[normalized] || normalized;
+};
+
+const normalizeLocality = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes("город")) return "cities";
+  if (normalized.includes("сель")) return "rural";
+  return value.trim();
+};
+
+const parseNumberValue = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return undefined;
+  if (typeof value === "number" && !Number.isNaN(value)) return value;
+  if (typeof value === "string") {
+    const normalized = value.replace(/\s/g, "").replace(",", ".");
+    const parsed = Number.parseFloat(normalized);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+};
+
+const parseDateValue = (value: unknown) => {
+  if (!value) return undefined;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString();
+  }
+  if (typeof value === "number") {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const direct = new Date(trimmed);
+    if (!Number.isNaN(direct.getTime())) {
+      return direct.toISOString();
+    }
+    const match = trimmed.match(
+      /(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/
+    );
+    if (match) {
+      const [, day, month, year, hours = "0", minutes = "0"] = match;
+      const iso = new Date(
+        Number(year.length === 2 ? `20${year}` : year),
+        Number(month) - 1,
+        Number(day),
+        Number(hours),
+        Number(minutes)
+      );
+      if (!Number.isNaN(iso.getTime())) {
+        return iso.toISOString();
+      }
+    }
+  }
+  return undefined;
+};
+
+const buildImportedIncident = (row: Record<string, unknown>, rowNumber: number) => {
+  const incident: ImportedIncident = { rowNumber };
+  Object.entries(row).forEach(([key, value]) => {
+    if (key === "incidentType") {
+      incident.incidentType = normalizeIncidentType(String(value ?? ""));
+      return;
+    }
+    if (key === "locality") {
+      incident.locality = normalizeLocality(String(value ?? ""));
+      return;
+    }
+    if (key === "dateTime") {
+      incident.dateTime = parseDateValue(value);
+      return;
+    }
+    if (key === "damage") {
+      incident.damage = parseNumberValue(value);
+      return;
+    }
+    if (key === "deathsTotal") {
+      incident.deathsTotal = parseNumberValue(value) ?? 0;
+      return;
+    }
+    if (key === "injuredTotal") {
+      incident.injuredTotal = parseNumberValue(value) ?? 0;
+      return;
+    }
+    (incident as Record<string, unknown>)[key] = typeof value === "string" ? value.trim() : value;
+  });
+  return incident;
+};
 
 function CalendarPopup({
   initialISO,
@@ -371,35 +535,100 @@ export default function IncidentsJournal() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
-        const csvData = e.target?.result as string;
-        const lines = csvData.split("\n");
-        const headers = lines[0].split(",");
+        const result = e.target?.result;
+        const extension = file.name.split(".").pop()?.toLowerCase();
+        let rows: (string | number | Date)[][] = [];
 
-        if (!headers.includes("Дата") || !headers.includes("Тип")) {
-          throw new Error("Неверный формат файла");
+        if (extension === "csv") {
+          const csvData = (result as string) || "";
+          const lines = csvData.split(/\r?\n/).filter((line) => line.trim().length > 0);
+          rows = lines.map(parseCsvLine);
+        } else {
+          const data = result instanceof ArrayBuffer ? result : new ArrayBuffer(0);
+          const workbook = XLSX.read(data, { type: "array", cellDates: true });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" }) as (
+            | string
+            | number
+            | Date
+          )[][];
         }
 
-        const importedCount = lines.length - 1;
+        const [headerRow, ...dataRows] = rows;
+        if (!headerRow) {
+          throw new Error("Пустой файл");
+        }
 
-        toast({
-          title: "Импорт выполнен",
-          description: `Импортировано ${importedCount} записей`,
+        const headers = headerRow.map((header) => normalizeHeader(String(header)));
+        const headerKeys = headers.map((header) => headerMap[header]).filter(Boolean);
+
+        if (
+          !headerKeys.includes("dateTime") ||
+          !headerKeys.includes("incidentType") ||
+          !headerKeys.includes("address")
+        ) {
+          throw new Error("Неверный формат файла: отсутствуют обязательные колонки");
+        }
+
+        const importedIncidents = dataRows
+          .filter((row) => row.some((cell) => String(cell ?? "").trim().length > 0))
+          .map((row, index) => {
+            const mappedRow: Record<string, unknown> = {};
+            row.forEach((cell, cellIndex) => {
+              const key = headerMap[headers[cellIndex]];
+              if (!key) return;
+              mappedRow[key] = cell;
+            });
+            return buildImportedIncident(mappedRow, index + 2);
+          });
+
+        if (importedIncidents.length === 0) {
+          throw new Error("Нет данных для импорта");
+        }
+
+        const response = await apiRequest("POST", "/api/incidents/bulk", {
+          incidents: importedIncidents,
+          format: extension || "unknown",
         });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload?.message || "Ошибка импорта");
+        }
+
+        if (payload.errors?.length) {
+          const errorRows = payload.errors.map((err: any) => err.rowNumber).join(", ");
+          toast({
+            title: "Импорт выполнен с ошибками",
+            description: `Импортировано ${payload.created} из ${payload.total} записей. Строки с ошибками: ${errorRows}`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Импорт выполнен",
+            description: `Импортировано ${payload.created} записей`,
+          });
+        }
 
         queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
         queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
-      } catch {
+      } catch (err) {
         toast({
           title: "Ошибка импорта",
-          description: "Проверьте формат файла",
+          description: err instanceof Error ? err.message : "Проверьте формат файла",
           variant: "destructive",
         });
       }
     };
 
-    reader.readAsText(file);
+    if (file.name.toLowerCase().endsWith(".csv")) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
     event.target.value = "";
   };
 
