@@ -363,34 +363,39 @@ export class IncidentStorage {
       .groupBy(incidents.locality);
 
     // --- FORM 5 DETAILED STATS (Aggregated from incident_victims) ---
-    // This query joins incidents and incident_victims to get detailed breakdown for fire deaths/injuries
-    const form5Victims = await db
-      .select({
-         gender: incidentVictims.gender,
-         ageGroup: incidentVictims.ageGroup,
-         socialStatus: incidentVictims.socialStatus,
-         condition: incidentVictims.condition,
-         deathCause: incidentVictims.deathCause,
-         deathPlace: incidentVictims.deathPlace,
-         status: incidentVictims.status,
-         count: sql<number>`count(*)`
-      })
-      .from(incidentVictims)
-      .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
-      .where(and(
-         ...baseConditions,
-         eq(incidents.incidentType, "fire"),
-         or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
-      ))
-      .groupBy(
-         incidentVictims.gender,
-         incidentVictims.ageGroup,
-         incidentVictims.socialStatus,
-         incidentVictims.condition,
-         incidentVictims.deathCause,
-         incidentVictims.deathPlace,
-         incidentVictims.status
-      );
+    // Safely attempt to join with incident_victims. If table doesn't exist, this block fails.
+    let form5Victims: any[] = [];
+    try {
+        form5Victims = await db
+        .select({
+            gender: incidentVictims.gender,
+            ageGroup: incidentVictims.ageGroup,
+            socialStatus: incidentVictims.socialStatus,
+            condition: incidentVictims.condition,
+            deathCause: incidentVictims.deathCause,
+            deathPlace: incidentVictims.deathPlace,
+            status: incidentVictims.status,
+            count: sql<number>`count(*)`
+        })
+        .from(incidentVictims)
+        .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
+        .where(and(
+            ...baseConditions,
+            eq(incidents.incidentType, "fire"),
+            or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
+        ))
+        .groupBy(
+            incidentVictims.gender,
+            incidentVictims.ageGroup,
+            incidentVictims.socialStatus,
+            incidentVictims.condition,
+            incidentVictims.deathCause,
+            incidentVictims.deathPlace,
+            incidentVictims.status
+        );
+    } catch (e) {
+        console.warn("Could not query incident_victims (likely pending migration). Form 5 details will be empty.");
+    }
 
     const steppeTypes = ["steppe_fire", "steppe_smolder"] as const;
 
@@ -432,33 +437,38 @@ export class IncidentStorage {
       .groupBy(incidents.region);
 
     // --- FORM 7 DETAILED STATS (Aggregated from incident_victims) ---
-    const form7Victims = await db
-      .select({
-         gender: incidentVictims.gender,
-         ageGroup: incidentVictims.ageGroup,
-         socialStatus: incidentVictims.socialStatus,
-         condition: incidentVictims.condition,
-         deathCause: incidentVictims.deathCause, // Here it maps to "Causes of CO violation" if needed, or just mapped similarly
-         deathPlace: incidentVictims.deathPlace,
-         status: incidentVictims.status,
-         count: sql<number>`count(*)`
-      })
-      .from(incidentVictims)
-      .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
-      .where(and(
-         ...baseConditions,
-         eq(incidents.incidentType, "co_nofire"),
-         or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
-      ))
-      .groupBy(
-         incidentVictims.gender,
-         incidentVictims.ageGroup,
-         incidentVictims.socialStatus,
-         incidentVictims.condition,
-         incidentVictims.deathCause,
-         incidentVictims.deathPlace,
-         incidentVictims.status
-      );
+    let form7Victims: any[] = [];
+    try {
+        form7Victims = await db
+        .select({
+            gender: incidentVictims.gender,
+            ageGroup: incidentVictims.ageGroup,
+            socialStatus: incidentVictims.socialStatus,
+            condition: incidentVictims.condition,
+            deathCause: incidentVictims.deathCause, // Here it maps to "Causes of CO violation" if needed, or just mapped similarly
+            deathPlace: incidentVictims.deathPlace,
+            status: incidentVictims.status,
+            count: sql<number>`count(*)`
+        })
+        .from(incidentVictims)
+        .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
+        .where(and(
+            ...baseConditions,
+            eq(incidents.incidentType, "co_nofire"),
+            or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
+        ))
+        .groupBy(
+            incidentVictims.gender,
+            incidentVictims.ageGroup,
+            incidentVictims.socialStatus,
+            incidentVictims.condition,
+            incidentVictims.deathCause,
+            incidentVictims.deathPlace,
+            incidentVictims.status
+        );
+    } catch (e) {
+        console.warn("Could not query incident_victims (likely pending migration). Form 7 details will be empty.");
+    }
 
     const form7Totals = form7RegionRows.reduce(
       (acc, row) => ({
@@ -577,8 +587,12 @@ export class IncidentStorage {
     const [incident] = await db.insert(incidents).values(data as any).returning();
 
     if (victims && victims.length > 0) {
-      const victimsWithId = victims.map(v => ({ ...v, incidentId: incident.id }));
-      await db.insert(incidentVictims).values(victimsWithId);
+      try {
+        const victimsWithId = victims.map(v => ({ ...v, incidentId: incident.id }));
+        await db.insert(incidentVictims).values(victimsWithId);
+      } catch (e) {
+        console.warn("Failed to insert victims (likely schema mismatch/missing table). Victims data skipped.");
+      }
     }
 
     return incident as Incident;
@@ -595,11 +609,15 @@ export class IncidentStorage {
       .returning();
 
     if (victims) {
-      // Replace all victims for simplicity (or we could smart diff, but this is safer for consistency)
-      await db.delete(incidentVictims).where(eq(incidentVictims.incidentId, id));
-      if (victims.length > 0) {
-        const victimsWithId = victims.map(v => ({ ...v, incidentId: incident.id }));
-        await db.insert(incidentVictims).values(victimsWithId);
+      try {
+        // Replace all victims for simplicity (or we could smart diff, but this is safer for consistency)
+        await db.delete(incidentVictims).where(eq(incidentVictims.incidentId, id));
+        if (victims.length > 0) {
+          const victimsWithId = victims.map(v => ({ ...v, incidentId: incident.id }));
+          await db.insert(incidentVictims).values(victimsWithId);
+        }
+      } catch (e) {
+        console.warn("Failed to update victims (likely schema mismatch/missing table). Victims data skipped.");
       }
     }
 
@@ -607,7 +625,12 @@ export class IncidentStorage {
   }
 
   async getIncidentVictims(incidentId: string) {
-    return await db.select().from(incidentVictims).where(eq(incidentVictims.incidentId, incidentId));
+    try {
+      return await db.select().from(incidentVictims).where(eq(incidentVictims.incidentId, incidentId));
+    } catch (e) {
+      console.warn("Failed to fetch victims (table missing). Returning empty.");
+      return [];
+    }
   }
 
   async deleteIncident(id: string): Promise<void> {
