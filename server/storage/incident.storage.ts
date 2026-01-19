@@ -2,15 +2,10 @@ import { db } from "./db";
 import { incidents, incidentVictims, type Incident, type InsertIncident, type InsertIncidentVictim } from "@shared/schema";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
-import { applyScopeCondition } from "../services/authz";
+import { applyScopeCondition, type ScopeUser } from "../services/authz";
 
 // Helper to avoid circular dependency if possible, or just instantiate locally
 const orgStorage = new OrganizationStorage();
-
-type ScopeUser = {
-  role: "MCHS" | "DCHS" | "DISTRICT";
-  orgUnitId?: string | null;
-};
 
 export class IncidentStorage {
   private incidentTypeLabels: Record<string, string> = {
@@ -84,7 +79,7 @@ export class IncidentStorage {
     }
 
     if (params.scopeUser) {
-      const scopeCondition = await applyScopeCondition(params.scopeUser, incidents.orgUnitId);
+      const scopeCondition = applyScopeCondition(params.scopeUser, incidents.region, incidents.city);
       if (scopeCondition) {
         conditions.push(scopeCondition);
       }
@@ -140,7 +135,7 @@ export class IncidentStorage {
     }
 
     if (filters?.scopeUser) {
-      const scopeCondition = await applyScopeCondition(filters.scopeUser, incidents.orgUnitId);
+      const scopeCondition = applyScopeCondition(filters.scopeUser, incidents.region, incidents.city);
       if (scopeCondition) {
         conditions.push(scopeCondition);
       }
@@ -734,7 +729,7 @@ export class IncidentStorage {
     }
 
     if (filters.scopeUser) {
-      const scopeCondition = await applyScopeCondition(filters.scopeUser, incidents.orgUnitId);
+      const scopeCondition = applyScopeCondition(filters.scopeUser, incidents.region, incidents.city);
       if (scopeCondition) {
         conditions.push(scopeCondition);
       }
@@ -847,7 +842,7 @@ export class IncidentStorage {
     }
 
     if (params.scopeUser) {
-      const scopeCondition = await applyScopeCondition(params.scopeUser, incidents.orgUnitId);
+      const scopeCondition = applyScopeCondition(params.scopeUser, incidents.region, incidents.city);
       if (scopeCondition) {
         conditions.push(scopeCondition);
       }

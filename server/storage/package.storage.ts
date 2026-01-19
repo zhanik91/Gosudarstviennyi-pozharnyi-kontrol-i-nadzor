@@ -1,17 +1,14 @@
 import { db } from "./db";
 import { packages, type Package, type InsertPackage } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { applyScopeCondition } from "../services/authz";
+import { isAdmin, type ScopeUser } from "../services/authz";
 
 export class PackageStorage {
   async getPackages(filters?: {
     orgUnitId?: string;
     status?: string;
     period?: string;
-    scopeUser?: {
-      role: "MCHS" | "DCHS" | "DISTRICT";
-      orgUnitId?: string | null;
-    };
+    scopeUser?: ScopeUser;
   }): Promise<Package[]> {
     let query = db.select().from(packages);
     const conditions = [];
@@ -28,11 +25,10 @@ export class PackageStorage {
       conditions.push(eq(packages.period, filters.period));
     }
 
-    if (filters?.scopeUser) {
-      const scopeCondition = await applyScopeCondition(filters.scopeUser, packages.orgUnitId);
-      if (scopeCondition) {
-        conditions.push(scopeCondition);
-      }
+    // Packages доступны только админам МЧС
+    // ДЧС и ОЧС не имеют доступа к пакетам отчетности
+    if (filters?.scopeUser && !isAdmin(filters.scopeUser)) {
+      return [];
     }
 
     if (conditions.length > 0) {

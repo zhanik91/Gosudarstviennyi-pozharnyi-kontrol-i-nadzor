@@ -1,152 +1,127 @@
-// Сервис авторизации и контроля организационной области
-import { and, eq, inArray, or, sql } from "drizzle-orm";
-import { db } from "../storage/db";
-import { orgUnits } from "@shared/schema";
+// Сервис авторизации и контроля доступа по региону/району
+import { and, eq, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
-interface OrgUnit {
+export type ScopeUser = {
   id: string;
-  parentId?: string;
-  name: string;
-  type: 'MCHS' | 'DCHS' | 'DISTRICT';
-}
+  role: string;
+  region?: string | null;
+  district?: string | null;
+};
 
-interface UserScope {
-  id: string;
-  orgUnitId?: string | null;
-  role: 'MCHS' | 'DCHS' | 'DISTRICT';
-}
-
-export function toScopeUser(user: any): UserScope | undefined {
+/**
+ * Преобразует пользователя в объект для фильтрации по области/району
+ */
+export function toScopeUser(user: any): ScopeUser | undefined {
   if (!user) return undefined;
   return {
     id: user.id ?? user.username ?? "",
-    role: user.role,
-    orgUnitId: user.orgUnitId ?? null,
+    role: user.role ?? "editor",
+    region: user.region ?? null,
+    district: user.district ?? null,
   };
 }
 
 /**
- * Строит набор ID организаций, доступных пользователю для просмотра
- * (включая дочерние организации)
+ * Проверяет, является ли пользователь администратором МЧС
  */
-export function buildOrgSet(orgs: OrgUnit[], rootId: string): Set<string> {
-  const ids = new Set([rootId]);
-  const queue = [rootId];
-  
-  while (queue.length > 0) {
-    const id = queue.pop()!;
-    const children = orgs.filter(o => o.parentId === id);
-    
-    for (const child of children) {
-      if (!ids.has(child.id)) {
-        ids.add(child.id);
-        queue.push(child.id);
-      }
-    }
-  }
-  
-  return ids;
+export function isAdmin(user: ScopeUser | any): boolean {
+  if (!user) return false;
+  const role = user.role?.toLowerCase?.() ?? user.role;
+  return role === 'admin' || role === 'mchs';
 }
 
 /**
- * Проверяет, имеет ли пользователь доступ к запрашиваемой организации
+ * Проверяет, является ли пользователь ДЧС (областной уровень)
  */
-export function assertOrgScope(orgs: OrgUnit[], userOrgId: string, requestedOrgId: string): void {
-  const allowedOrgs = buildOrgSet(orgs, userOrgId);
-  
-  if (!allowedOrgs.has(requestedOrgId)) {
-    const error = new Error('Access forbidden: organization out of scope');
-    (error as any).code = 403;
-    throw error;
-  }
+export function isDCHS(user: ScopeUser | any): boolean {
+  if (!user) return false;
+  // ДЧС - это пользователь с регионом, но без района
+  return user.region && !user.district;
 }
 
 /**
- * Проверяет, может ли пользователь запрашивать данные с includeChildren=true
+ * Проверяет, является ли пользователь ОЧС (районный уровень)
  */
-export function assertTreeAccess(userRole: string): void {
-  const canAccessTree = ['MCHS', 'DCHS'].includes(userRole);
-  
-  if (!canAccessTree) {
-    const error = new Error('Access forbidden: insufficient role for hierarchical data');
-    (error as any).code = 403;
-    throw error;
-  }
+export function isOCHS(user: ScopeUser | any): boolean {
+  if (!user) return false;
+  // ОЧС - это пользователь с регионом И районом
+  return user.region && user.district;
 }
 
 /**
- * Middleware для проверки организационной области
+ * Возвращает уровень доступа пользователя
  */
-export function orgScopeMiddleware(orgs: OrgUnit[]) {
-  return (req: any, res: any, next: any) => {
-    if (!req.user) {
-      return res.status(401).json({ ok: false, msg: 'unauthorized' });
-    }
-
-    const orgId = req.query.orgId || req.body.orgId || req.user.orgUnitId;
-    const includeChildren = req.query.includeChildren === 'true';
-
-    try {
-      // Проверка доступа к организации
-      assertOrgScope(orgs, req.user.orgUnitId, orgId);
-      
-      // Проверка доступа к иерархическим данным
-      if (includeChildren) {
-        assertTreeAccess(req.user.role);
-      }
-
-      // Добавляем проверенный orgId в запрос
-      req.validatedOrgId = orgId;
-      req.includeChildren = includeChildren;
-      
-      next();
-    } catch (error: any) {
-      const status = error.code || 403;
-      return res.status(status).json({ 
-        ok: false, 
-        msg: error.message || 'forbidden' 
-      });
-    }
-  };
+export function getUserLevel(user: ScopeUser | any): 'MCHS' | 'DCHS' | 'OCHS' {
+  if (isAdmin(user)) return 'MCHS';
+  if (isDCHS(user)) return 'DCHS';
+  return 'OCHS';
 }
 
-export async function applyScopeCondition(user: UserScope, orgUnitColumn: any): Promise<SQL | undefined> {
+/**
+ * Применяет фильтр по региону/району для запроса инцидентов
+ * 
+ * МЧС - видит всё
+ * ДЧС - видит только свою область (все районы)
+ * ОЧС - видит только свой район
+ */
+export function applyScopeCondition(
+  user: ScopeUser | undefined,
+  regionColumn: any,
+  districtColumn?: any
+): SQL | undefined {
+  return applyScopeConditionInternal(user, regionColumn, districtColumn);
+}
+
+function applyScopeConditionInternal(
+  user: ScopeUser | undefined,
+  regionColumn: any,
+  districtColumn?: any
+): SQL | undefined {
   if (!user) {
     return sql`1 = 0`;
   }
 
-  if (user.role === 'MCHS') {
+  // Администратор МЧС видит всё
+  if (isAdmin(user)) {
     return undefined;
   }
 
-  if (!user.orgUnitId) {
-    return sql`1 = 0`;
+  // ДЧС - фильтр по области (видит все районы своей области)
+  if (isDCHS(user) && user.region) {
+    return eq(regionColumn, user.region);
   }
 
-  if (user.role === 'DISTRICT') {
-    return eq(orgUnitColumn, user.orgUnitId);
+  // ОЧС - фильтр по области И району
+  if (isOCHS(user) && user.region && user.district && districtColumn) {
+    return and(
+      eq(regionColumn, user.region),
+      eq(districtColumn, user.district)
+    );
   }
 
-  const childUnitsQuery = db
-    .select({ id: orgUnits.id })
-    .from(orgUnits)
-    .where(eq(orgUnits.parentId, user.orgUnitId));
+  // Если только регион указан
+  if (user.region) {
+    return eq(regionColumn, user.region);
+  }
 
-  return or(
-    eq(orgUnitColumn, user.orgUnitId),
-    inArray(orgUnitColumn, childUnitsQuery),
-  );
+  // Нет доступа
+  return sql`1 = 0`;
 }
 
+/**
+ * Применяет фильтр области/района к запросу
+ */
 export async function applyScope<T extends { where: (condition: SQL) => T }>(
   query: T,
-  user: UserScope,
-  orgUnitColumn: any,
+  user: ScopeUser,
+  regionColumn: any,
+  districtColumn?: any,
   extraConditions: SQL[] = [],
 ): Promise<T> {
-  const scopeCondition = await applyScopeCondition(user, orgUnitColumn);
+  const scopeCondition = applyScopeCondition(user, regionColumn, districtColumn);
   const conditions = [...extraConditions];
+  
   if (scopeCondition) {
     conditions.push(scopeCondition);
   }
@@ -158,9 +133,29 @@ export async function applyScope<T extends { where: (condition: SQL) => T }>(
   return query.where(and(...conditions));
 }
 
+/**
+ * Middleware для проверки доступа к данным
+ */
+export function scopeMiddleware() {
+  return (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ ok: false, msg: 'unauthorized' });
+    }
+
+    req.scopeUser = toScopeUser(req.user);
+    req.userLevel = getUserLevel(req.user);
+    
+    next();
+  };
+}
+
 export default {
-  buildOrgSet,
-  assertOrgScope,
-  assertTreeAccess,
-  orgScopeMiddleware
+  toScopeUser,
+  isAdmin,
+  isDCHS,
+  isOCHS,
+  getUserLevel,
+  applyScopeCondition,
+  applyScope,
+  scopeMiddleware
 };
