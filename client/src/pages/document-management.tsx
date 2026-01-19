@@ -19,8 +19,8 @@ interface Document {
   title: string;
   documentType: string;
   status: 'draft' | 'pending' | 'approved' | 'rejected';
-  organizationId: string;
-  organizationName?: string;
+  orgUnitId: string;
+  orgUnitName?: string;
   period: string;
   fileUrl?: string;
   fileSize?: number;

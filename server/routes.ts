@@ -13,6 +13,7 @@ import { adminController } from "./controllers/admin.controller";
 import { statsController } from "./controllers/stats.controller";
 import { auditController } from "./controllers/audit.controller";
 import { analyticsController } from "./controllers/analytics.controller";
+import { toScopeUser } from "./services/authz";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -122,7 +123,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/maps/data', isAuthenticated, async (req: any, res) => {
     try {
       const { region, timeRange } = req.query;
-      const analyticsData = await storage.getAdvancedAnalytics({ period: timeRange, organizationId: region });
+      const analyticsData = await storage.getAdvancedAnalytics({
+        period: timeRange,
+        orgUnitId: region,
+        scopeUser: toScopeUser(req.user),
+      });
       res.json({ regions: analyticsData.regionStats || [] });
     } catch (error) {
       res.status(500).json({ message: 'Ошибка загрузки данных карты' });
@@ -138,9 +143,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id || req.user?.username;
       const reportData = JSON.parse(req.body.reportData || '{}');
+      if (!req.user?.orgUnitId) {
+        return res.status(400).json({ message: 'org unit required' });
+      }
       const incidentData = {
         ...reportData,
-        organizationId: req.user?.organizationId || 'field-report',
+        orgUnitId: req.user?.orgUnitId,
         createdBy: userId,
         dateTime: new Date(),
         objectType: '01',

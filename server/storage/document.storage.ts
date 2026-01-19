@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { documents } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { applyScopeCondition } from "../services/authz";
 
 export class DocumentStorage {
   async createDocument(documentData: any): Promise<any> {
@@ -12,10 +13,16 @@ export class DocumentStorage {
     let query = db.select().from(documents);
     const conditions = [];
 
-    if (filters.organizationId) conditions.push(eq(documents.organizationId, filters.organizationId));
+    if (filters.orgUnitId) conditions.push(eq(documents.orgUnitId, filters.orgUnitId));
     if (filters.documentType) conditions.push(eq(documents.documentType, filters.documentType));
     if (filters.status) conditions.push(eq(documents.status, filters.status));
     if (filters.period) conditions.push(eq(documents.period, filters.period));
+    if (filters.scope) {
+      const scopeCondition = await applyScopeCondition(filters.scope, documents.orgUnitId);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+    }
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));

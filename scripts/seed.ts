@@ -1,15 +1,10 @@
 import { db } from "../server/storage/db";
 import { users } from "@shared/schema";
-import { scrypt, randomBytes } from "crypto";
-import { promisify } from "util";
+import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 
-const scryptAsync = promisify(scrypt);
-
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  return bcrypt.hash(password, 12);
 }
 
 async function seed() {
@@ -25,19 +20,20 @@ async function seed() {
       console.log("Admin user already exists. Updating password...");
       const hashedPassword = await hashPassword(password);
       await db.update(users)
-        .set({ password: hashedPassword, updatedAt: new Date() })
+        .set({ passwordHash: hashedPassword, updatedAt: new Date() })
         .where(eq(users.username, username));
     } else {
       console.log("Creating new admin user...");
       const hashedPassword = await hashPassword(password);
       await db.insert(users).values({
         username,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         fullName: "System Administrator",
-        role: "admin",
+        role: "MCHS",
         region: "system",
         district: "",
         isActive: true,
+        mustChangeOnFirstLogin: false,
         createdAt: new Date(),
         updatedAt: new Date()
       });

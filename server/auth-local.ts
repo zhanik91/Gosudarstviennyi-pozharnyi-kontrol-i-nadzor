@@ -4,22 +4,14 @@ import { type Express } from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-
-const scryptAsync = promisify(scrypt);
+import bcrypt from "bcryptjs";
 
 export async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  return bcrypt.hash(password, 12);
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  return bcrypt.compare(supplied, stored);
 }
 
 export function setupLocalAuth(app: Express) {
@@ -54,7 +46,7 @@ export function setupLocalAuth(app: Express) {
           return done(null, false, { message: 'Неверный логин или пароль' });
         }
 
-        const isValid = await comparePasswords(password, user.password);
+        const isValid = await comparePasswords(password, user.passwordHash);
         if (!isValid) {
           return done(null, false, { message: 'Неверный логин или пароль' });
         }
@@ -82,10 +74,10 @@ export function setupLocalAuth(app: Express) {
   // Маршруты аутентификации
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, fullName, region, role = 'editor' } = req.body;
+      const { username, password, fullName, region, role = 'DISTRICT' } = req.body;
       
       // Проверяем права администратора
-      if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
+      if (!req.isAuthenticated() || (req.user as any)?.role !== 'MCHS') {
         return res.status(403).json({ message: "Только администратор может создавать пользователей" });
       }
 
@@ -97,12 +89,13 @@ export function setupLocalAuth(app: Express) {
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
         username,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         fullName,
         region,
         district: "",
         role,
-        organizationId: `${region}-mchs`,
+        orgUnitId: null,
+        mustChangeOnFirstLogin: true,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -129,7 +122,8 @@ export function setupLocalAuth(app: Express) {
       fullName: user.fullName,
       region: user.region,
       role: user.role,
-      organizationId: user.organizationId
+      orgUnitId: user.orgUnitId,
+      mustChangeOnFirstLogin: user.mustChangeOnFirstLogin
     });
   });
 
@@ -157,6 +151,32 @@ export function setupLocalAuth(app: Express) {
   app.post("/api/logout", handleLogout);
   app.get("/api/logout", handleLogout);
 
+  app.post("/api/change-password", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Не авторизован" });
+      }
+
+      const { newPassword } = req.body;
+      if (!newPassword) {
+        return res.status(400).json({ message: "Новый пароль обязателен" });
+      }
+
+      const user = req.user as any;
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUser(user.id, {
+        passwordHash: hashedPassword,
+        mustChangeOnFirstLogin: false,
+        updatedAt: new Date(),
+      });
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Ошибка смены пароля:", error);
+      res.status(500).json({ message: "Ошибка смены пароля" });
+    }
+  });
+
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Не авторизован" });
@@ -169,14 +189,15 @@ export function setupLocalAuth(app: Express) {
       fullName: user.fullName,
       region: user.region,
       role: user.role,
-      organizationId: user.organizationId
+      orgUnitId: user.orgUnitId,
+      mustChangeOnFirstLogin: user.mustChangeOnFirstLogin
     });
   });
 
   // Получение списка пользователей (только для админа)
   app.get("/api/users", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
+      if (!req.isAuthenticated() || (req.user as any)?.role !== 'MCHS') {
         return res.status(403).json({ message: "Доступ запрещен" });
       }
 
@@ -201,15 +222,15 @@ export function setupLocalAuth(app: Express) {
   // Деактивация пользователя (только для админа)
   app.put("/api/users/:id/deactivate", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
+      if (!req.isAuthenticated() || (req.user as any)?.role !== 'MCHS') {
         return res.status(403).json({ message: "Доступ запрещен" });
       }
 
       const userId = req.params.id;
       // В реальной системе лучше проверять по ID админа
-      const admin = await storage.getUserByUsername('admin');
-      if (admin && admin.id === userId) {
-         return res.status(400).json({ message: "Нельзя деактивировать главного администратора" });
+      const targetUser = await storage.getUser(userId);
+      if (targetUser?.role === 'MCHS') {
+         return res.status(400).json({ message: "Нельзя деактивировать учетную запись МЧС" });
       }
 
       await storage.updateUser(userId, { isActive: false, updatedAt: new Date() });
@@ -223,6 +244,12 @@ export function setupLocalAuth(app: Express) {
 
 export const isAuthenticated = (req: any, res: any, next: any) => {
   if (req.isAuthenticated()) {
+    if (
+      req.user?.mustChangeOnFirstLogin &&
+      !["/api/change-password", "/api/user", "/api/logout"].includes(req.path)
+    ) {
+      return res.status(403).json({ message: "Требуется сменить пароль", code: "PASSWORD_CHANGE_REQUIRED" });
+    }
     return next();
   }
   res.status(401).json({ message: "Необходима авторизация" });

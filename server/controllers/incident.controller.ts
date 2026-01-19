@@ -1,7 +1,15 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { insertIncidentSchema, insertIncidentVictimSchema } from "@shared/schema";
-import { z } from "zod";
+import { toScopeUser } from "../services/authz";
+
+async function canAccessOrgUnit(user: any, orgUnitId?: string | null) {
+  if (!user || !orgUnitId) return false;
+  if (user.role === "MCHS") return true;
+  if (user.role === "DISTRICT") return user.orgUnitId === orgUnitId;
+  const hierarchy = await storage.getOrganizationHierarchy(user.orgUnitId);
+  return hierarchy.some((org) => org.id === orgUnitId);
+}
 
 export class IncidentController {
 
@@ -14,15 +22,14 @@ export class IncidentController {
         user = await storage.getUserByUsername(req.user.username);
       }
       const filters: any = {};
+      const scopeUser = toScopeUser(user);
 
       if (req.query.period) filters.period = req.query.period as string;
       if (req.query.includeSubOrgs === 'true') filters.includeSubOrgs = true;
+      if (scopeUser) filters.scopeUser = scopeUser;
 
-      // Apply organization-based filtering based on user role
-      if (user?.role !== 'admin' && user?.organizationId) {
-        filters.organizationId = user.organizationId;
-      } else if (req.query.organizationId) {
-        filters.organizationId = req.query.organizationId as string;
+      if (user?.role === "MCHS" && req.query.orgUnitId) {
+        filters.orgUnitId = req.query.orgUnitId as string;
       }
 
       const incidents = await storage.getIncidents(filters);
@@ -42,6 +49,7 @@ export class IncidentController {
         user = await storage.getUserByUsername(req.user.username);
       }
       const filters: any = {};
+      const scopeUser = toScopeUser(user);
 
       const { q, dateFrom, dateTo, incidentType, region, includeSubOrgs } = req.query;
 
@@ -66,10 +74,12 @@ export class IncidentController {
         filters.includeSubOrgs = true;
       }
 
-      if (user?.role !== "admin" && user?.organizationId) {
-        filters.organizationId = user.organizationId;
-      } else if (req.query.organizationId) {
-        filters.organizationId = req.query.organizationId as string;
+      if (scopeUser) {
+        filters.scopeUser = scopeUser;
+      }
+
+      if (user?.role === "MCHS" && req.query.orgUnitId) {
+        filters.orgUnitId = req.query.orgUnitId as string;
       }
 
       const hasSearchParams =
@@ -81,7 +91,8 @@ export class IncidentController {
 
       if (!hasSearchParams) {
         const incidents = await storage.getIncidents({
-          organizationId: filters.organizationId,
+          orgUnitId: filters.orgUnitId,
+          scopeUser,
         });
         res.json(incidents);
         return;
@@ -107,13 +118,19 @@ export class IncidentController {
       console.log("📍 Request body region/city:", req.body.region, req.body.city);
 
       // Для админа используем значения по умолчанию, если организация не задана
-      const organizationId = user?.organizationId || 'mcs-rk';
+      const orgUnitId =
+        user?.role === "MCHS" && req.body.orgUnitId
+          ? req.body.orgUnitId
+          : user?.orgUnitId;
+      if (!orgUnitId) {
+        return res.status(400).json({ message: "Org unit is required for incident creation" });
+      }
       const createdBy = user?.id || userId;
 
       // Подготавливаем данные для валидации
       const incidentData = {
         ...req.body,
-        organizationId,
+        orgUnitId,
         createdBy,
         dateTime: req.body.dateTime ? new Date(req.body.dateTime) : new Date(),
         // Конвертируем числовые поля в строки для соответствия схеме
@@ -187,7 +204,8 @@ export class IncidentController {
       }
 
       // Check permissions
-      if (user?.role !== 'admin' && incident.organizationId !== user?.organizationId) {
+      const canAccess = await canAccessOrgUnit(user, incident.orgUnitId);
+      if (!canAccess) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
@@ -237,7 +255,8 @@ export class IncidentController {
       }
 
       // Check permissions
-      if (user?.role !== 'admin' && incident.organizationId !== user?.organizationId) {
+      const canAccess = await canAccessOrgUnit(user, incident.orgUnitId);
+      if (!canAccess) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 

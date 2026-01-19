@@ -1,8 +1,17 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { DocumentStorageService, ObjectNotFoundError } from "../objectStorage";
+import { toScopeUser } from "../services/authz";
 
 const documentStorageService = new DocumentStorageService();
+
+async function canAccessOrgUnit(user: any, orgUnitId?: string | null) {
+  if (!user || !orgUnitId) return false;
+  if (user.role === "MCHS") return true;
+  if (user.role === "DISTRICT") return user.orgUnitId === orgUnitId;
+  const hierarchy = await storage.getOrganizationHierarchy(user.orgUnitId);
+  return hierarchy.some((org) => org.id === orgUnitId);
+}
 
 export class DocumentController {
 
@@ -29,9 +38,17 @@ export class DocumentController {
       const userId = req.user?.id || req.user?.username;
       const user = await storage.getUser(userId);
 
+      const orgUnitId =
+        user?.role === "MCHS" && req.body.orgUnitId
+          ? req.body.orgUnitId
+          : user?.orgUnitId;
+      if (!orgUnitId) {
+        return res.status(400).json({ message: "Org unit is required for document creation" });
+      }
+
       const documentData = {
         ...req.body,
-        organizationId: user?.organizationId || 'mcs-rk',
+        orgUnitId,
         createdBy: userId,
       };
 
@@ -48,6 +65,7 @@ export class DocumentController {
     try {
       const userId = req.user?.id || req.user?.username;
       const user = await storage.getUser(userId);
+      const scopeUser = toScopeUser(user);
 
       // Merge query params from both route styles
       const filters: any = {
@@ -57,9 +75,12 @@ export class DocumentController {
         status: req.query.status
       };
 
-      // Apply organization filtering
-      if (user?.role !== 'admin' && user?.organizationId) {
-        filters.organizationId = user.organizationId;
+      if (scopeUser) {
+        filters.scope = scopeUser;
+      }
+
+      if (user?.role === "MCHS" && req.query.orgUnitId) {
+        filters.orgUnitId = req.query.orgUnitId as string;
       }
 
       const documents = await storage.getDocuments(filters);
@@ -88,8 +109,17 @@ export class DocumentController {
   async updateStatus(req: Request, res: Response) {
     try {
       const { status } = req.body;
-      const document = await storage.updateDocumentStatus(req.params.id, status);
-      res.json(document);
+      const user = await storage.getUser(req.user?.id || req.user?.username);
+      const existingDocument = await storage.getDocumentById(req.params.id);
+      if (!existingDocument) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      const canAccess = await canAccessOrgUnit(user, existingDocument.orgUnitId);
+      if (!canAccess) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      const updatedDocument = await storage.updateDocumentStatus(req.params.id, status);
+      res.json(updatedDocument);
     } catch (error) {
       console.error('Error updating document status:', error);
       res.status(500).json({ message: 'Ошибка обновления статуса' });
@@ -99,6 +129,15 @@ export class DocumentController {
   // Удалить документ
   async deleteDocument(req: Request, res: Response) {
     try {
+      const user = await storage.getUser(req.user?.id || req.user?.username);
+      const existingDocument = await storage.getDocumentById(req.params.id);
+      if (!existingDocument) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      const canAccess = await canAccessOrgUnit(user, existingDocument.orgUnitId);
+      if (!canAccess) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
       await storage.deleteDocument(req.params.id);
       res.json({ success: true });
     } catch (error) {

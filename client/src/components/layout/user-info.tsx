@@ -26,14 +26,12 @@ export default function UserInfo() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'admin':
-        return <Badge variant="destructive" className="text-xs">Администратор</Badge>;
-      case 'reviewer':
-        return <Badge variant="secondary" className="text-xs">Проверяющий</Badge>;
-      case 'approver':
-        return <Badge variant="outline" className="text-xs">Утверждающий</Badge>;
+      case 'MCHS':
+        return <Badge variant="destructive" className="text-xs">МЧС</Badge>;
+      case 'DCHS':
+        return <Badge variant="secondary" className="text-xs">ДЧС</Badge>;
       default:
-        return <Badge variant="default" className="text-xs">Редактор</Badge>;
+        return <Badge variant="default" className="text-xs">Район</Badge>;
     }
   };
 

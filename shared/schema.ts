@@ -10,6 +10,7 @@ import {
   decimal,
   boolean,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -27,10 +28,10 @@ export const sessions = pgTable(
 );
 
 // User roles enum
-export const userRoleEnum = pgEnum('user_role', ['editor', 'reviewer', 'approver', 'admin']);
+export const userRoleEnum = pgEnum('user_role', ['MCHS', 'DCHS', 'DISTRICT']);
 
 // Organization types enum
-export const organizationTypeEnum = pgEnum('organization_type', ['district', 'region', 'rk']);
+export const orgUnitTypeEnum = pgEnum('org_unit_type', ['MCHS', 'DCHS', 'DISTRICT']);
 
 // Incident types enum
 export const incidentTypeEnum = pgEnum('incident_type', [
@@ -44,31 +45,39 @@ export const packageStatusEnum = pgEnum('package_status', [
 
 // Users table for local authentication (МЧС РК)
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: varchar("username").notNull().unique(),
-  password: varchar("password").notNull(),
-  fullName: varchar("full_name").notNull(),
-  region: varchar("region").notNull(),
+  passwordHash: varchar("password_hash").notNull(),
+  fullName: varchar("full_name").default(""),
+  region: varchar("region").default(""),
   district: varchar("district").default(""),
   email: text("email").notNull().default(""),
-  role: userRoleEnum("role").notNull().default('editor'),
-  organizationId: varchar("organization_id"),
+  role: userRoleEnum("role").notNull().default('DISTRICT'),
+  orgUnitId: varchar("org_unit_id"),
+  mustChangeOnFirstLogin: boolean("must_change_on_first_login").notNull().default(true),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Organizations table
-export const organizations = pgTable("organizations", {
+export const orgUnits = pgTable("org_units", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: orgUnitTypeEnum("type").notNull(),
   name: varchar("name").notNull(),
-  type: organizationTypeEnum("type").notNull(),
   parentId: varchar("parent_id"),
+  regionName: varchar("region_name").default(""),
+  unitName: varchar("unit_name").default(""),
   code: varchar("code").unique(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ([
+  uniqueIndex("org_units_type_name_parent_id_key").on(table.type, table.name, table.parentId),
+  index("org_units_type_idx").on(table.type),
+  index("org_units_parent_id_idx").on(table.parentId),
+  index("org_units_region_name_idx").on(table.regionName),
+]));
 
 // Fire incidents table (согласно форме 1-ОСП)
 export const incidents = pgTable("incidents", {
@@ -134,7 +143,7 @@ export const incidents = pgTable("incidents", {
   savedProperty: decimal("saved_property", { precision: 15, scale: 2 }).default('0'),
   
   // Система управления
-  organizationId: varchar("organization_id").notNull(),
+  orgUnitId: varchar("org_unit_id").notNull(),
   createdBy: varchar("created_by").notNull(),
   packageId: varchar("package_id"),
   status: varchar("status", { enum: ["pending", "investigating", "resolved", "archived"] })
@@ -146,7 +155,9 @@ export const incidents = pgTable("incidents", {
   timeOfDay: varchar("time_of_day"), // 00:00-06:00, etc. (Can be derived but useful for explicit Form 5/7 stats)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("incidents_org_unit_id_idx").on(table.orgUnitId),
+]);
 
 // Detailed victims table for Forms 5 and 7
 export const incidentVictims = pgTable("incident_victims", {
@@ -176,7 +187,7 @@ export const incidentVictims = pgTable("incident_victims", {
 export const packages = pgTable("packages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   period: varchar("period").notNull(), // YYYY-MM format
-  organizationId: varchar("organization_id").notNull(),
+  orgUnitId: varchar("org_unit_id").notNull(),
   status: packageStatusEnum("status").notNull().default('draft'),
   submittedBy: varchar("submitted_by"),
   submittedAt: timestamp("submitted_at"),
@@ -187,32 +198,34 @@ export const packages = pgTable("packages", {
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("packages_org_unit_id_idx").on(table.orgUnitId),
+]);
 
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [users.organizationId],
-    references: [organizations.id],
+  orgUnit: one(orgUnits, {
+    fields: [users.orgUnitId],
+    references: [orgUnits.id],
   }),
   incidents: many(incidents),
 }));
 
-export const organizationsRelations = relations(organizations, ({ one, many }) => ({
-  parent: one(organizations, {
-    fields: [organizations.parentId],
-    references: [organizations.id],
+export const orgUnitsRelations = relations(orgUnits, ({ one, many }) => ({
+  parent: one(orgUnits, {
+    fields: [orgUnits.parentId],
+    references: [orgUnits.id],
   }),
-  children: many(organizations),
+  children: many(orgUnits),
   users: many(users),
   incidents: many(incidents),
   packages: many(packages),
 }));
 
 export const incidentsRelations = relations(incidents, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [incidents.organizationId],
-    references: [organizations.id],
+  orgUnit: one(orgUnits, {
+    fields: [incidents.orgUnitId],
+    references: [orgUnits.id],
   }),
   createdByUser: one(users, {
     fields: [incidents.createdBy],
@@ -233,9 +246,9 @@ export const incidentVictimsRelations = relations(incidentVictims, ({ one }) => 
 }));
 
 export const packagesRelations = relations(packages, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [packages.organizationId],
-    references: [organizations.id],
+  orgUnit: one(orgUnits, {
+    fields: [packages.orgUnitId],
+    references: [orgUnits.id],
   }),
   submittedByUser: one(users, {
     fields: [packages.submittedBy],
@@ -251,7 +264,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
-export const insertOrganizationSchema = createInsertSchema(organizations).omit({
+export const insertOrgUnitSchema = createInsertSchema(orgUnits).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -283,7 +296,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Пароль обязателен")
 });
 
-export type Organization = typeof organizations.$inferSelect;
+export type OrgUnit = typeof orgUnits.$inferSelect;
 
 // Схема уведомлений для CRM системы
 export const notifications = pgTable('notifications', {
@@ -352,7 +365,7 @@ export const workflowInstances = pgTable('workflow_instances', {
 
 export type WorkflowInstance = typeof workflowInstances.$inferSelect;
 export type InsertWorkflowInstance = typeof workflowInstances.$inferInsert;
-export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type InsertOrgUnit = z.infer<typeof insertOrgUnitSchema>;
 
 export type Incident = typeof incidents.$inferSelect;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
