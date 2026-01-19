@@ -95,20 +95,24 @@ export class ReportController {
       const orgUnits = await storage.getOrganizations();
       const orgId = (req.query.orgId as string) || req.user?.orgUnitId;
       const period = req.query.period as string;
+      const includeChildren = req.query.includeChildren === 'true';
 
       // Проверка доступа
-      const { assertOrgScope } = await import('../services/authz');
+      const { assertOrgScope, assertTreeAccess } = await import('../services/authz');
 
       try {
         if (!req.user?.orgUnitId) {
           return res.status(400).json({ ok: false, msg: 'org unit required' });
         }
         assertOrgScope(orgUnits, req.user?.orgUnitId, orgId);
+        if (includeChildren) {
+          assertTreeAccess(req.user?.role || 'DISTRICT');
+        }
       } catch (error: any) {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
       }
 
-      const validationErrors = await storage.validateReports(orgId, period);
+      const validationErrors = await storage.validateReports(orgId, period, includeChildren);
       res.json({ ok: true, errors: validationErrors });
     } catch (error) {
       console.error('Error validating reports:', error);
