@@ -21,7 +21,7 @@ import { Plus, Trash2 } from "lucide-react";
 // Updated schema to include victims array
 const ospIncidentSchema = insertIncidentSchema
   .omit({
-    organizationId: true,
+    orgUnitId: true,
     createdBy: true,
     packageId: true,
   })
@@ -336,7 +336,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                         <FormItem>
                           <FormLabel>Область</FormLabel>
                           <Select
-                            disabled={(user as any)?.role !== 'admin'}
+                            disabled={(user as any)?.role !== 'MCHS'}
                             onValueChange={(val) => {
                                 field.onChange(val);
                                 setSelectedRegion(val);
@@ -361,7 +361,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                         <FormItem>
                           <FormLabel>Город/Район</FormLabel>
                           <Select
-                             disabled={!selectedRegion}
+                             disabled={!selectedRegion || (user as any)?.role === 'DISTRICT'}
                              onValueChange={field.onChange}
                              value={field.value}
                           >

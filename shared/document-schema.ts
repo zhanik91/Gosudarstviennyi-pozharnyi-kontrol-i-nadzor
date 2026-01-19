@@ -7,7 +7,8 @@ import {
   jsonb,
   integer,
   boolean,
-  pgEnum
+  pgEnum,
+  index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -56,7 +57,7 @@ export const documents = pgTable('documents', {
   // Метаданные
   period: varchar('period'),           // Отчетный период (YYYY-MM)
   region: varchar('region'),           // Область
-  organizationId: varchar('organization_id').notNull(),
+  orgUnitId: varchar('org_unit_id').notNull(),
   
   // Статус и workflow
   status: documentStatusEnum('status').notNull().default('draft'),
@@ -76,7 +77,9 @@ export const documents = pgTable('documents', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
   approvedAt: timestamp('approved_at'),
-});
+}, (table) => ([
+  index('documents_org_unit_id_idx').on(table.orgUnitId),
+]));
 
 // Таблица истории версий документов
 export const documentVersions = pgTable('document_versions', {
@@ -95,9 +98,11 @@ export const documentTags = pgTable('document_tags', {
   id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
   name: varchar('name', { length: 100 }).notNull(),
   color: varchar('color', { length: 7 }).default('#3b82f6'), // HEX цвет
-  organizationId: varchar('organization_id').notNull(),
+  orgUnitId: varchar('org_unit_id').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (table) => ([
+  index('document_tags_org_unit_id_idx').on(table.orgUnitId),
+]));
 
 // Связующая таблица документов и тегов
 export const documentTagRelations = pgTable('document_tag_relations', {

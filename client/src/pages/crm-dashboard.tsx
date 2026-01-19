@@ -378,7 +378,7 @@ export default function CRMDashboard() {
                       
                       <div className="flex flex-col items-end gap-2">
                         <Badge 
-                          variant={user.role === 'admin' ? 'default' : 'secondary'}
+                          variant={user.role === 'MCHS' ? 'default' : 'secondary'}
                           className="text-xs"
                         >
                           {user.role}

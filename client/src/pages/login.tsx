@@ -148,15 +148,11 @@ export default function LoginPage() {
                       </form>
                     </Form>
 
-                    {/* Тестовые учетные записи */}
                     <div className="mt-6 p-4 bg-white/20 dark:bg-black/20 rounded-lg border border-white/10 backdrop-blur-sm">
-                      <h4 className="text-sm font-medium mb-2 text-slate-800 dark:text-slate-200">Тестовые учетные записи:</h4>
+                      <h4 className="text-sm font-medium mb-2 text-slate-800 dark:text-slate-200">Доступ к системе</h4>
                       <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                        <div><strong>Администратор:</strong> mchs_admin / uQ8i5gAe</div>
-                        <div><strong>МЧС РК:</strong> mchs_rk / hj9fWbvu</div>
-                        <div><strong>Алматы (город):</strong> almaty_city_mchs / Al2025mcs</div>
-                        <div><strong>Нур-Султан:</strong> astana_mchs / As2025mcs</div>
-                        <div><strong>Шымкент:</strong> shymkent_mchs / Sh2025mcs</div>
+                        Учетные записи создаются через импорт оргструктуры и CSV-файл. Обратитесь к администратору МЧС
+                        для получения доступа.
                       </div>
                     </div>
                   </CardContent>

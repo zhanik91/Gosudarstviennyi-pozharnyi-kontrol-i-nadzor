@@ -25,19 +25,20 @@ async function seed() {
       console.log("Admin user already exists. Updating password...");
       const hashedPassword = await hashPassword(password);
       await db.update(users)
-        .set({ password: hashedPassword, updatedAt: new Date() })
+        .set({ passwordHash: hashedPassword, updatedAt: new Date() })
         .where(eq(users.username, username));
     } else {
       console.log("Creating new admin user...");
       const hashedPassword = await hashPassword(password);
       await db.insert(users).values({
         username,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         fullName: "System Administrator",
-        role: "admin",
+        role: "MCHS",
         region: "system",
         district: "",
         isActive: true,
+        mustChangeOnFirstLogin: false,
         createdAt: new Date(),
         updatedAt: new Date()
       });

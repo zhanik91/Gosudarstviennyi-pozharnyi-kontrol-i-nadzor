@@ -1,18 +1,23 @@
 import { db } from "./db";
 import { packages, type Package, type InsertPackage } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { applyScopeCondition } from "../services/authz";
 
 export class PackageStorage {
   async getPackages(filters?: {
-    organizationId?: string;
+    orgUnitId?: string;
     status?: string;
     period?: string;
+    scopeUser?: {
+      role: "MCHS" | "DCHS" | "DISTRICT";
+      orgUnitId?: string | null;
+    };
   }): Promise<Package[]> {
     let query = db.select().from(packages);
     const conditions = [];
 
-    if (filters?.organizationId) {
-      conditions.push(eq(packages.organizationId, filters.organizationId));
+    if (filters?.orgUnitId) {
+      conditions.push(eq(packages.orgUnitId, filters.orgUnitId));
     }
 
     if (filters?.status) {
@@ -21,6 +26,13 @@ export class PackageStorage {
 
     if (filters?.period) {
       conditions.push(eq(packages.period, filters.period));
+    }
+
+    if (filters?.scopeUser) {
+      const scopeCondition = await applyScopeCondition(filters.scopeUser, packages.orgUnitId);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
     }
 
     if (conditions.length > 0) {

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import XLSX from 'xlsx';
+import { toScopeUser } from "../services/authz";
 
 export class ExportController {
 
@@ -10,21 +11,31 @@ export class ExportController {
       const { form, period, orgId, includeChildren } = req.query;
 
       // Проверка доступа к организации
-      const organizations = await storage.getOrganizations();
-      const { assertOrgScope } = await import('../services/authz');
+      const orgUnits = await storage.getOrganizations();
+      const { assertOrgScope, assertTreeAccess } = await import('../services/authz');
 
       try {
-        assertOrgScope(organizations, req.user?.organizationId || 'mcs-rk', orgId as string);
+        const userOrgId = req.user?.orgUnitId;
+        if (!userOrgId) {
+          return res.status(400).json({ ok: false, msg: 'org unit required' });
+        }
+        const resolvedOrgId = (orgId as string) || userOrgId;
+        assertOrgScope(orgUnits, userOrgId, resolvedOrgId);
+        if (includeChildren === 'true') {
+          assertTreeAccess(req.user?.role || 'DISTRICT');
+        }
       } catch (error: any) {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
       }
 
       // Получение данных отчета
+      const resolvedOrgId = (orgId as string) || req.user?.orgUnitId;
       const reportData = await storage.getReportData({
-        orgId: orgId as string,
+        orgId: resolvedOrgId,
         period: period as string,
         form: form as string,
-        includeChildren: includeChildren === 'true'
+        includeChildren: includeChildren === 'true',
+        scopeUser: toScopeUser(req.user),
       });
 
       // Создание Excel файла
@@ -69,7 +80,7 @@ export class ExportController {
       // Генерация Excel файла
       const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-      const filename = `report_${form || 'all'}_${period}_${orgId}.xlsx`;
+      const filename = `report_${form || 'all'}_${period}_${resolvedOrgId}.xlsx`;
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
