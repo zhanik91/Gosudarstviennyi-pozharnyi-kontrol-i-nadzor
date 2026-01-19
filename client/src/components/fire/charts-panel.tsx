@@ -1,27 +1,67 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+const COLORS = ["#2563eb", "#0ea5e9", "#14b8a6", "#f59e0b", "#ef4444", "#a855f7"];
 
 export default function ChartsPanel() {
   const [periodFrom, setPeriodFrom] = useState("");
   const [periodTo, setPeriodTo] = useState("");
   const [includeOrgTree, setIncludeOrgTree] = useState(false);
   const [chartsGenerated, setChartsGenerated] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({
+    periodFrom: "",
+    periodTo: "",
+    includeOrgTree: false,
+  });
 
   const handleBuildCharts = () => {
     setChartsGenerated(true);
+    setAppliedFilters({
+      periodFrom,
+      periodTo,
+      includeOrgTree,
+    });
   };
 
-  // Simulate chart rendering
-  useEffect(() => {
-    if (chartsGenerated) {
-      // In a real app, you would use Chart.js or recharts here
-      // For now, we'll just simulate chart containers
-    }
-  }, [chartsGenerated]);
+  const queryParams = new URLSearchParams();
+  if (appliedFilters.periodFrom) {
+    queryParams.set("periodFrom", appliedFilters.periodFrom);
+  }
+  if (appliedFilters.periodTo) {
+    queryParams.set("periodTo", appliedFilters.periodTo);
+  }
+  queryParams.set("includeChildren", appliedFilters.includeOrgTree ? "true" : "false");
+  const analyticsUrl = `/api/analytics/forms${queryParams.toString() ? `?${queryParams}` : ""}`;
+
+  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+    queryKey: [analyticsUrl],
+    enabled: chartsGenerated,
+  });
+
+  const monthlyTrends = (analytics as any)?.form1?.monthly ?? [];
+  const causes = (analytics as any)?.form2?.causes ?? [];
+  const regions = (analytics as any)?.form2?.regions ?? [];
+
+  const periodLabel = `${appliedFilters.periodFrom || "начало"} — ${appliedFilters.periodTo || "настоящее время"}`;
 
   return (
     <div className="space-y-6">
@@ -37,7 +77,7 @@ export default function ChartsPanel() {
               </Label>
               <Input
                 id="periodFrom"
-                type="text"
+                type="month"
                 placeholder="2025-01"
                 value={periodFrom}
                 onChange={(e) => setPeriodFrom(e.target.value)}
@@ -51,7 +91,7 @@ export default function ChartsPanel() {
               </Label>
               <Input
                 id="periodTo"
-                type="text"
+                type="month"
                 placeholder="2025-12"
                 value={periodTo}
                 onChange={(e) => setPeriodTo(e.target.value)}
@@ -93,22 +133,36 @@ export default function ChartsPanel() {
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Тренды по месяцам</h3>
             <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
-              {chartsGenerated ? (
-                <div className="text-center" data-testid="chart-monthly-trends">
-                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <div className="w-8 h-8 bg-primary rounded"></div>
-                  </div>
-                  <p className="text-muted-foreground">График трендов по месяцам</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Данные за период {periodFrom || "2025-01"} — {periodTo || "2025-12"}
-                  </p>
-                </div>
-              ) : (
+              {!chartsGenerated ? (
                 <p className="text-muted-foreground" data-testid="chart-placeholder-monthly">
                   Нажмите "Построить" для отображения диаграммы
                 </p>
+              ) : isAnalyticsLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"></span>
+                  Загрузка данных...
+                </div>
+              ) : monthlyTrends.length === 0 ? (
+                <p className="text-muted-foreground" data-testid="chart-empty-monthly">
+                  Нет данных за выбранный период
+                </p>
+              ) : (
+                <div className="w-full h-full" data-testid="chart-monthly-trends">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyTrends}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" fontSize={12} />
+                      <YAxis fontSize={12} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="count" name="Инциденты" stroke={COLORS[0]} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               )}
             </div>
+            {chartsGenerated && !isAnalyticsLoading && monthlyTrends.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-2">Период: {periodLabel}</p>
+            )}
           </CardContent>
         </Card>
 
@@ -117,20 +171,38 @@ export default function ChartsPanel() {
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Структура причин</h3>
             <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
-              {chartsGenerated ? (
-                <div className="text-center" data-testid="chart-causes">
-                  <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <div className="w-8 h-8 bg-accent rounded-full"></div>
-                  </div>
-                  <p className="text-muted-foreground">Структура причин пожаров</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Круговая диаграмма распределения
-                  </p>
-                </div>
-              ) : (
+              {!chartsGenerated ? (
                 <p className="text-muted-foreground" data-testid="chart-placeholder-causes">
                   Нажмите "Построить" для отображения диаграммы
                 </p>
+              ) : isAnalyticsLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"></span>
+                  Загрузка данных...
+                </div>
+              ) : causes.length === 0 ? (
+                <p className="text-muted-foreground" data-testid="chart-empty-causes">
+                  Нет данных по причинам
+                </p>
+              ) : (
+                <div className="w-full h-full" data-testid="chart-causes">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={causes}
+                        dataKey="count"
+                        nameKey="label"
+                        innerRadius={40}
+                        outerRadius={90}
+                      >
+                        {causes.map((entry: { label: string }, index: number) => (
+                          <Cell key={`${entry.label}-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               )}
             </div>
           </CardContent>
@@ -141,22 +213,31 @@ export default function ChartsPanel() {
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Распределение по регионам</h3>
             <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
-              {chartsGenerated ? (
-                <div className="text-center" data-testid="chart-regional">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="w-8 bg-primary rounded" style={{ height: `${20 + i * 10}px` }}></div>
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground">Распределение инцидентов по регионам</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Столбчатая диаграмма по областям РК
-                  </p>
-                </div>
-              ) : (
+              {!chartsGenerated ? (
                 <p className="text-muted-foreground" data-testid="chart-placeholder-regional">
                   Нажмите "Построить" для отображения диаграммы
                 </p>
+              ) : isAnalyticsLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"></span>
+                  Загрузка данных...
+                </div>
+              ) : regions.length === 0 ? (
+                <p className="text-muted-foreground" data-testid="chart-empty-regional">
+                  Нет данных по регионам
+                </p>
+              ) : (
+                <div className="w-full h-full" data-testid="chart-regional">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={regions}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" fontSize={12} />
+                      <YAxis fontSize={12} />
+                      <Tooltip />
+                      <Bar dataKey="count" name="Инциденты" fill={COLORS[1]} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               )}
             </div>
           </CardContent>
