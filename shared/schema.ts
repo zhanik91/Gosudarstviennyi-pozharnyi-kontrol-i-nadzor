@@ -289,7 +289,14 @@ export const insertOrgUnitSchema = createInsertSchema(orgUnits).omit({
   updatedAt: true,
 });
 
-export const insertIncidentSchema = createInsertSchema(incidents).omit({
+export const insertIncidentSchema = createInsertSchema(incidents, {
+  cause: z.string().trim().optional(),
+  causeCode: z.string().trim().optional(),
+  causeDetailed: z.string().trim().optional(),
+  objectType: z.string().trim().optional(),
+  objectCode: z.string().trim().optional(),
+  objectDetailed: z.string().trim().optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

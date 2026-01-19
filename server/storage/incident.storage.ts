@@ -603,7 +603,12 @@ export class IncidentStorage {
 
   async createIncident(incidentData: InsertIncident & { victims?: InsertIncidentVictim[] }): Promise<Incident> {
     const { victims, ...data } = incidentData;
-    const [incident] = await db.insert(incidents).values(data as any).returning();
+    const normalizedData = {
+      ...data,
+      causeCode: data.causeCode ?? data.cause,
+      objectCode: data.objectCode ?? data.objectType,
+    };
+    const [incident] = await db.insert(incidents).values(normalizedData as any).returning();
 
     if (victims && victims.length > 0) {
       const victimsWithId = victims.map(v => ({ ...v, incidentId: incident.id }));
@@ -615,7 +620,12 @@ export class IncidentStorage {
 
   async updateIncident(id: string, incidentData: Partial<InsertIncident> & { victims?: InsertIncidentVictim[] }): Promise<Incident> {
     const { victims, ...data } = incidentData;
-    const updateData = { ...data, updatedAt: new Date() };
+    const updateData = {
+      ...data,
+      causeCode: data.causeCode ?? data.cause,
+      objectCode: data.objectCode ?? data.objectType,
+      updatedAt: new Date(),
+    };
 
     const [incident] = await db
       .update(incidents)

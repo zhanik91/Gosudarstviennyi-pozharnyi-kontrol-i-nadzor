@@ -142,9 +142,11 @@ export class IncidentController {
         // Обязательные поля для валидации с дефолтными значениями
         region: req.body.region || user?.region || 'Шымкент',
         city: req.body.city || user?.district || '',
-        objectType: req.body.objectType || '01',
-        cause: req.body.cause || '01',
-        locality: req.body.locality || 'cities'
+        causeCode: req.body.causeCode || req.body.cause || '01',
+        cause: req.body.cause || req.body.causeCode || '01',
+        objectCode: req.body.objectCode || req.body.objectType || '01',
+        objectType: req.body.objectType || req.body.objectCode || '01',
+        locality: req.body.locality || 'cities',
       };
 
       console.log("✅ Prepared incident data:", incidentData);
