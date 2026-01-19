@@ -262,18 +262,18 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/documents">
-                    <a className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 cursor-pointer w-full">
                       <FileText className="h-4 w-4" />
                       Документация
-                    </a>
+                    </div>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/notifications">
-                    <a className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 cursor-pointer w-full">
                       <Bell className="h-4 w-4" />
                       Уведомления
-                    </a>
+                    </div>
                   </Link>
                 </DropdownMenuItem>
                 {((user as any)?.role === "MCHS") && (
@@ -281,10 +281,10 @@ export default function Header() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link href="/admin">
-                        <a className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 cursor-pointer w-full">
                           <Users className="h-4 w-4" />
                           Администрирование
-                        </a>
+                        </div>
                       </Link>
                     </DropdownMenuItem>
                   </>
