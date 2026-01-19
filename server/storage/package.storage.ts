@@ -61,9 +61,22 @@ export class PackageStorage {
   }
 
   async getApprovedPackages(orgId: string, period: string): Promise<any[]> {
-    return [
-      { id: 'pkg-001', orgId: 'child-org-1', period, status: 'approved', createdAt: new Date() }
-    ];
+    const hierarchy = await orgStorage.getOrganizationHierarchy(orgId);
+    const orgIds = hierarchy.length > 0 ? hierarchy.map((org) => org.id) : [orgId];
+
+    const conditions = [eq(packages.status, "approved" as any)];
+    if (period) {
+      conditions.push(eq(packages.period, period));
+    }
+    if (orgIds.length > 0) {
+      conditions.push(inArray(packages.orgUnitId, orgIds));
+    }
+
+    return await db
+      .select()
+      .from(packages)
+      .where(and(...conditions))
+      .orderBy(desc(packages.createdAt)) as Package[];
   }
 
   async createConsolidatedPackage(data: any): Promise<any> {

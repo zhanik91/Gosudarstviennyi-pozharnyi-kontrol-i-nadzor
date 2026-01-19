@@ -1,9 +1,23 @@
 import { db } from "./db";
-import { documents } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { auditLogs, documents, notifications, users } from "@shared/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { isAdmin, type ScopeUser } from "../services/authz";
 
 export class DocumentStorage {
+  private formatRelativeTime(date: Date): string {
+    const diffMs = Date.now() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return "только что";
+    if (diffMinutes < 60) return `${diffMinutes} мин. назад`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} ч. назад`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} дн. назад`;
+  }
+
   async createDocument(documentData: any): Promise<any> {
     const [document] = await db.insert(documents).values(documentData).returning();
     return document;
@@ -48,30 +62,84 @@ export class DocumentStorage {
     await db.delete(documents).where(eq(documents.id, id));
   }
 
-  // Stubs required by interface or legacy code
+  // Notifications
   async createNotification(data: any): Promise<any> {
+    const {
+      userId,
+      createdBy,
+      title,
+      message,
+      type,
+      isRead,
+      createdAt,
+      data: payloadData,
+      ...rest
+    } = data || {};
+
+    const resolvedUserId = userId || createdBy;
+    if (!resolvedUserId) {
+      throw new Error("userId is required to create a notification");
+    }
+
     const notificationData = {
-      id: `notif-${Date.now()}`,
-      userId: data.userId,
-      title: data.title,
-      message: data.message,
-      type: data.type || 'info',
-      isRead: false,
-      createdAt: new Date(),
-      ...data
+      id: crypto.randomUUID(),
+      userId: resolvedUserId,
+      title,
+      message,
+      type: type || "info",
+      isRead: Boolean(isRead),
+      data: {
+        ...payloadData,
+        ...rest,
+        createdBy,
+      },
+      createdAt: createdAt ? new Date(createdAt) : new Date(),
     };
-    return notificationData;
+
+    const [notification] = await db.insert(notifications).values(notificationData).returning();
+    return notification;
   }
 
   async getObjectsCount(): Promise<number> {
-    return 2156; // Stub
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(documents);
+    return Number(result?.count ?? 0);
   }
 
   async getRecentActivities(limit: number = 10): Promise<any[]> {
-    return [
-      { user: 'Администратор МЧС Алматы', action: 'создал новое происшествие', timestamp: '2 минуты назад', type: 'info' },
-      { user: 'Инспектор Шымкент', action: 'утвердил отчет 1-ОСП', timestamp: '15 минут назад', type: 'success' },
-      { user: 'Старший специалист Астана', action: 'внес изменения в документ', timestamp: '1 час назад', type: 'warning' }
-    ].slice(0, limit);
+    const rows = await db
+      .select({
+        action: auditLogs.action,
+        entityType: auditLogs.entityType,
+        createdAt: auditLogs.createdAt,
+        userName: users.fullName,
+        username: users.username,
+      })
+      .from(auditLogs)
+      .leftJoin(users, eq(auditLogs.userId, users.id))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit);
+
+    return rows.map((row) => {
+      const action = row.action?.toLowerCase() ?? "";
+      let type: "info" | "success" | "warning" | "error" = "info";
+
+      if (action.includes("approve")) type = "success";
+      if (action.includes("reject") || action.includes("error")) type = "error";
+      if (action.includes("warning")) type = "warning";
+
+      const userName = row.userName || row.username || "Система";
+      const timestamp = row.createdAt
+        ? this.formatRelativeTime(new Date(row.createdAt))
+        : "—";
+
+      return {
+        user: userName,
+        action: row.entityType ? `${row.action} ${row.entityType}` : row.action,
+        timestamp,
+        type,
+      };
+    });
   }
 }

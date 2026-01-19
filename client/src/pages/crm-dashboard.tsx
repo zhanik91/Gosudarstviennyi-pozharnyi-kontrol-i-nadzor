@@ -108,15 +108,19 @@ export default function CRMDashboard() {
         </div>
 
         {/* Уведомления */}
-        {notifications.length > 0 && (
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Bell className="h-5 w-5" />
-                Активные уведомления ({notifications.filter((n: any) => !n.isRead).length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Bell className="h-5 w-5" />
+              Активные уведомления ({notifications.filter((n: any) => !n.isRead).length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {notifications.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                Нет новых уведомлений. Все события обработаны.
+              </div>
+            ) : (
               <div className="space-y-2">
                 {notifications.slice(0, 3).map((notif: any) => (
                   <div 
@@ -141,9 +145,9 @@ export default function CRMDashboard() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
         {/* Основная статистика */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -228,29 +232,39 @@ export default function CRMDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentActivities.slice(0, 5).map((activity: any, index: number) => (
-                      <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {activity.user?.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm">
-                            <span className="font-medium">{activity.user}</span>{' '}
-                            {activity.action}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {activity.timestamp}
-                          </p>
-                        </div>
-                        <Badge variant={activity.type === 'error' ? 'destructive' : 'secondary'}>
-                          {activity.type}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                  {recentActivities.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      Активность пока не зарегистрирована.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentActivities.slice(0, 5).map((activity: any, index: number) => {
+                        const displayName = activity.user || "Система";
+                        const displayType = activity.type || "info";
+                        return (
+                          <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>
+                                {displayName.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm">
+                                <span className="font-medium">{displayName}</span>{' '}
+                                {activity.action}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {activity.timestamp}
+                              </p>
+                            </div>
+                            <Badge variant={displayType === 'error' ? 'destructive' : 'secondary'}>
+                              {displayType}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -299,41 +313,47 @@ export default function CRMDashboard() {
                 <CardTitle>Организации МЧС РК</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {organizations.map((org: any, index: number) => (
-                    <Card key={index} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                            <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold truncate">{org.name}</h3>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" />
-                              {org.region}
-                            </p>
-                            <div className="flex gap-2 mt-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {org.type}
-                              </Badge>
-                              <Badge 
-                                variant={org.status === 'active' ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {org.status}
-                              </Badge>
+                {organizations.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">
+                    Организации пока не добавлены.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {organizations.map((org: any, index: number) => (
+                      <Card key={index} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                              <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold truncate">{org.name}</h3>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                <MapPin className="h-3 w-3" />
+                                {org.region}
+                              </p>
+                              <div className="flex gap-2 mt-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {org.type}
+                                </Badge>
+                                <Badge 
+                                  variant={org.status === 'active' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {org.status}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex justify-between items-center mt-4 text-sm text-muted-foreground">
-                          <span>Сотрудников: {org.employeeCount || 0}</span>
-                          <span>Происшествий: {org.incidentCount || 0}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          <div className="flex justify-between items-center mt-4 text-sm text-muted-foreground">
+                            <span>Сотрудников: {org.employeeCount || 0}</span>
+                            <span>Происшествий: {org.incidentCount || 0}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -344,55 +364,61 @@ export default function CRMDashboard() {
                 <CardTitle>Сотрудники системы</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users.map((user: any, index: number) => (
-                    <div key={index} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50">
-                      <Avatar>
-                        <AvatarFallback>
-                          {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <h3 className="font-medium">
-                          {user.firstName} {user.lastName}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {user.position} • {user.organization}
-                        </p>
-                        <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
-                          {user.email && (
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {user.email}
-                            </span>
-                          )}
-                          {user.phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {user.phone}
-                            </span>
-                          )}
+                {users.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">
+                    Сотрудники пока не добавлены.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {users.map((user: any, index: number) => (
+                      <div key={index} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50">
+                        <Avatar>
+                          <AvatarFallback>
+                            {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1">
+                          <h3 className="font-medium">
+                            {user.firstName} {user.lastName}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {user.position} • {user.organization}
+                          </p>
+                          <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
+                            {user.email && (
+                              <span className="flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {user.email}
+                              </span>
+                            )}
+                            {user.phone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {user.phone}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge 
+                            variant={user.role === 'MCHS' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {user.role}
+                          </Badge>
+                          <Badge 
+                            variant={user.isOnline ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {user.isOnline ? 'Онлайн' : 'Оффлайн'}
+                          </Badge>
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge 
-                          variant={user.role === 'MCHS' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {user.role}
-                        </Badge>
-                        <Badge 
-                          variant={user.isOnline ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {user.isOnline ? 'Онлайн' : 'Оффлайн'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
