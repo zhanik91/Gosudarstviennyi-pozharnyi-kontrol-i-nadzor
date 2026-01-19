@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
 import { hashPassword } from "../auth-local";
+import { randomBytes } from "crypto";
 
 export class AdminController {
 
@@ -140,9 +141,10 @@ export class AdminController {
         return res.status(404).json({ message: "Пользователь не найден" });
       }
 
-      // Генерируем временный пароль
+      // Генерируем криптографически безопасный временный пароль
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-      const temporaryPassword = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+      const bytes = randomBytes(10);
+      const temporaryPassword = Array.from(bytes, (b) => chars[b % chars.length]).join("");
       
       const hashedPassword = await hashPassword(temporaryPassword);
       
