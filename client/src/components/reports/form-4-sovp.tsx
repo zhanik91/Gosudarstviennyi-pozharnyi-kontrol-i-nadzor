@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FORM_4_SOVP_ROWS, Form4SOVPRow } from "@/data/fire-forms-data";
+import { FORM_4_SOVP_ROWS, Form4SOVPRow } from "@shared/fire-forms-data";
 import { Download, FileText, Send, Printer, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useReportForm } from "@/components/reports/use-report-form";
 
 interface ValidationError {
   rowId: string;
@@ -22,13 +23,37 @@ interface ObjectData {
 }
 
 export default function Form4SOVP() {
-  const [reportData, setReportData] = useState<Record<string, ObjectData>>({});
-  const [reportMonth, setReportMonth] = useState("");
-  const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
+  const now = new Date();
+  const [reportMonth, setReportMonth] = useState(
+    String(now.getMonth() + 1).padStart(2, "0")
+  );
+  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
+  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+
+  const { reportData, setReportData, isLoading, saveReport } = useReportForm<ObjectData>({
+    formId: "4-sovp",
+    period,
+    extractData: (payload) => {
+      const rows = payload?.rows ?? [];
+      const map: Record<string, ObjectData> = {};
+      const walk = (items: any[]) => {
+        items.forEach((item) => {
+          if (item.values) {
+            map[item.id] = item.values;
+          }
+          if (item.children) {
+            walk(item.children);
+          }
+        });
+      };
+      walk(rows);
+      return map;
+    },
+  });
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
@@ -154,7 +179,7 @@ export default function Form4SOVP() {
     window.print();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errors = validateForm();
     if (errors.filter(e => e.type === 'error').length > 0) {
       setValidationErrors(errors);
@@ -175,12 +200,19 @@ export default function Form4SOVP() {
       return;
     }
 
-    console.log("Отправка формы 4-СОВП:", { reportMonth, reportYear, region, data: reportData });
-    
-    toast({
-      title: "Форма отправлена",
-      description: "Форма 4-СОВП успешно отправлена в КПС МЧС РК"
-    });
+    try {
+      await saveReport("submitted");
+      toast({
+        title: "Форма отправлена",
+        description: "Форма 4-СОВП успешно отправлена в КПС МЧС РК"
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отправить форму 4-СОВП",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderRow = (row: Form4SOVPRow, level = 0) => {
@@ -316,6 +348,9 @@ export default function Form4SOVP() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6 print:space-y-2">
+          {isLoading && (
+            <div className="text-sm text-muted-foreground">Загрузка данных...</div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
             <div className="flex gap-2">
               <div className="flex-1">

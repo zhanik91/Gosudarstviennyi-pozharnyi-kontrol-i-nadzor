@@ -1,5 +1,15 @@
 import { db } from "./db";
 import { incidents, incidentVictims, type Incident, type InsertIncident, type InsertIncidentVictim } from "@shared/schema";
+import {
+  FIRE_CAUSES,
+  FORM_1_OSP_ROWS,
+  FORM_4_SOVP_ROWS,
+  FORM_5_ROWS,
+  FORM_6_IGNITIONS_ROWS,
+  FORM_6_STEPPE_FIRES_ROWS,
+  FORM_7_CO_ROWS,
+  NON_FIRE_CASES,
+} from "@shared/fire-forms-data";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
 import { applyScopeCondition, type ScopeUser } from "../services/authz";
@@ -808,6 +818,611 @@ export class IncidentStorage {
         totalDeaths: regionStats.reduce((sum, item) => sum + Number(item.deaths || 0), 0)
       }
     };
+  }
+
+  private async getReportDataset(params: {
+    orgId: string;
+    period?: string;
+    includeChildren?: boolean;
+    scopeUser?: ScopeUser;
+  }) {
+    const conditions: any[] = await this.getOrganizationConditions({
+      orgUnitId: params.orgId,
+      includeSubOrgs: params.includeChildren,
+      scopeUser: params.scopeUser,
+    });
+
+    if (params.period) {
+      const [year, month] = params.period.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0);
+      endDate.setHours(23, 59, 59, 999);
+      conditions.push(gte(incidents.dateTime, startDate));
+      conditions.push(lte(incidents.dateTime, endDate));
+    }
+
+    const incidentRows = await db
+      .select({
+        id: incidents.id,
+        incidentType: incidents.incidentType,
+        locality: incidents.locality,
+        region: incidents.region,
+        causeCode: incidents.causeCode,
+        causeDetailed: incidents.causeDetailed,
+        objectCode: incidents.objectCode,
+        objectDetailed: incidents.objectDetailed,
+        damage: incidents.damage,
+        deathsTotal: incidents.deathsTotal,
+        deathsChildren: incidents.deathsChildren,
+        deathsDrunk: incidents.deathsDrunk,
+        deathsCOTotal: incidents.deathsCOTotal,
+        deathsCOChildren: incidents.deathsCOChildren,
+        injuredTotal: incidents.injuredTotal,
+        injuredChildren: incidents.injuredChildren,
+        injuredCOTotal: incidents.injuredCOTotal,
+        injuredCOChildren: incidents.injuredCOChildren,
+        savedPeopleTotal: incidents.savedPeopleTotal,
+        savedPeopleChildren: incidents.savedPeopleChildren,
+        savedProperty: incidents.savedProperty,
+        livestockLost: incidents.livestockLost,
+        destroyedItems: incidents.destroyedItems,
+      })
+      .from(incidents)
+      .where(and(...conditions));
+
+    const incidentIds = incidentRows.map((row) => row.id);
+    const victimRows = incidentIds.length
+      ? await db
+          .select({
+            incidentId: incidentVictims.incidentId,
+            gender: incidentVictims.gender,
+            ageGroup: incidentVictims.ageGroup,
+            status: incidentVictims.status,
+            victimType: incidentVictims.victimType,
+            socialStatus: incidentVictims.socialStatus,
+            deathCause: incidentVictims.deathCause,
+            deathPlace: incidentVictims.deathPlace,
+            condition: incidentVictims.condition,
+          })
+          .from(incidentVictims)
+          .where(inArray(incidentVictims.incidentId, incidentIds))
+      : [];
+
+    return { incidentRows, victimRows };
+  }
+
+  async getReportFormData(params: {
+    orgId: string;
+    period?: string;
+    form?: string;
+    includeChildren?: boolean;
+    scopeUser?: ScopeUser;
+  }): Promise<any> {
+    const { incidentRows, victimRows } = await this.getReportDataset(params);
+
+    const fireIncidents = incidentRows.filter((incident) =>
+      ["fire", "steppe_fire"].includes(incident.incidentType ?? "")
+    );
+    const sumByLocality = (
+      incidentsList: typeof incidentRows,
+      valueGetter: (incident: (typeof incidentRows)[number]) => number
+    ) => {
+      return incidentsList.reduce(
+        (acc, incident) => {
+          const value = valueGetter(incident);
+          acc.total += value;
+          if (incident.locality === "cities") {
+            acc.urban += value;
+          } else if (incident.locality === "rural") {
+            acc.rural += value;
+          }
+          return acc;
+        },
+        { total: 0, urban: 0, rural: 0 }
+      );
+    };
+
+    switch (params.form) {
+      case "1-osp": {
+        const coIncidents = incidentRows.filter((incident) => incident.incidentType === "co_nofire");
+        const values: Record<string, { total: number; urban: number; rural: number }> = {};
+
+        values["1"] = sumByLocality(fireIncidents, () => 1);
+        values["2"] = sumByLocality(fireIncidents, (incident) => Number(incident.damage || 0));
+        values["3"] = sumByLocality(fireIncidents, (incident) => Number(incident.deathsTotal || 0));
+        values["3.1"] = sumByLocality(fireIncidents, (incident) => Number(incident.deathsChildren || 0));
+        values["3.2"] = sumByLocality(fireIncidents, (incident) => Number(incident.deathsDrunk || 0));
+        values["4"] = sumByLocality(coIncidents, (incident) => Number(incident.deathsCOTotal || 0));
+        values["4.1"] = sumByLocality(coIncidents, (incident) => Number(incident.deathsCOChildren || 0));
+        values["5"] = sumByLocality(fireIncidents, (incident) => Number(incident.injuredTotal || 0));
+        values["5.1"] = sumByLocality(fireIncidents, (incident) => Number(incident.injuredChildren || 0));
+        values["6"] = sumByLocality(coIncidents, (incident) => Number(incident.injuredCOTotal || 0));
+        values["6.1"] = sumByLocality(coIncidents, (incident) => Number(incident.injuredCOChildren || 0));
+        values["7"] = sumByLocality(fireIncidents, (incident) => Number(incident.savedPeopleTotal || 0));
+        values["7.1"] = sumByLocality(fireIncidents, (incident) => Number(incident.savedPeopleChildren || 0));
+        values["8"] = sumByLocality(fireIncidents, (incident) => Number(incident.savedProperty || 0));
+
+        const attachValues = (rows: typeof FORM_1_OSP_ROWS) =>
+          rows.map((row) => ({
+            ...row,
+            values: values[row.id] ?? { total: 0, urban: 0, rural: 0 },
+            children: row.children ? attachValues(row.children) : undefined,
+          }));
+
+        return {
+          form: params.form,
+          period: params.period,
+          rows: attachValues(FORM_1_OSP_ROWS),
+        };
+      }
+      case "2-ssg": {
+        const nonfireIncidents = incidentRows.filter((incident) => incident.incidentType === "nonfire");
+        const counts = new Map<string, number>();
+        nonfireIncidents.forEach((incident) => {
+          const code = incident.causeCode || incident.causeDetailed;
+          if (!code) {
+            return;
+          }
+          counts.set(code, (counts.get(code) ?? 0) + 1);
+        });
+        return {
+          form: params.form,
+          period: params.period,
+          rows: NON_FIRE_CASES.map((item) => ({
+            ...item,
+            value: counts.get(item.code) ?? 0,
+          })),
+        };
+      }
+      case "3-spvp": {
+        const byCause = new Map<string, { count: number; damage: number }>();
+        const byDetail = new Map<string, { count: number; damage: number }>();
+        fireIncidents.forEach((incident) => {
+          const damageValue = Number(incident.damage || 0);
+          if (incident.causeCode) {
+            const existing = byCause.get(incident.causeCode) ?? { count: 0, damage: 0 };
+            existing.count += 1;
+            existing.damage += damageValue;
+            byCause.set(incident.causeCode, existing);
+          }
+          if (incident.causeDetailed) {
+            const existing = byDetail.get(incident.causeDetailed) ?? { count: 0, damage: 0 };
+            existing.count += 1;
+            existing.damage += damageValue;
+            byDetail.set(incident.causeDetailed, existing);
+          }
+        });
+        const attachValues = (rows: typeof FIRE_CAUSES) =>
+          rows.map((row) => {
+            const source = row.code.includes(".") ? byDetail.get(row.code) : byCause.get(row.code);
+            return {
+              ...row,
+              values: {
+                fires_total: source?.count ?? 0,
+                fires_high_risk: 0,
+                damage_total: source?.damage ?? 0,
+                damage_high_risk: 0,
+              },
+              children: row.children ? attachValues(row.children) : undefined,
+            };
+          });
+
+        return {
+          form: params.form,
+          period: params.period,
+          rows: attachValues(FIRE_CAUSES),
+        };
+      }
+      case "4-sovp": {
+        const byObject = new Map<string, { count: number; damage: number; deaths: number; injuries: number }>();
+        const byDetail = new Map<string, { count: number; damage: number; deaths: number; injuries: number }>();
+        fireIncidents.forEach((incident) => {
+          const damageValue = Number(incident.damage || 0);
+          const deathsValue = Number(incident.deathsTotal || 0);
+          const injuriesValue = Number(incident.injuredTotal || 0);
+          if (incident.objectCode) {
+            const existing = byObject.get(incident.objectCode) ?? { count: 0, damage: 0, deaths: 0, injuries: 0 };
+            existing.count += 1;
+            existing.damage += damageValue;
+            existing.deaths += deathsValue;
+            existing.injuries += injuriesValue;
+            byObject.set(incident.objectCode, existing);
+          }
+          if (incident.objectDetailed) {
+            const existing = byDetail.get(incident.objectDetailed) ?? { count: 0, damage: 0, deaths: 0, injuries: 0 };
+            existing.count += 1;
+            existing.damage += damageValue;
+            existing.deaths += deathsValue;
+            existing.injuries += injuriesValue;
+            byDetail.set(incident.objectDetailed, existing);
+          }
+        });
+        const attachValues = (rows: typeof FORM_4_SOVP_ROWS) =>
+          rows.map((row) => {
+            const source = row.id.includes(".") ? byDetail.get(row.id) : byObject.get(row.id);
+            return {
+              ...row,
+              values: {
+                fires_total: source?.count ?? 0,
+                damage_total: source?.damage ?? 0,
+                deaths_total: source?.deaths ?? 0,
+                injuries_total: source?.injuries ?? 0,
+              },
+              children: row.children ? attachValues(row.children) : undefined,
+            };
+          });
+
+        return {
+          form: params.form,
+          period: params.period,
+          rows: attachValues(FORM_4_SOVP_ROWS),
+        };
+      }
+      case "5-spzs": {
+        const isResidential = (incident: (typeof incidentRows)[number]) => {
+          const code = incident.objectCode ?? "";
+          const detailed = incident.objectDetailed ?? "";
+          return code.startsWith("14") || detailed.startsWith("14");
+        };
+        const residentialIncidents = fireIncidents.filter(isResidential);
+        const incidentLocality = new Map(residentialIncidents.map((incident) => [incident.id, incident.locality]));
+
+        const values: Record<string, { urban: number; rural: number }> = {};
+        const addValue = (rowId: string, locality: string | null | undefined, amount: number) => {
+          const existing = values[rowId] ?? { urban: 0, rural: 0 };
+          if (locality === "cities") {
+            existing.urban += amount;
+          } else if (locality === "rural") {
+            existing.rural += amount;
+          }
+          values[rowId] = existing;
+        };
+
+        const addFromIncidents = (rowId: string, getter: (incident: (typeof incidentRows)[number]) => number) => {
+          residentialIncidents.forEach((incident) => {
+            addValue(rowId, incident.locality, getter(incident));
+          });
+        };
+
+        addFromIncidents("1", () => 1);
+        addFromIncidents("1.1", (incident) => Number(incident.damage || 0));
+        addFromIncidents("2", (incident) => Number(incident.deathsTotal || 0));
+        addFromIncidents("2.3", (incident) => Number(incident.deathsChildren || 0));
+        addFromIncidents("3", (incident) => Number(incident.injuredTotal || 0));
+        addFromIncidents("3.3", (incident) => Number(incident.injuredChildren || 0));
+        addFromIncidents("4", (incident) => Number(incident.savedPeopleTotal || 0));
+        addFromIncidents("4.1", (incident) => Number(incident.savedPeopleChildren || 0));
+        addFromIncidents("5", (incident) => Number(incident.savedProperty || 0));
+
+        const livestockMap: Record<string, string> = {
+          cows: "6.1",
+          sheep: "6.2",
+          horse: "6.3",
+          camel: "6.4",
+          pig: "6.5",
+          rodents: "6.6",
+          birds: "6.7",
+        };
+
+        residentialIncidents.forEach((incident) => {
+          const livestock = incident.livestockLost as Record<string, number> | null | undefined;
+          if (livestock) {
+            Object.entries(livestockMap).forEach(([key, rowId]) => {
+              const value = Number(livestock[key] || 0);
+              if (value > 0) {
+                addValue(rowId, incident.locality, value);
+              }
+            });
+          }
+          const destroyed = incident.destroyedItems as Record<string, number> | null | undefined;
+          if (destroyed) {
+            const techniquesValue = Number(destroyed.techniques || 0);
+            if (techniquesValue > 0) {
+              addValue("7", incident.locality, techniquesValue);
+            }
+            const structuresValue = Number(destroyed.structures || 0);
+            if (structuresValue > 0) {
+              addValue("8", incident.locality, structuresValue);
+            }
+          }
+        });
+
+        const socialStatusMap: Record<string, string> = {
+          worker: "2.1.1",
+          employee: "2.1.2",
+          entrepreneur: "2.1.3",
+          unemployed: "2.1.4",
+          pensioner: "2.1.5",
+          child: "2.1.6",
+          student_7_10: "2.1.7.1",
+          student_10_16: "2.1.7.2",
+          student: "2.1.8",
+          homeless: "2.1.9",
+          disabled: "2.1.10",
+        };
+
+        const conditionMap: Record<string, string> = {
+          alcohol: "3.1.1",
+          sleep: "3.1.2",
+          disability: "3.1.3",
+          unattended_children: "3.1.4",
+          panic: "3.1.5",
+          other: "3.1.6",
+        };
+
+        const deathCauseMap: Record<string, string> = {
+          high_temp: "4.1.1",
+          smoke: "4.1.2",
+          collapse: "4.1.3",
+          panic: "4.1.4",
+          gas_explosion: "4.1.5",
+          other: "4.1.6",
+        };
+
+        const deathPlaceMap: Record<string, string> = {
+          on_site: "5.1.1",
+          en_route: "5.1.2",
+          hospital: "5.1.3",
+        };
+
+        victimRows.forEach((victim) => {
+          if (victim.victimType !== "fire" || victim.status !== "dead") {
+            return;
+          }
+          const locality = incidentLocality.get(victim.incidentId);
+          if (!locality) {
+            return;
+          }
+          if (victim.gender === "male") {
+            addValue("2.1", locality, 1);
+          }
+          if (victim.gender === "female") {
+            addValue("2.2", locality, 1);
+          }
+          if (victim.ageGroup === "child") {
+            addValue("2.3", locality, 1);
+          }
+          if (victim.socialStatus && socialStatusMap[victim.socialStatus]) {
+            addValue(socialStatusMap[victim.socialStatus], locality, 1);
+          }
+          if (victim.condition && conditionMap[victim.condition]) {
+            addValue(conditionMap[victim.condition], locality, 1);
+          }
+          if (victim.deathCause && deathCauseMap[victim.deathCause]) {
+            addValue(deathCauseMap[victim.deathCause], locality, 1);
+          }
+          if (victim.deathPlace && deathPlaceMap[victim.deathPlace]) {
+            addValue(deathPlaceMap[victim.deathPlace], locality, 1);
+          }
+        });
+
+        victimRows.forEach((victim) => {
+          if (victim.victimType !== "fire" || victim.status !== "injured") {
+            return;
+          }
+          const locality = incidentLocality.get(victim.incidentId);
+          if (!locality) {
+            return;
+          }
+          if (victim.gender === "male") {
+            addValue("3.1", locality, 1);
+          }
+          if (victim.gender === "female") {
+            addValue("3.2", locality, 1);
+          }
+        });
+
+        const causeCounts = new Map<string, { urban: number; rural: number }>();
+        residentialIncidents.forEach((incident) => {
+          const code = incident.causeDetailed || incident.causeCode;
+          if (!code) {
+            return;
+          }
+          const existing = causeCounts.get(code) ?? { urban: 0, rural: 0 };
+          if (incident.locality === "cities") {
+            existing.urban += 1;
+          } else if (incident.locality === "rural") {
+            existing.rural += 1;
+          }
+          causeCounts.set(code, existing);
+        });
+
+        FORM_5_ROWS.forEach((row) => {
+          if (row.isSection || !row.id.startsWith("6")) {
+            return;
+          }
+          const mapped = causeCounts.get(row.id);
+          if (mapped) {
+            values[row.id] = mapped;
+          }
+        });
+
+        const attachValues = (rows: typeof FORM_5_ROWS) =>
+          rows.map((row) => ({
+            ...row,
+            values: row.isSection ? undefined : values[row.id] ?? { urban: 0, rural: 0 },
+            children: row.children ? attachValues(row.children) : undefined,
+          }));
+
+        return {
+          form: params.form,
+          period: params.period,
+          rows: attachValues(FORM_5_ROWS),
+        };
+      }
+      case "6-sspz": {
+        const steppeIncidents = incidentRows.filter((incident) => incident.incidentType === "steppe_fire");
+        const ignitionIncidents = incidentRows.filter((incident) => incident.incidentType === "steppe_smolder");
+
+        const buildRowValues = (rows: typeof FORM_6_STEPPE_FIRES_ROWS, incidentsList: typeof incidentRows) => {
+          const map = new Map<string, any>();
+
+          const blank = () => ({
+            fires_count: 0,
+            steppe_area: 0,
+            damage_total: 0,
+            people_total: 0,
+            people_dead: 0,
+            people_injured: 0,
+            animals_total: 0,
+            animals_dead: 0,
+            animals_injured: 0,
+            extinguished_total: 0,
+            extinguished_area: 0,
+            extinguished_damage: 0,
+            garrison_people: 0,
+            garrison_units: 0,
+            mchs_people: 0,
+            mchs_units: 0,
+          });
+
+          const addIncident = (rowKey: string, incident: (typeof incidentRows)[number]) => {
+            const existing = map.get(rowKey) ?? blank();
+            const damageValue = Number(incident.damage || 0);
+            const deathsValue = Number(incident.deathsTotal || 0);
+            const injuriesValue = Number(incident.injuredTotal || 0);
+            existing.fires_count += 1;
+            existing.damage_total += damageValue;
+            existing.people_dead += deathsValue;
+            existing.people_injured += injuriesValue;
+            existing.people_total += deathsValue + injuriesValue;
+            map.set(rowKey, existing);
+          };
+
+          incidentsList.forEach((incident) => {
+            const regionLabel = incident.region ?? "";
+            if (regionLabel) {
+              addIncident(regionLabel, incident);
+            }
+            addIncident("РК", incident);
+          });
+
+          return rows.map((row) => ({
+            ...row,
+            values: map.get(row.label) ?? blank(),
+          }));
+        };
+
+        return {
+          form: params.form,
+          period: params.period,
+          steppeRows: buildRowValues(FORM_6_STEPPE_FIRES_ROWS, steppeIncidents),
+          ignitionRows: buildRowValues(FORM_6_IGNITIONS_ROWS, ignitionIncidents),
+        };
+      }
+      case "co": {
+        const values: Record<string, { killed_total: number; injured_total: number }> = {};
+        const ensure = (rowId: string) => {
+          if (!values[rowId]) {
+            values[rowId] = { killed_total: 0, injured_total: 0 };
+          }
+          return values[rowId];
+        };
+        const socialStatusMap: Record<string, string> = {
+          worker: "2.1",
+          employee: "2.2",
+          entrepreneur: "2.3",
+          unemployed: "2.4",
+          pensioner: "2.5",
+          child: "2.6",
+          student_7_10: "2.7.1",
+          student_10_16: "2.7.2",
+          student: "2.8",
+          homeless: "2.9",
+          prisoner: "2.10",
+          disabled: "2.11",
+        };
+        const injuredSocialStatusMap: Record<string, string> = {
+          worker: "12.1",
+          employee: "12.2",
+          entrepreneur: "12.3",
+          unemployed: "12.4",
+          pensioner: "12.5",
+          child: "12.6",
+          student_7_10: "12.7.1",
+          student_10_16: "12.7.2",
+          student: "12.8",
+          homeless: "12.9",
+          prisoner: "12.10",
+          disabled: "12.11",
+        };
+        const conditionMap: Record<string, string> = {
+          alcohol: "3.1",
+          sleep: "3.2",
+          disability: "3.3",
+          unattended_children: "3.4",
+          other: "3.5",
+        };
+        const injuredConditionMap: Record<string, string> = {
+          alcohol: "13.1",
+          sleep: "13.2",
+          disability: "13.3",
+          unattended_children: "13.4",
+          other: "13.5",
+        };
+
+        victimRows.forEach((victim) => {
+          if (victim.victimType !== "co_poisoning") {
+            return;
+          }
+          if (victim.status === "dead") {
+            ensure("1").killed_total += 1;
+            if (victim.gender === "male") {
+              ensure("1.1").killed_total += 1;
+            }
+            if (victim.gender === "female") {
+              ensure("1.2").killed_total += 1;
+            }
+            if (victim.ageGroup === "child") {
+              ensure("1.3").killed_total += 1;
+            }
+            if (victim.socialStatus && socialStatusMap[victim.socialStatus]) {
+              ensure(socialStatusMap[victim.socialStatus]).killed_total += 1;
+            }
+            if (victim.condition && conditionMap[victim.condition]) {
+              ensure(conditionMap[victim.condition]).killed_total += 1;
+            }
+          }
+          if (victim.status === "injured") {
+            ensure("11").injured_total += 1;
+            if (victim.gender === "male") {
+              ensure("11.1").injured_total += 1;
+            }
+            if (victim.gender === "female") {
+              ensure("11.2").injured_total += 1;
+            }
+            if (victim.ageGroup === "child") {
+              ensure("11.3").injured_total += 1;
+            }
+            if (victim.socialStatus && injuredSocialStatusMap[victim.socialStatus]) {
+              ensure(injuredSocialStatusMap[victim.socialStatus]).injured_total += 1;
+            }
+            if (victim.condition && injuredConditionMap[victim.condition]) {
+              ensure(injuredConditionMap[victim.condition]).injured_total += 1;
+            }
+          }
+        });
+
+        const attachValues = (rows: typeof FORM_7_CO_ROWS) =>
+          rows.map((row) => ({
+            ...row,
+            values: values[row.id] ?? { killed_total: 0, injured_total: 0 },
+            children: row.children ? attachValues(row.children) : undefined,
+          }));
+
+        return {
+          form: params.form,
+          period: params.period,
+          rows: attachValues(FORM_7_CO_ROWS),
+        };
+      }
+      default:
+        return {
+          form: params.form,
+          period: params.period,
+          rows: [],
+        };
+    }
   }
 
   // Данные для отчетов (Excel)

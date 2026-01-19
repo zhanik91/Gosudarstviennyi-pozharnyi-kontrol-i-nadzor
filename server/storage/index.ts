@@ -4,6 +4,7 @@ import { IncidentStorage } from "./incident.storage";
 import { PackageStorage } from "./package.storage";
 import { AuditStorage } from "./audit.storage";
 import { DocumentStorage } from "./document.storage";
+import { ReportFormStorage } from "./report-form.storage";
 
 // Mixin helper to combine classes
 function applyMixins(derivedCtor: any, constructors: any[]) {
@@ -26,6 +27,7 @@ export interface IStorage extends
   OrganizationStorage,
   IncidentStorage,
   PackageStorage,
+  ReportFormStorage,
   AuditStorage,
   DocumentStorage {}
 
@@ -38,6 +40,7 @@ applyMixins(CombinedStorage, [
   OrganizationStorage,
   IncidentStorage,
   PackageStorage,
+  ReportFormStorage,
   AuditStorage,
   DocumentStorage
 ]);

@@ -1,12 +1,13 @@
-import { useState, useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FORM_1_OSP_ROWS, Form1OSPRow } from "@/data/fire-forms-data";
+import { FORM_1_OSP_ROWS, Form1OSPRow } from "@shared/fire-forms-data";
 import { Download, FileText, Send, Printer, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useReportForm } from "@/components/reports/use-report-form";
 
 interface RowData {
   total: number;
@@ -21,13 +22,37 @@ interface ValidationError {
 }
 
 export default function Form1OSP() {
-  const [reportData, setReportData] = useState<Record<string, RowData>>({});
-  const [reportMonth, setReportMonth] = useState("");
-  const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
+  const now = new Date();
+  const [reportMonth, setReportMonth] = useState(
+    String(now.getMonth() + 1).padStart(2, "0")
+  );
+  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
+  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+
+  const { reportData, setReportData, isLoading, saveReport } = useReportForm<RowData>({
+    formId: "1-osp",
+    period,
+    extractData: (payload) => {
+      const rows = payload?.rows ?? [];
+      const map: Record<string, RowData> = {};
+      const walk = (items: any[]) => {
+        items.forEach((item) => {
+          if (item.values) {
+            map[item.id] = item.values;
+          }
+          if (item.children) {
+            walk(item.children);
+          }
+        });
+      };
+      walk(rows);
+      return map;
+    },
+  });
 
   const handleInputChange = (rowId: string, field: keyof RowData, value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -150,7 +175,7 @@ export default function Form1OSP() {
     window.print();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errors = validateForm();
     if (errors.filter(e => e.type === 'error').length > 0) {
       toast({
@@ -170,12 +195,19 @@ export default function Form1OSP() {
       return;
     }
 
-    console.log("Отправка формы 1-ОСП:", { reportMonth, reportYear, region, data: reportData });
-    
-    toast({
-      title: "Форма отправлена",
-      description: "Форма 1-ОСП успешно отправлена в КПС МЧС РК"
-    });
+    try {
+      await saveReport("submitted");
+      toast({
+        title: "Форма отправлена",
+        description: "Форма 1-ОСП успешно отправлена в КПС МЧС РК"
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отправить форму 1-ОСП",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderRow = (row: Form1OSPRow, isChild = false) => {
@@ -282,6 +314,9 @@ export default function Form1OSP() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6 print:space-y-2">
+          {isLoading && (
+            <div className="text-sm text-muted-foreground">Загрузка данных...</div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
             <div>
               <Label>Форма отчета</Label>

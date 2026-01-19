@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FORM_7_CO_ROWS, Form7CORow } from "@/data/fire-forms-data";
+import { FORM_7_CO_ROWS, Form7CORow } from "@shared/fire-forms-data";
 import { Download, Send, Printer, AlertTriangle, ChevronDown, ChevronRight, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useReportForm } from "@/components/reports/use-report-form";
 
 interface ValidationError {
   rowId: string;
@@ -20,13 +21,37 @@ interface COData {
 }
 
 export default function FormCO() {
-  const [reportData, setReportData] = useState<Record<string, COData>>({});
-  const [reportMonth, setReportMonth] = useState("");
-  const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
+  const now = new Date();
+  const [reportMonth, setReportMonth] = useState(
+    String(now.getMonth() + 1).padStart(2, "0")
+  );
+  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
+  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+
+  const { reportData, setReportData, isLoading, saveReport } = useReportForm<COData>({
+    formId: "co",
+    period,
+    extractData: (payload) => {
+      const rows = payload?.rows ?? [];
+      const map: Record<string, COData> = {};
+      const walk = (items: any[]) => {
+        items.forEach((item) => {
+          if (item.values) {
+            map[item.id] = item.values;
+          }
+          if (item.children) {
+            walk(item.children);
+          }
+        });
+      };
+      walk(rows);
+      return map;
+    },
+  });
 
   const formMeta = {
     formCode: "7-CO",
@@ -203,7 +228,7 @@ export default function FormCO() {
     window.print();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errors = validateForm();
     if (errors.filter(e => e.type === 'error').length > 0) {
       setValidationErrors(errors);
@@ -224,12 +249,19 @@ export default function FormCO() {
       return;
     }
 
-    console.log("Отправка формы 7-CO:", { reportMonth, reportYear, region, data: reportData });
-    
-    toast({
-      title: "Форма отправлена",
-      description: "Форма 7-CO успешно отправлена в КПС МЧС РК"
-    });
+    try {
+      await saveReport("submitted");
+      toast({
+        title: "Форма отправлена",
+        description: "Форма 7-CO успешно отправлена в КПС МЧС РК"
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отправить форму 7-CO",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderRow = (row: Form7CORow, level = 0) => {
@@ -349,6 +381,9 @@ export default function FormCO() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6 print:space-y-2">
+          {isLoading && (
+            <div className="text-sm text-muted-foreground">Загрузка данных...</div>
+          )}
           <Card className="bg-slate-50 dark:bg-slate-900/40 print:hidden">
             <CardContent className="p-4 space-y-3 text-sm">
               <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-200">
