@@ -113,6 +113,23 @@ export const incidents = pgTable("incidents", {
   
   // Ущерб (тысячи тенге)
   damage: decimal("damage", { precision: 15, scale: 2 }).default('0'),
+
+  // Степные пожары (Форма 6-ССПЗ)
+  steppeArea: decimal("steppe_area", { precision: 15, scale: 2 }).default('0'),
+  steppeDamage: decimal("steppe_damage", { precision: 15, scale: 2 }).default('0'),
+  steppePeopleTotal: integer("steppe_people_total").default(0),
+  steppePeopleDead: integer("steppe_people_dead").default(0),
+  steppePeopleInjured: integer("steppe_people_injured").default(0),
+  steppeAnimalsTotal: integer("steppe_animals_total").default(0),
+  steppeAnimalsDead: integer("steppe_animals_dead").default(0),
+  steppeAnimalsInjured: integer("steppe_animals_injured").default(0),
+  steppeExtinguishedTotal: integer("steppe_extinguished_total").default(0),
+  steppeExtinguishedArea: decimal("steppe_extinguished_area", { precision: 15, scale: 2 }).default('0'),
+  steppeExtinguishedDamage: decimal("steppe_extinguished_damage", { precision: 15, scale: 2 }).default('0'),
+  steppeGarrisonPeople: integer("steppe_garrison_people").default(0),
+  steppeGarrisonUnits: integer("steppe_garrison_units").default(0),
+  steppeMchsPeople: integer("steppe_mchs_people").default(0),
+  steppeMchsUnits: integer("steppe_mchs_units").default(0),
   
   // Детали здания
   floor: integer("floor"),
