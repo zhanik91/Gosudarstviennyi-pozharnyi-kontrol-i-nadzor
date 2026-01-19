@@ -276,6 +276,19 @@ export default function Header() {
                     </a>
                   </Link>
                 </DropdownMenuItem>
+                {((user as any)?.role === "MCHS") && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin">
+                        <a className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Администрирование
+                        </a>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer"
