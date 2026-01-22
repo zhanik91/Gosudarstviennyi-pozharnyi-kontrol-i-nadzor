@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -20,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MchsEmblem } from "@/components/mchs-emblem";
 import { useAuth } from "@/hooks/useAuth";
+import { LanguageToggle } from "@/components/ui/language-toggle";
 import {
   Activity,
   Bell,
@@ -42,95 +44,6 @@ type NavItem = {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 };
 
-const navGroups: { label: string; items: NavItem[] }[] = [
-  {
-    label: "Модули",
-    items: [
-      {
-        title: "Государственный учёт пожаров",
-        description: "Журнал инцидентов, отчётные формы и пакеты данных",
-        href: "/fire-module",
-        icon: Shield,
-      },
-      {
-        title: "Контроль и надзор",
-        description: "Реестр подконтрольных объектов и график проверок",
-        href: "/controlled-objects",
-        icon: Layers,
-      },
-      {
-        title: "CRM и документооборот",
-        description: "Хранилище документов, согласования и шаблоны",
-        href: "/document-management",
-        icon: FileText,
-      },
-      {
-        title: "Интерактивные карты",
-        description: "Геоданные, риски и маршруты реагирования",
-        href: "/maps",
-        icon: MapPin,
-      },
-    ],
-  },
-  {
-    label: "Отчёты",
-    items: [
-      {
-        title: "Расширенная аналитика",
-        description: "Дашборды, сравнения регионов и тренды",
-        href: "/analytics",
-        icon: ChartBarBig,
-      },
-      {
-        title: "Журнал заключений",
-        description: "Аудиты, контроль выполнения и акты",
-        href: "/audit-conclusions",
-        icon: Activity,
-      },
-      {
-        title: "Уведомления и Workflow",
-        description: "Согласования, напоминания и SLA",
-        href: "/notifications",
-        icon: Bell,
-      },
-    ],
-  },
-  {
-    label: "Администрирование",
-    items: [
-      {
-        title: "Панель администратора",
-        description: "Настройки системы, роли и логирование",
-        href: "/admin",
-        icon: Users,
-      },
-      {
-        title: "CRM данные",
-        description: "Организации, контакты и интеграции",
-        href: "/crm",
-        icon: Sparkles,
-      },
-    ],
-  },
-  {
-    label: "Помощь",
-    items: [
-      {
-        title: "Документация",
-        description: "Руководства пользователя и шаблоны",
-        href: "/documents",
-        icon: BookOpen,
-      },
-      {
-        title: "Поддержка",
-        description: "Чат с оператором и база знаний",
-        href: "/notifications?tab=support",
-        icon: Headset,
-      },
-    ],
-  },
-];
-
 function getInitials(name?: string) {
   if (!name) return "МЧ";
   const parts = name.split(" ").filter(Boolean);
@@ -143,11 +56,102 @@ function getInitials(name?: string) {
 
 export default function Header() {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   if (!user) return null;
   const isAdmin = (user as any)?.role === "MCHS" || (user as any)?.role === "admin";
+
+  const navGroups: { label: string; items: NavItem[] }[] = [
+    {
+      label: t("menu.modules") || "Модули",
+      items: [
+        {
+          title: t("menu.fire"),
+          description: "Журнал инцидентов, отчётные формы и пакеты данных",
+          href: "/fire-module",
+          icon: Shield,
+        },
+        {
+          title: t("menu.supervision"),
+          description: "Реестр подконтрольных объектов и график проверок",
+          href: "/controlled-objects",
+          icon: Layers,
+        },
+        {
+          title: t("menu.crm"),
+          description: "Хранилище документов, согласования и шаблоны",
+          href: "/document-management",
+          icon: FileText,
+        },
+        {
+          title: "Интерактивные карты", // TODO: Add key
+          description: "Геоданные, риски и маршруты реагирования",
+          href: "/maps",
+          icon: MapPin,
+        },
+      ],
+    },
+    {
+      label: t("menu.reports"),
+      items: [
+        {
+          title: "Расширенная аналитика", // TODO: Add key
+          description: "Дашборды, сравнения регионов и тренды",
+          href: "/analytics",
+          icon: ChartBarBig,
+        },
+        {
+          title: "Журнал заключений", // TODO: Add key
+          description: "Аудиты, контроль выполнения и акты",
+          href: "/audit-conclusions",
+          icon: Activity,
+        },
+        {
+          title: "Уведомления и Workflow", // TODO: Add key
+          description: "Согласования, напоминания и SLA",
+          href: "/notifications",
+          icon: Bell,
+        },
+      ],
+    },
+    {
+      label: t("menu.admin"),
+      items: [
+        {
+          title: "Панель администратора",
+          description: "Настройки системы, роли и логирование",
+          href: "/admin",
+          icon: Users,
+        },
+        {
+          title: "CRM данные",
+          description: "Организации, контакты и интеграции",
+          href: "/crm",
+          icon: Sparkles,
+        },
+      ],
+    },
+    {
+      label: t("menu.help"),
+      items: [
+        {
+          title: "Документация",
+          description: "Руководства пользователя и шаблоны",
+          href: "/documents",
+          icon: BookOpen,
+        },
+        {
+          title: "Поддержка",
+          description: "Чат с оператором и база знаний",
+          href: "/notifications?tab=support",
+          icon: Headset,
+        },
+      ],
+    },
+  ];
+
   const navGroupsForUser = navGroups.filter(
-    (group) => group.label !== "Администрирование" || isAdmin
+    (group) => group.label !== t("menu.admin") || isAdmin
   );
 
   return (
@@ -158,10 +162,10 @@ export default function Header() {
             <MchsEmblem className="h-10 w-10 rounded-md shadow-sm" />
             <div className="leading-tight">
               <p className="text-xs uppercase tracking-[0.08em] text-primary">
-                ҚР ТЖМ ӨҚҚК 
+                {t("app.title_short") || "ҚР ТЖМ ӨҚҚК"}
               </p>
               <p className="text-sm font-semibold text-white">
-                КПС МЧС РК
+                {t("app.title_abbr") || "КПС МЧС РК"}
               </p>
             </div>
           </Link>
@@ -212,6 +216,8 @@ export default function Header() {
           </div>
 
           <div className="flex flex-none items-center gap-2">
+            <LanguageToggle />
+
             <Button
               variant="ghost"
               size="icon"
@@ -284,7 +290,7 @@ export default function Header() {
                       <Link href="/admin">
                         <div className="flex items-center gap-2 cursor-pointer w-full">
                           <Users className="h-4 w-4" />
-                          Администрирование
+                          {t("menu.admin")}
                         </div>
                       </Link>
                     </DropdownMenuItem>
@@ -297,7 +303,7 @@ export default function Header() {
                 >
                   <span className="flex items-center gap-2 text-red-600">
                     <Shield className="h-4 w-4" />
-                    Выйти из системы
+                    {t("auth.logout")}
                   </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

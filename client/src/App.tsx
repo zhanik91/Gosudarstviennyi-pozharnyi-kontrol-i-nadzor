@@ -20,6 +20,7 @@ import Home from "@/pages/home";
 import FireModule from "@/pages/fire-module";
 import ControlSupervision from "@/pages/control-supervision";
 import LoginPage from "@/pages/login";
+import "./lib/i18n"; // Initialize i18n
 
 type ProtectedRouteProps = {
   component: ComponentType;

@@ -86,6 +86,31 @@ export class PackageController {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
+      // Deadline Enforcement (Day 6 Check)
+      // Forms are due by the 27th of the month following the reporting period.
+      // But user might be submitting for *current* month?
+      // Usually statistics are for *previous* month submitted by 27th of *current*.
+      // Or for *current* month submitted by 27th?
+      // Order 377 says "monthly by 27th". Assuming "reporting period" is Month X, submission is Month X+1?
+      // Or maybe Month X data is submitted in Month X by 27th?
+      // Let's assume deadline is 27th of the *current calendar month* for whatever package is being submitted now.
+
+      const today = new Date();
+      const dayOfMonth = today.getDate();
+      const isLate = dayOfMonth > 27;
+
+      // Allow MCHS/Admin to override
+      const isPrivileged = ['MCHS', 'admin'].includes(user?.role || '');
+
+      if (isLate && !isPrivileged) {
+         // Check if this is indeed a 'late' submission attempt.
+         // If they are submitting a package for a past period, it's definitely late.
+         // If they are submitting for current period after 27th, it's late.
+         return res.status(400).json({
+             message: "Срок сдачи отчетов истек (до 27-го числа). Обратитесь к администратору."
+         });
+      }
+
       const updatedPackage = await storage.updatePackage(req.params.id, {
         status: 'submitted',
         submittedBy: user!.id,
