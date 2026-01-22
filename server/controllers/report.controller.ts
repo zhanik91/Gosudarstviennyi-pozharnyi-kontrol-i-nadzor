@@ -175,6 +175,9 @@ export const reportController = new ReportController();
 function validateReportData(form: string, data: Record<string, any>) {
   const errors: Array<{ field: string; message: string }> = [];
   const isNumber = (value: any) => typeof value === 'number' && Number.isFinite(value);
+  const getValue = (rowId: string, field: string = 'total'): number => {
+    return Number(data[rowId]?.[field] || 0);
+  };
 
   const validateRowValues = (rowId: string, fields: string[]) => {
     const row = data[rowId];
@@ -189,10 +192,30 @@ function validateReportData(form: string, data: Record<string, any>) {
     });
   };
 
+  // Helper to sum multiple row/field values
+  const sumRows = (rowIds: string[], field: string = 'total'): number => {
+    return rowIds.reduce((sum, id) => sum + getValue(id, field), 0);
+  };
+
   switch (form) {
     case '1-osp':
       Object.keys(data).forEach((rowId) => validateRowValues(rowId, ['total', 'urban', 'rural']));
+
+      // Validation Logic: Total Deaths (3) must be >= Children (3.1) and Intoxicated (3.2)
+      if (getValue('3') < getValue('3.1')) {
+        errors.push({ field: '3.total', message: 'Общее число погибших меньше числа погибших детей' });
+      }
+      if (getValue('3') < getValue('3.2')) {
+        errors.push({ field: '3.total', message: 'Общее число погибших меньше числа погибших в нетрезвом виде' });
+      }
+      // Note: Strict equality 3 = 3.1 + 3.2 is NOT enforced because sober adults exist.
+
+      // Injured (5) >= Children (5.1)
+      if (getValue('5') < getValue('5.1')) {
+        errors.push({ field: '5.total', message: 'Общее число травмированных меньше числа травмированных детей' });
+      }
       break;
+
     case '2-ssg':
       Object.entries(data).forEach(([rowId, value]) => {
         if (!isNumber(value) || value < 0) {
@@ -200,19 +223,36 @@ function validateReportData(form: string, data: Record<string, any>) {
         }
       });
       break;
+
     case '3-spvp':
       Object.keys(data).forEach((rowId) =>
         validateRowValues(rowId, ['fires_total', 'fires_high_risk', 'damage_total', 'damage_high_risk'])
       );
       break;
+
     case '4-sovp':
       Object.keys(data).forEach((rowId) =>
         validateRowValues(rowId, ['fires_total', 'damage_total', 'deaths_total', 'injuries_total'])
       );
       break;
+
     case '5-spzs':
       Object.keys(data).forEach((rowId) => validateRowValues(rowId, ['urban', 'rural']));
+      // Validation: Total Dead (2) should match breakdowns if exhaustive
+      // Assuming 2 = 2.1 (Men) + 2.2 (Women) + 2.3 (Children) as implied by compliance notes
+      const deadTotal = getValue('2', 'urban') + getValue('2', 'rural');
+      const men = getValue('2.1', 'urban') + getValue('2.1', 'rural');
+      const women = getValue('2.2', 'urban') + getValue('2.2', 'rural');
+      const children = getValue('2.3', 'urban') + getValue('2.3', 'rural');
+
+      if (deadTotal !== men + women + children) {
+         // Only flag if non-zero to avoid noise on empty forms, but strictly if data exists
+         if (deadTotal > 0) {
+             errors.push({ field: '2.total', message: 'Сумма погибших (мужчин, женщин, детей) не совпадает с общим итогом (стр. 2)' });
+         }
+      }
       break;
+
     case '6-sspz':
       Object.keys(data).forEach((rowId) =>
         validateRowValues(rowId, [
@@ -235,9 +275,39 @@ function validateReportData(form: string, data: Record<string, any>) {
         ])
       );
       break;
-    case 'co':
+
+    case 'co': // Form 7-CO
       Object.keys(data).forEach((rowId) => validateRowValues(rowId, ['killed_total', 'injured_total']));
+
+      // Row 5: Dead by object (5.1 - 5.11)
+      const row5Total = getValue('5', 'killed_total');
+      const row5Sum = sumRows(['5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9', '5.10', '5.11'], 'killed_total');
+      if (row5Total !== row5Sum) {
+         errors.push({ field: '5.killed_total', message: `Сумма по объектам (${row5Sum}) не равна итогу (стр. 5: ${row5Total})` });
+      }
+
+      // Row 6: Dead by place (6.1 - 6.15)
+      const row6Total = getValue('6', 'killed_total');
+      const row6Sum = sumRows(['6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8', '6.9', '6.10', '6.11', '6.12', '6.13', '6.14', '6.15'], 'killed_total');
+      if (row6Total !== row6Sum) {
+         errors.push({ field: '6.killed_total', message: `Сумма по местам (${row6Sum}) не равна итогу (стр. 6: ${row6Total})` });
+      }
+
+      // Row 15: Injured by object (15.1 - 15.11)
+      const row15Total = getValue('15', 'injured_total');
+      const row15Sum = sumRows(['15.1', '15.2', '15.3', '15.4', '15.5', '15.6', '15.7', '15.8', '15.9', '15.10', '15.11'], 'injured_total');
+      if (row15Total !== row15Sum) {
+         errors.push({ field: '15.injured_total', message: `Сумма по объектам (${row15Sum}) не равна итогу (стр. 15: ${row15Total})` });
+      }
+
+      // Row 16: Injured by place (16.1 - 16.15)
+      const row16Total = getValue('16', 'injured_total');
+      const row16Sum = sumRows(['16.1', '16.2', '16.3', '16.4', '16.5', '16.6', '16.7', '16.8', '16.9', '16.10', '16.11', '16.12', '16.13', '16.14', '16.15'], 'injured_total');
+      if (row16Total !== row16Sum) {
+         errors.push({ field: '16.injured_total', message: `Сумма по местам (${row16Sum}) не равна итогу (стр. 16: ${row16Total})` });
+      }
       break;
+
     default:
       break;
   }
