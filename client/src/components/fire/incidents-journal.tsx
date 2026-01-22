@@ -9,13 +9,18 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import BulkOperationsToolbar from "@/components/ui/bulk-operations-toolbar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Edit, Trash2, Search, FileDown, Filter, Plus } from "lucide-react";
+import { Edit, Trash2, Search, FileDown, Filter, Plus, X } from "lucide-react";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
 import type { Incident } from "@shared/schema";
 import * as XLSX from "xlsx";
 import IncidentFormOSP from "./incident-form-osp";
 import BulkEditModal from "./bulk-edit-modal";
 import EmailNotificationModal from "./email-notification-modal";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const daysShort = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -316,7 +321,7 @@ function DateField({
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-40 rounded-md border border-input bg-background px-3 pr-10 text-sm"
+          className="h-10 w-full rounded-md border border-input bg-background px-3 pr-10 text-sm"
           min={min}
           max={max}
         />
@@ -356,9 +361,20 @@ export default function IncidentsJournal() {
   });
 
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
-  const [showNewIncidentForm, setShowNewIncidentForm] = useState(false);
+  // Combined modal state: if open=true, and editingIncidentId=null -> Create mode.
+  // If open=true, editingIncidentId='...' -> Edit mode.
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingIncidentId, setEditingIncidentId] = useState<string | null>(null);
+
   const [showBulkEditModal, setShowBulkEditModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+
+  // Import Results Modal State
+  const [importResults, setImportResults] = useState<{
+    created: number;
+    total: number;
+    errors: { rowNumber: number; error: string }[];
+  } | null>(null);
 
   // Если нет активных фильтров — грузим полный список /api/incidents
   // Если есть фильтры — используем /api/incidents/search (у него может быть limit)
@@ -445,6 +461,16 @@ export default function IncidentsJournal() {
     if (confirm("Удалить инцидент?")) {
       deleteIncidentMutation.mutate(id);
     }
+  };
+
+  const handleEdit = (id: string) => {
+    setEditingIncidentId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setEditingIncidentId(null);
+    setIsModalOpen(true);
   };
 
   const handleSelectAll = () => {
@@ -599,19 +625,12 @@ export default function IncidentsJournal() {
           throw new Error(payload?.message || "Ошибка импорта");
         }
 
-        if (payload.errors?.length) {
-          const errorRows = payload.errors.map((err: any) => err.rowNumber).join(", ");
-          toast({
-            title: "Импорт выполнен с ошибками",
-            description: `Импортировано ${payload.created} из ${payload.total} записей. Строки с ошибками: ${errorRows}`,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Импорт выполнен",
-            description: `Импортировано ${payload.created} записей`,
-          });
-        }
+        // Show detailed results modal instead of just a toast
+        setImportResults({
+            created: payload.created,
+            total: payload.total,
+            errors: payload.errors || []
+        });
 
         queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
         queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
@@ -758,127 +777,160 @@ export default function IncidentsJournal() {
       <Card className="bg-card border border-border">
         <CardContent className="p-4">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="search-query">Поиск</Label>
-                <div className="relative">
-                  <Input
-                    id="search-query"
-                    value={filters.searchQuery}
-                    onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                    placeholder="Адрес или описание"
-                    className="w-72 pr-8"
-                    data-testid="input-search"
-                  />
-                  <Search className="pointer-events-none absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                </div>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-1">
+                 <Label htmlFor="search-query" className="sr-only">Поиск</Label>
+                 <div className="relative w-full max-w-sm">
+                   <Input
+                     id="search-query"
+                     value={filters.searchQuery}
+                     onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                     placeholder="Поиск по адресу, описанию..."
+                     className="pr-8"
+                     data-testid="input-search"
+                   />
+                   <Search className="pointer-events-none absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                 </div>
+
+                 {/* Modern Filter Popover */}
+                 <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className={hasFilters ? "border-primary text-primary" : ""}>
+                         <Filter className="h-4 w-4 mr-2" />
+                         Фильтры
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-4" align="start">
+                        <div className="space-y-4">
+                           <h4 className="font-medium text-sm">Расширенный поиск</h4>
+                           <div className="grid gap-2">
+                             <DateField
+                                label="Дата с"
+                                value={filters.dateFrom}
+                                onChange={(value) => setFilters({ ...filters, dateFrom: value })}
+                              />
+                              <DateField
+                                label="Дата по"
+                                value={filters.dateTo}
+                                onChange={(value) => setFilters({ ...filters, dateTo: value })}
+                                min={filters.dateFrom || undefined}
+                              />
+
+                              <div className="flex flex-col gap-1">
+                                <Label htmlFor="incident-type" className="text-sm">Тип события</Label>
+                                <select
+                                  id="incident-type"
+                                  value={filters.incidentType}
+                                  onChange={(e) => setFilters({ ...filters, incidentType: e.target.value })}
+                                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                  data-testid="select-incident-type"
+                                >
+                                  <option value="">Все типы</option>
+                                  <option value="fire">Пожар</option>
+                                  <option value="nonfire">Случай горения</option>
+                                  <option value="steppe_fire">Степной пожар</option>
+                                  <option value="steppe_smolder">Степное загорание</option>
+                                  <option value="co_nofire">Отравление CO</option>
+                                </select>
+                              </div>
+
+                              <div className="flex flex-col gap-1">
+                                <Label htmlFor="region-filter" className="text-sm">Регион</Label>
+                                <Input
+                                  id="region-filter"
+                                  value={filters.region}
+                                  onChange={(e) => setFilters({ ...filters, region: e.target.value })}
+                                  placeholder="Регион"
+                                  data-testid="input-region"
+                                />
+                              </div>
+
+                              <div className="pt-2 flex justify-end">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setFilters({
+                                        searchQuery: "",
+                                        dateFrom: "",
+                                        dateTo: "",
+                                        incidentType: "",
+                                        region: "",
+                                      })
+                                    }
+                                  >
+                                    Сбросить
+                                  </Button>
+                              </div>
+                           </div>
+                        </div>
+                    </PopoverContent>
+                 </Popover>
+
+                 {hasFilters && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                         setFilters({
+                           searchQuery: "",
+                           dateFrom: "",
+                           dateTo: "",
+                           incidentType: "",
+                           region: "",
+                         })
+                      }
+                      title="Сбросить все"
+                    >
+                       <X className="h-4 w-4" />
+                    </Button>
+                 )}
               </div>
 
-              <DateField
-                label="Дата с"
-                value={filters.dateFrom}
-                onChange={(value) => setFilters({ ...filters, dateFrom: value })}
-              />
-              <DateField
-                label="Дата по"
-                value={filters.dateTo}
-                onChange={(value) => setFilters({ ...filters, dateTo: value })}
-                min={filters.dateFrom || undefined}
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleLoad} data-testid="button-refresh">
+                  <Search className="h-4 w-4 mr-2" />
+                  Обновить
+                </Button>
 
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="incident-type">Тип события</Label>
-                <select
-                  id="incident-type"
-                  value={filters.incidentType}
-                  onChange={(e) => setFilters({ ...filters, incidentType: e.target.value })}
-                  className="h-10 w-48 rounded-md border border-input bg-background px-3 text-sm"
-                  data-testid="select-incident-type"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreate}
+                  data-testid="button-add-incident"
                 >
-                  <option value="">Все типы</option>
-                  <option value="fire">Пожар</option>
-                  <option value="nonfire">Случай горения</option>
-                  <option value="steppe_fire">Степной пожар</option>
-                  <option value="steppe_smolder">Степное загорание</option>
-                  <option value="co_nofire">Отравление CO</option>
-                </select>
-              </div>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Добавить
+                </Button>
 
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="region-filter">Регион</Label>
-                <Input
-                  id="region-filter"
-                  value={filters.region}
-                  onChange={(e) => setFilters({ ...filters, region: e.target.value })}
-                  placeholder="Регион"
-                  className="w-40"
-                  data-testid="input-region"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkExport}
+                  disabled={selectedIncidents.length === 0}
+                  data-testid="button-export"
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Экспорт
+                </Button>
+
+                <input
+                  type="file"
+                  id="import-file"
+                  accept=".csv,.xlsx"
+                  style={{ display: "none" }}
+                  onChange={handleImportFile}
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById("import-file")?.click()}
+                  data-testid="button-import"
+                >
+                  <FileDown className="h-4 w-4 mr-2 rotate-180" />
+                  Импорт
+                </Button>
               </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setFilters({
-                    ...filters,
-                    searchQuery: "",
-                    dateFrom: "",
-                    dateTo: "",
-                    incidentType: "",
-                    region: "",
-                  })
-                }
-                data-testid="button-clear-filters"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Очистить фильтры
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleLoad} data-testid="button-refresh">
-                <Search className="h-4 w-4 mr-2" />
-                Обновить
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowNewIncidentForm(true)}
-                data-testid="button-add-incident"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Добавить
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkExport}
-                disabled={selectedIncidents.length === 0}
-                data-testid="button-export"
-              >
-                <FileDown className="h-4 w-4 mr-2" />
-                Экспорт ({selectedIncidents.length})
-              </Button>
-
-              <input
-                type="file"
-                id="import-file"
-                accept=".csv,.xlsx"
-                style={{ display: "none" }}
-                onChange={handleImportFile}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById("import-file")?.click()}
-                data-testid="button-import"
-              >
-                <FileDown className="h-4 w-4 mr-2 rotate-180" />
-                Импорт
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -1012,6 +1064,7 @@ export default function IncidentsJournal() {
                               size="sm"
                               className="h-7 w-7 p-0 text-primary hover:text-primary/80"
                               data-testid={`button-edit-${incident.id}`}
+                              onClick={() => handleEdit(incident.id)}
                             >
                               <Edit className="w-3 h-3" />
                             </Button>
@@ -1093,29 +1146,74 @@ export default function IncidentsJournal() {
         </Card>
       )}
 
-      {showNewIncidentForm && (
+      {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Новое происшествие</h3>
+                <h3 className="text-lg font-semibold">{editingIncidentId ? 'Редактирование' : 'Новое происшествие'}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowNewIncidentForm(false)}
+                  onClick={() => setIsModalOpen(false)}
                   data-testid="button-close-form"
                 >
                   ✕
                 </Button>
               </div>
               <IncidentFormOSP
+                incidentId={editingIncidentId || undefined}
                 onSuccess={() => {
-                  setShowNewIncidentForm(false);
+                  setIsModalOpen(false);
                   queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
                   queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
                 }}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Results Modal */}
+      {importResults && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-lg">
+             <div className="p-6">
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className="text-lg font-semibold">Результаты импорта</h3>
+                   <Button variant="ghost" size="sm" onClick={() => setImportResults(null)}>✕</Button>
+                 </div>
+
+                 <div className="space-y-4">
+                    <div className="flex gap-4">
+                       <div className="p-3 bg-green-100 dark:bg-green-900 rounded-md flex-1 text-center">
+                          <div className="text-2xl font-bold text-green-700 dark:text-green-300">{importResults.created}</div>
+                          <div className="text-xs text-green-800 dark:text-green-200">Добавлено</div>
+                       </div>
+                       <div className="p-3 bg-red-100 dark:bg-red-900 rounded-md flex-1 text-center">
+                          <div className="text-2xl font-bold text-red-700 dark:text-red-300">{importResults.errors.length}</div>
+                          <div className="text-xs text-red-800 dark:text-red-200">Ошибок</div>
+                       </div>
+                    </div>
+
+                    {importResults.errors.length > 0 && (
+                       <div className="mt-4">
+                          <h4 className="font-medium text-sm mb-2 text-destructive">Детали ошибок:</h4>
+                          <div className="bg-muted p-3 rounded-md max-h-48 overflow-y-auto text-sm space-y-1">
+                             {importResults.errors.map((err, i) => (
+                                <div key={i} className="text-destructive-foreground">
+                                   <span className="font-mono font-bold">Строка {err.rowNumber}:</span> {err.error}
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+                    )}
+
+                    <div className="flex justify-end pt-2">
+                       <Button onClick={() => setImportResults(null)}>Закрыть</Button>
+                    </div>
+                 </div>
+             </div>
           </div>
         </div>
       )}
