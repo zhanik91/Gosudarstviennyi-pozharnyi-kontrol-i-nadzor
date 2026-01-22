@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { insertIncidentSchema, insertIncidentVictimSchema } from "@shared/schema";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { insertIncidentSchema, insertIncidentVictimSchema, type Incident } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { z } from "zod";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 import { Plus, Trash2 } from "lucide-react";
@@ -132,9 +130,10 @@ const DEATH_CAUSES = [
 
 interface IncidentFormOSPProps {
   onSuccess?: () => void;
+  incidentId?: string; // If provided, mode is "edit"
 }
 
-export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
+export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormOSPProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -143,6 +142,14 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
   const [selectedIncidentType, setSelectedIncidentType] = useState("fire");
   const [selectedRegion, setSelectedRegion] = useState((user as any)?.region || "");
   const isSteppeIncident = ["steppe_fire", "steppe_smolder"].includes(selectedIncidentType);
+
+  const isEditMode = !!incidentId;
+
+  // Fetch incident data if editing
+  const { data: initialData, isLoading: isLoadingData } = useQuery<Incident & { victims?: any[] }>({
+    queryKey: [`/api/incidents/${incidentId}`],
+    enabled: isEditMode,
+  });
 
   const form = useForm<OSPIncidentFormData>({
     resolver: zodResolver(ospIncidentSchema),
@@ -180,6 +187,33 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
     },
   });
 
+  // Populate form when data loads
+  useEffect(() => {
+    if (initialData) {
+      // Format date for datetime-local
+      const dateVal = initialData.dateTime ? new Date(initialData.dateTime).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16);
+
+      const formData = {
+        ...initialData,
+        dateTime: dateVal,
+        damage: initialData.damage ? Number(initialData.damage) : 0,
+        savedProperty: initialData.savedProperty ? Number(initialData.savedProperty) : 0,
+        // Steppe fields
+        steppeArea: initialData.steppeArea ? Number(initialData.steppeArea) : 0,
+        steppeDamage: initialData.steppeDamage ? Number(initialData.steppeDamage) : 0,
+        steppeExtinguishedArea: initialData.steppeExtinguishedArea ? Number(initialData.steppeExtinguishedArea) : 0,
+        steppeExtinguishedDamage: initialData.steppeExtinguishedDamage ? Number(initialData.steppeExtinguishedDamage) : 0,
+        // ... map other numeric fields if needed, or rely on form default handling of strings/numbers if compatible
+        victims: initialData.victims || [],
+      };
+
+      form.reset(formData as any); // Cast to any because Zod type might strict check vs API response
+      setSelectedIncidentType(initialData.incidentType || "fire");
+      if (initialData.region) setSelectedRegion(initialData.region);
+    }
+  }, [initialData, form]);
+
+
   const { fields: victimFields, append: appendVictim, remove: removeVictim } = useFieldArray({
     control: form.control,
     name: "victims",
@@ -206,14 +240,15 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
 
 
   useEffect(() => {
-    if (user && (user as any).region) {
+    // Only set default region for new records
+    if (!isEditMode && user && (user as any).region) {
       setSelectedRegion((user as any).region);
       form.setValue("region", (user as any).region);
       if ((user as any).district) {
         form.setValue("city", (user as any).district);
       }
     }
-  }, [user, form]);
+  }, [user, form, isEditMode]);
 
   useEffect(() => {
     if (!isSteppeIncident && activeTab === "steppe") {
@@ -227,7 +262,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
     return Number.isNaN(numericValue) ? "0" : numericValue.toString();
   };
 
-  const createIncidentMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: async (data: OSPIncidentFormData) => {
       const formattedData = {
         ...data,
@@ -238,57 +273,38 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
         steppeDamage: normalizeCurrency(data.steppeDamage),
         steppeExtinguishedArea: normalizeCurrency(data.steppeExtinguishedArea),
         steppeExtinguishedDamage: normalizeCurrency(data.steppeExtinguishedDamage),
-        // Ensure victims have correct types if needed (zod handles parsing mostly)
       };
       
       console.log("🔄 Отправляем данные на сервер:", formattedData);
       
-      try {
+      if (isEditMode && incidentId) {
+        const response = await apiRequest("PUT", `/api/incidents/${incidentId}`, formattedData);
+        return response.json();
+      } else {
         const response = await apiRequest("POST", "/api/incidents", formattedData);
         return response.json();
-      } catch (error) {
-        console.error("❌ Ошибка при отправке:", error);
-        throw error;
       }
     },
     onSuccess: () => {
       toast({
-        title: "✅ Происшествие добавлено",
+        title: isEditMode ? "✅ Происшествие обновлено" : "✅ Происшествие добавлено",
         description: "Данные успешно сохранены в журнал МЧС",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
-      form.reset({
-        dateTime: new Date().toISOString().slice(0, 16),
-        locality: "cities",
-        incidentType: "fire",
-        address: "",
-        region: (user as any)?.region || "",
-        city: (user as any)?.district || "",
-        description: "",
-        victims: [],
-        steppeArea: 0,
-        steppeDamage: 0,
-        steppePeopleTotal: 0,
-        steppePeopleDead: 0,
-        steppePeopleInjured: 0,
-        steppeAnimalsTotal: 0,
-        steppeAnimalsDead: 0,
-        steppeAnimalsInjured: 0,
-        steppeExtinguishedTotal: 0,
-        steppeExtinguishedArea: 0,
-        steppeExtinguishedDamage: 0,
-        steppeGarrisonPeople: 0,
-        steppeGarrisonUnits: 0,
-        steppeMchsPeople: 0,
-        steppeMchsUnits: 0,
-      });
-      setSelectedIncidentType("fire");
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+      if (isEditMode) {
+         queryClient.invalidateQueries({ queryKey: [`/api/incidents/${incidentId}`] });
+      } else {
+         form.reset(); // Only reset on create
+         setSelectedIncidentType("fire");
+      }
+
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
       toast({
         title: "Ошибка",
-        description: error.message || "Не удалось добавить инцидент",
+        description: error.message || "Не удалось сохранить инцидент",
         variant: "destructive",
       });
     },
@@ -298,7 +314,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
     if (!data.city && selectedRegion && (user as any)?.district) {
       data.city = (user as any).district;
     }
-    createIncidentMutation.mutate(data);
+    mutation.mutate(data);
   };
 
   const addVictim = () => {
@@ -316,11 +332,15 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
     });
   };
 
+  if (isEditMode && isLoadingData) {
+    return <div className="p-8 text-center">Загрузка данных...</div>;
+  }
+
   return (
     <Card className="bg-card border border-border">
       <CardContent className="p-6">
         <h3 className="text-xl font-semibold text-foreground mb-4">
-          Форма 1-ОСП (Расширенная)
+          {isEditMode ? "Редактирование происшествия" : "Форма 1-ОСП (Расширенная)"}
         </h3>
         
         <Form {...form}>
@@ -355,7 +375,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Местность *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger><SelectValue /></SelectTrigger>
                             </FormControl>
@@ -376,7 +396,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                           <Select onValueChange={(val) => {
                               field.onChange(val);
                               setSelectedIncidentType(val);
-                          }} defaultValue={field.value}>
+                          }} value={field.value}>
                             <FormControl>
                               <SelectTrigger><SelectValue /></SelectTrigger>
                             </FormControl>
@@ -556,7 +576,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Статус</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         {VICTIM_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
@@ -571,7 +591,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Возрастная группа</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         {AGE_GROUPS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
@@ -586,7 +606,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Пол</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         {GENDERS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
@@ -601,7 +621,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Соц. положение</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         {SOCIAL_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
@@ -616,7 +636,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Состояние/Условие</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         {CONDITIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
@@ -632,7 +652,7 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Причина смерти</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                                         <SelectContent>
                                                             {DEATH_CAUSES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
@@ -990,10 +1010,10 @@ export default function IncidentFormOSP({ onSuccess }: IncidentFormOSPProps) {
             <div className="flex gap-3 pt-4 border-t border-border mt-6">
               <Button 
                 type="submit" 
-                disabled={createIncidentMutation.isPending}
+                disabled={mutation.isPending}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
-                {createIncidentMutation.isPending ? "Сохранение..." : "Сохранить в журнал"}
+                {mutation.isPending ? "Сохранение..." : "Сохранить в журнал"}
               </Button>
               <Button type="button" variant="outline" onClick={() => onSuccess?.()}>
                 Отмена

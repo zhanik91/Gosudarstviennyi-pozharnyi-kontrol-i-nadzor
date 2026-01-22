@@ -26,6 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === Инциденты ===
   app.get('/api/incidents/search', isAuthenticated, incidentController.searchIncidents);
+  app.get('/api/incidents/:id', isAuthenticated, incidentController.getIncident);
   app.get('/api/incidents', isAuthenticated, incidentController.getIncidents);
   app.post('/api/incidents', isAuthenticated, incidentController.createIncident);
   app.put('/api/incidents/:id', isAuthenticated, incidentController.updateIncident);

@@ -13,6 +13,36 @@ async function canAccessOrgUnit(user: any, orgUnitId?: string | null) {
 
 export class IncidentController {
 
+  // Получить один инцидент (с жертвами)
+  async getIncident(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id || req.user?.username;
+      let user = await storage.getUser(userId);
+      if (!user && req.user?.username) {
+        user = await storage.getUserByUsername(req.user.username);
+      }
+
+      const incident = await storage.getIncident(req.params.id);
+
+      if (!incident) {
+        return res.status(404).json({ message: "Incident not found" });
+      }
+
+      // Check permissions
+      const canAccess = await canAccessOrgUnit(user, incident.orgUnitId);
+      if (!canAccess) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const victims = await storage.getIncidentVictims(incident.id);
+
+      res.json({ ...incident, victims });
+    } catch (error) {
+      console.error("Error fetching incident:", error);
+      res.status(500).json({ message: "Failed to fetch incident" });
+    }
+  }
+
   // Получить список инцидентов
   async getIncidents(req: Request, res: Response) {
     try {
