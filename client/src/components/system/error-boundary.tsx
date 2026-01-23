@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import ErrorPage from "@/components/system/error-page";
 import { Button } from "@/components/ui/button";
 
 interface ErrorBoundaryProps {
@@ -29,12 +30,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold">Произошла ошибка</h1>
-            <Button onClick={this.handleReload}>Перезагрузить</Button>
-          </div>
-        </div>
+        <ErrorPage
+          code={500}
+          message="Произошла ошибка. Попробуйте обновить страницу."
+          actions={<Button onClick={this.handleReload}>Перезагрузить</Button>}
+        />
       );
     }
 
