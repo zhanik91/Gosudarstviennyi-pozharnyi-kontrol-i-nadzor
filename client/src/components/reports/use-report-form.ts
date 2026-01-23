@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +29,7 @@ export function useReportForm<T>({
   const [reportData, setReportData] = useState<Record<string, any>>({});
   const [loaded, setLoaded] = useState(false);
   const initialLoadRef = useRef(false);
+  const lastSavedSignatureRef = useRef<string | null>(null);
 
   const { data, isLoading } = useQuery<ReportResponse<T>>({
     queryKey: ["/api/reports", formId, period],
@@ -54,6 +55,7 @@ export function useReportForm<T>({
     const nextData =
       savedData && Object.keys(savedData).length > 0 ? savedData : computed;
     setReportData(nextData);
+    lastSavedSignatureRef.current = stableSignature(nextData);
     setLoaded(true);
     initialLoadRef.current = true;
   }, [data, extractData]);
@@ -92,18 +94,50 @@ export function useReportForm<T>({
             : "Данные формы сохранены",
       });
     }
+    lastSavedSignatureRef.current = stableSignature(reportData);
     return payload;
   };
+
+  const reportSignature = useMemo(() => stableSignature(reportData), [reportData]);
+  const debounceMs = useMemo(() => {
+    const length = reportSignature.length;
+    if (length > 15000) {
+      return 2500;
+    }
+    if (length > 5000) {
+      return 1500;
+    }
+    return 800;
+  }, [reportSignature]);
 
   useEffect(() => {
     if (!period || !loaded || !initialLoadRef.current) {
       return;
     }
+    if (reportSignature === lastSavedSignatureRef.current) {
+      return;
+    }
     const timeout = window.setTimeout(() => {
       saveReport("draft", { silent: true }).catch(() => undefined);
-    }, 800);
+    }, debounceMs);
     return () => window.clearTimeout(timeout);
-  }, [reportData, period, loaded]);
+  }, [debounceMs, period, loaded, reportSignature, saveReport]);
 
   return { reportData, setReportData, isLoading, saveReport };
+}
+
+function stableSignature(value: unknown) {
+  return (
+    JSON.stringify(value, (_key, val) => {
+      if (val && typeof val === "object" && !Array.isArray(val)) {
+        return Object.keys(val as Record<string, unknown>)
+          .sort()
+          .reduce<Record<string, unknown>>((acc, key) => {
+            acc[key] = (val as Record<string, unknown>)[key];
+            return acc;
+          }, {});
+      }
+      return val;
+    }) ?? ""
+  );
 }
