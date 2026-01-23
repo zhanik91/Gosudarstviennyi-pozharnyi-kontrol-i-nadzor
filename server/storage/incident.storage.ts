@@ -117,7 +117,17 @@ export class IncidentStorage {
     period?: string;
     includeSubOrgs?: boolean;
     scopeUser?: ScopeUser;
-  }): Promise<Incident[]> {
+    limit?: number;
+    offset?: number;
+  }): Promise<
+    | Incident[]
+    | {
+        items: Incident[];
+        total: number;
+        limit: number;
+        offset: number;
+      }
+  > {
     const conditions: any[] = [];
 
     if (filters?.orgUnitId) {
@@ -151,13 +161,42 @@ export class IncidentStorage {
       }
     }
 
+    const limit = filters?.limit;
+    const offset = filters?.offset ?? 0;
+
+    const query = db.select().from(incidents).orderBy(desc(incidents.dateTime));
+
     if (conditions.length > 0) {
-      const result = await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.dateTime));
-      return result as Incident[];
+      query.where(and(...conditions));
     }
 
-    const result = await db.select().from(incidents).orderBy(desc(incidents.dateTime));
-    return result as Incident[];
+    if (typeof limit === "number") {
+      query.limit(limit);
+      query.offset(offset);
+    }
+
+    const items = (await query) as Incident[];
+
+    if (typeof limit === "number") {
+      const countQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(incidents);
+
+      if (conditions.length > 0) {
+        countQuery.where(and(...conditions));
+      }
+
+      const [countResult] = await countQuery;
+
+      return {
+        items,
+        total: Number(countResult?.count) || 0,
+        limit,
+        offset,
+      };
+    }
+
+    return items;
   }
 
   async getSimpleAnalytics(params: {
@@ -770,7 +809,15 @@ export class IncidentStorage {
     return allIncidents.length;
   }
 
-  async searchIncidents(query: string, filters: any = {}): Promise<any[]> {
+  async searchIncidents(query: string, filters: any = {}): Promise<
+    | any[]
+    | {
+        items: any[];
+        total: number;
+        limit: number;
+        offset: number;
+      }
+  > {
     const conditions = [];
 
     if (query) {
@@ -819,13 +866,42 @@ export class IncidentStorage {
       }
     }
 
+    const limit = typeof filters.limit === "number" ? filters.limit : undefined;
+    const offset = typeof filters.offset === "number" ? filters.offset : 0;
+
+    const queryBuilder = db.select().from(incidents).orderBy(desc(incidents.dateTime));
+
     if (conditions.length > 0) {
-      const result = await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.dateTime)).limit(100);
-      return result as any[];
+      queryBuilder.where(and(...conditions));
     }
 
-    const result = await db.select().from(incidents).orderBy(desc(incidents.dateTime)).limit(100);
-    return result as any[];
+    if (typeof limit === "number") {
+      queryBuilder.limit(limit);
+      queryBuilder.offset(offset);
+    }
+
+    const items = await queryBuilder;
+
+    if (typeof limit === "number") {
+      const countQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(incidents);
+
+      if (conditions.length > 0) {
+        countQuery.where(and(...conditions));
+      }
+
+      const [countResult] = await countQuery;
+
+      return {
+        items,
+        total: Number(countResult?.count) || 0,
+        limit,
+        offset,
+      };
+    }
+
+    return items as any[];
   }
 
   // Advanced Analytics (Charts/Maps)

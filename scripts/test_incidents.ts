@@ -6,7 +6,8 @@ async function test() {
   try {
     console.log("Testing getIncidents...");
     const incidents = await storage.getIncidents({});
-    console.log("Success! Found", incidents.length, "incidents.");
+    const items = Array.isArray(incidents) ? incidents : incidents.items;
+    console.log("Success! Found", items.length, "incidents.");
   } catch (error) {
     console.error("Error calling getIncidents:", error);
   } finally {

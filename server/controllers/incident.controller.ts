@@ -57,6 +57,12 @@ export class IncidentController {
       if (req.query.period) filters.period = req.query.period as string;
       if (req.query.includeSubOrgs === 'true') filters.includeSubOrgs = true;
       if (scopeUser) filters.scopeUser = scopeUser;
+      const limit = Number.parseInt(req.query.limit as string, 10);
+      const offset = Number.parseInt(req.query.offset as string, 10);
+      if (!Number.isNaN(limit)) {
+        filters.limit = Math.max(1, limit);
+        filters.offset = Number.isNaN(offset) ? 0 : Math.max(0, offset);
+      }
 
       if (user?.role === "MCHS" && req.query.orgUnitId) {
         filters.orgUnitId = req.query.orgUnitId as string;
@@ -82,6 +88,8 @@ export class IncidentController {
       const scopeUser = toScopeUser(user);
 
       const { q, dateFrom, dateTo, incidentType, region, includeSubOrgs } = req.query;
+      const limit = Number.parseInt(req.query.limit as string, 10);
+      const offset = Number.parseInt(req.query.offset as string, 10);
 
       if (dateFrom) {
         filters.dateFrom = dateFrom as string;
@@ -112,6 +120,11 @@ export class IncidentController {
         filters.orgUnitId = req.query.orgUnitId as string;
       }
 
+      if (!Number.isNaN(limit)) {
+        filters.limit = Math.max(1, limit);
+        filters.offset = Number.isNaN(offset) ? 0 : Math.max(0, offset);
+      }
+
       const hasSearchParams =
         Boolean(q) ||
         Boolean(dateFrom) ||
@@ -123,6 +136,8 @@ export class IncidentController {
         const incidents = await storage.getIncidents({
           orgUnitId: filters.orgUnitId,
           scopeUser,
+          limit: filters.limit,
+          offset: filters.offset,
         });
         res.json(incidents);
         return;
