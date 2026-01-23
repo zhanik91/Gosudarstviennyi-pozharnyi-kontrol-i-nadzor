@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Eye, Download, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { type Package } from "@shared/schema";
@@ -14,8 +15,16 @@ import { type Package } from "@shared/schema";
 export default function PackagesPanel() {
   const [outgoingPeriod, setOutgoingPeriod] = useState("");
   const [incomingPeriod, setIncomingPeriod] = useState("");
+  const [consolidationStatus, setConsolidationStatus] = useState<
+    "idle" | "pending" | "success" | "error"
+  >("idle");
+  const [consolidationMessage, setConsolidationMessage] = useState<string>("");
+  const [consolidatedPackage, setConsolidatedPackage] = useState<Package | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userRole = (user as any)?.role;
+  const canConsolidate = userRole === "MCHS" || userRole === "DCHS";
 
   const { data: packages = [], isLoading } = useQuery({
     queryKey: ["/api/packages"],
@@ -81,6 +90,47 @@ export default function PackagesPanel() {
     },
   });
 
+  const consolidatePackageMutation = useMutation({
+    mutationFn: async ({ period, orgId }: { period: string; orgId: string }) => {
+      const response = await apiRequest("POST", "/api/packages/consolidate", { period, orgId });
+      return (await response.json()) as { ok: boolean; msg?: string; package?: Package };
+    },
+    onMutate: () => {
+      setConsolidationStatus("pending");
+      setConsolidationMessage("Запуск консолидации...");
+      setConsolidatedPackage(null);
+    },
+    onSuccess: (data) => {
+      if (data.ok) {
+        setConsolidationStatus("success");
+        setConsolidationMessage("Свод успешно сформирован");
+        setConsolidatedPackage(data.package ?? null);
+        toast({
+          title: "Успех",
+          description: "Сводный пакет сформирован",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
+      } else {
+        setConsolidationStatus("error");
+        setConsolidationMessage(data.msg || "Не удалось сформировать свод");
+        toast({
+          title: "Ошибка",
+          description: data.msg || "Не удалось сформировать свод",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      setConsolidationStatus("error");
+      setConsolidationMessage(error.message || "Не удалось сформировать свод");
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось сформировать свод",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmitUp = () => {
     if (!outgoingPeriod) {
       toast({
@@ -106,11 +156,16 @@ export default function PackagesPanel() {
       });
       return;
     }
-    // In a real app, would create summary package
-    toast({
-      title: "Информация",
-      description: "Функция в разработке",
-    });
+    const orgId = (user as any)?.orgUnitId;
+    if (!orgId) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось определить организацию",
+        variant: "destructive",
+      });
+      return;
+    }
+    consolidatePackageMutation.mutate({ period: outgoingPeriod, orgId });
   };
 
   const handleShowIncoming = () => {
@@ -178,14 +233,40 @@ export default function PackagesPanel() {
                 >
                   Отправить вверх
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={handleCreateSummary}
-                  data-testid="button-create-summary"
-                >
-                  Сформировать сводный
-                </Button>
+                {canConsolidate && (
+                  <Button 
+                    variant="outline"
+                    onClick={handleCreateSummary}
+                    disabled={consolidatePackageMutation.isPending}
+                    data-testid="button-create-summary"
+                  >
+                    Сформировать свод
+                  </Button>
+                )}
               </div>
+              {canConsolidate && (
+                <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-foreground">Статус выполнения</span>
+                    <Badge variant="secondary">
+                      {consolidationStatus === "idle" && "Ожидание"}
+                      {consolidationStatus === "pending" && "В процессе"}
+                      {consolidationStatus === "success" && "Готово"}
+                      {consolidationStatus === "error" && "Ошибка"}
+                    </Badge>
+                  </div>
+                  <p className="mt-2">{consolidationMessage || "Свод еще не формировался."}</p>
+                  {consolidatedPackage && (
+                    <div className="mt-3 space-y-1 text-xs text-foreground">
+                      <div>Период: {consolidatedPackage.period}</div>
+                      <div>Пакет: {consolidatedPackage.id}</div>
+                      <div>
+                        Статус: {getStatusBadge(consolidatedPackage.status)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
