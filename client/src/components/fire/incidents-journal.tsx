@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
@@ -110,6 +110,13 @@ const normalizeLocality = (value: string) => {
   if (normalized.includes("город")) return "cities";
   if (normalized.includes("сель")) return "rural";
   return value.trim();
+};
+
+type IncidentPageResponse = {
+  items: Incident[];
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 const parseNumberValue = (value: unknown) => {
@@ -359,6 +366,8 @@ export default function IncidentsJournal() {
     incidentType: "",
     region: "",
   });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
 
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
   // Combined modal state: if open=true, and editingIncidentId=null -> Create mode.
@@ -387,7 +396,22 @@ export default function IncidentsJournal() {
 
   const endpoint = hasFilters ? "/api/incidents/search" : "/api/incidents";
 
-  const { data: incidents = [], isLoading, error, refetch } = useQuery<Incident[]>({
+  const offset = (page - 1) * pageSize;
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    filters.searchQuery,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.incidentType,
+    filters.region,
+    pageSize,
+  ]);
+
+  const { data: incidentsResponse, isLoading, error, refetch } = useQuery<
+    IncidentPageResponse | Incident[]
+  >({
     queryKey: [
       endpoint,
       filters.searchQuery,
@@ -395,6 +419,8 @@ export default function IncidentsJournal() {
       filters.dateTo,
       filters.incidentType,
       filters.region,
+      page,
+      pageSize,
     ],
     queryFn: async ({ queryKey }) => {
       const [
@@ -404,9 +430,13 @@ export default function IncidentsJournal() {
         dateTo,
         incidentType,
         region,
-      ] = queryKey as [string, string, string, string, string, string];
+        pageValue,
+        pageSizeValue,
+      ] = queryKey as [string, string, string, string, string, string, number, number];
 
       const params = new URLSearchParams();
+      const limitValue = Number(pageSizeValue) || pageSize;
+      const offsetValue = (Number(pageValue) - 1) * limitValue;
 
       // Параметры нужны только для /search
       if (ep === "/api/incidents/search") {
@@ -416,6 +446,9 @@ export default function IncidentsJournal() {
         if (incidentType) params.set("incidentType", incidentType);
         if (region) params.set("region", region);
       }
+
+      params.set("limit", String(limitValue));
+      params.set("offset", String(offsetValue));
 
       const qs = params.toString();
       const url = qs ? `${ep}?${qs}` : ep;
@@ -430,6 +463,46 @@ export default function IncidentsJournal() {
     retry: 2,
     retryDelay: 1000,
   });
+
+  const incidentPage = Array.isArray(incidentsResponse)
+    ? {
+        items: incidentsResponse,
+        total: incidentsResponse.length,
+        limit: incidentsResponse.length,
+        offset: 0,
+      }
+    : incidentsResponse ?? {
+        items: [],
+        total: 0,
+        limit: pageSize,
+        offset: 0,
+      };
+
+  const incidents = incidentPage.items ?? [];
+  const totalIncidents = incidentPage.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalIncidents / pageSize));
+  const currentOffset = incidentPage.offset ?? offset;
+  const startItem = totalIncidents === 0 ? 0 : currentOffset + 1;
+  const endItem = totalIncidents === 0 ? 0 : Math.min(currentOffset + incidents.length, totalIncidents);
+
+  useEffect(() => {
+    setSelectedIncidents([]);
+  }, [
+    page,
+    pageSize,
+    endpoint,
+    filters.searchQuery,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.incidentType,
+    filters.region,
+  ]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const deleteIncidentMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -1013,7 +1086,7 @@ export default function IncidentsJournal() {
                           />
                         </td>
                         <td className="p-2 border-r border-border text-foreground font-mono">
-                          {index + 1}
+                          {currentOffset + index + 1}
                         </td>
                         <td className="p-2 border-r border-border text-foreground">
                           {format(new Date(incident.dateTime), "dd.MM.yyyy HH:mm")}
@@ -1116,6 +1189,48 @@ export default function IncidentsJournal() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border p-4 text-sm">
+            <div className="text-muted-foreground">
+              Показаны {startItem}-{endItem} из {totalIncidents}
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-muted-foreground">
+                Записей на странице
+                <select
+                  className="rounded border border-border bg-background px-2 py-1 text-sm text-foreground"
+                  value={pageSize}
+                  onChange={(event) => setPageSize(Number(event.target.value))}
+                >
+                  {[25, 50, 100, 200].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  disabled={page === 1}
+                >
+                  Назад
+                </Button>
+                <span className="text-muted-foreground">
+                  Страница {page} из {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Вперед
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
