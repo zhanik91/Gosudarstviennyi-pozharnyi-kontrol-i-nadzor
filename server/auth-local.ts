@@ -40,7 +40,8 @@ export function setupLocalAuth(app: Express) {
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 часа
       httpOnly: true,
-      secure: false // в production должно быть true
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production"
     }
   };
 
