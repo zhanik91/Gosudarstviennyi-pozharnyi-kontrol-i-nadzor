@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/layout/header";
+import ErrorBoundary from "@/components/system/error-boundary";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import AdminPanel from "@/pages/admin-panel";
@@ -103,7 +104,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <ErrorBoundary>
+          <Router />
+        </ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>
   );
