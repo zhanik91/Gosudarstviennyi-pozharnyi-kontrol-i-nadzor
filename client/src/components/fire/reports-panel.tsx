@@ -1,28 +1,40 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { DateRangeField } from "@/components/ui/date-range-field";
+import { usePeriodStore } from "@/hooks/use-period-store";
 
 export default function ReportsPanel() {
-  const [period, setPeriod] = useState("");
+  const { store, updatePreset } = usePeriodStore();
+  const [periodError, setPeriodError] = useState("");
   const [includeOrgTree, setIncludeOrgTree] = useState(false);
   const [validationResults, setValidationResults] = useState<Array<{
     type: 'success' | 'warning' | 'error';
     message: string;
   }>>([]);
 
+  const periodKey = useMemo(() => {
+    const from = store.report.from;
+    const to = store.report.to;
+    const candidate = from || to;
+    if (!candidate) return "";
+    return candidate.slice(0, 7);
+  }, [store.report.from, store.report.to]);
+
   const handleGenerate = async () => {
-    if (!period) {
+    if (!periodKey) {
       setValidationResults([{ type: 'error', message: 'Укажите период для формирования отчёта.' }]);
+      setPeriodError("Выберите диапазон дат для периода отчёта.");
       return;
     }
+    setPeriodError("");
 
     try {
       const params = new URLSearchParams({
-        period,
+        period: periodKey,
         includeChildren: String(includeOrgTree),
       });
       const response = await fetch(`/api/reports?${params.toString()}`);
@@ -55,14 +67,16 @@ export default function ReportsPanel() {
   };
 
   const handleCheck = async () => {
-    if (!period) {
+    if (!periodKey) {
       setValidationResults([{ type: 'error', message: 'Укажите период для проверки отчётов.' }]);
+      setPeriodError("Выберите диапазон дат для периода отчёта.");
       return;
     }
+    setPeriodError("");
 
     try {
       const params = new URLSearchParams({
-        period,
+        period: periodKey,
         includeChildren: String(includeOrgTree),
       });
       const response = await fetch(`/api/reports/validate?${params.toString()}`);
@@ -111,18 +125,23 @@ export default function ReportsPanel() {
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Формирование отчётов</h3>
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="period" className="text-sm font-medium text-foreground mb-2">
-                  Период (YYYY-MM)
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-foreground">
+                  Период отчёта
                 </Label>
-                <Input
-                  id="period"
-                  type="text"
-                  placeholder="2025-01"
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  data-testid="input-report-period"
+                <DateRangeField
+                  from={store.report.from}
+                  to={store.report.to}
+                  onChange={({ from, to }) => {
+                    setPeriodError("");
+                    updatePreset("report", { from, to });
+                  }}
                 />
+                {periodError ? (
+                  <p className="text-xs text-destructive">{periodError}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Для отчёта используется месяц начала периода.</p>
+                )}
               </div>
               
               <div className="flex items-center gap-2">

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateRangeField } from "@/components/ui/date-range-field";
+import { usePeriodStore } from "@/hooks/use-period-store";
 import {
   BarChart,
   Bar,
@@ -23,22 +24,42 @@ import {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export default function SimpleAnalytics() {
-  const [periodFrom, setPeriodFrom] = useState("");
-  const [periodTo, setPeriodTo] = useState("");
+  const { store, updatePreset } = usePeriodStore();
   const [includeOrgTree, setIncludeOrgTree] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState({
-    periodFrom: "",
-    periodTo: "",
+    periodFrom: store.analytics.from,
+    periodTo: store.analytics.to,
     includeOrgTree: false,
   });
 
   const handleBuildCharts = () => {
     setAppliedFilters({
-      periodFrom,
-      periodTo,
+      periodFrom: store.analytics.from,
+      periodTo: store.analytics.to,
       includeOrgTree,
     });
   };
+
+  const applyAnalyticsPeriod = (next: { from: string; to: string }) => {
+    updatePreset("analytics", next);
+    setAppliedFilters((prev) => ({
+      ...prev,
+      periodFrom: next.from,
+      periodTo: next.to,
+    }));
+  };
+
+  const reportPeriodLabel = useMemo(() => {
+    const from = store.report.from || "начало";
+    const to = store.report.to || "настоящее время";
+    return `${from} — ${to}`;
+  }, [store.report.from, store.report.to]);
+
+  const journalPeriodLabel = useMemo(() => {
+    const from = store.journal.from || "начало";
+    const to = store.journal.to || "настоящее время";
+    return `${from} — ${to}`;
+  }, [store.journal.from, store.journal.to]);
 
   const queryParams = new URLSearchParams();
   if (appliedFilters.periodFrom) {
@@ -106,32 +127,14 @@ export default function SimpleAnalytics() {
       <Card className="bg-card border border-border">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">Параметры диаграмм</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="periodFrom" className="text-sm font-medium text-foreground mb-2">
-                Период с
-              </Label>
-              <Input
-                id="periodFrom"
-                type="month"
-                placeholder="2025-01"
-                value={periodFrom}
-                onChange={(e) => setPeriodFrom(e.target.value)}
-                data-testid="input-period-from"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="periodTo" className="text-sm font-medium text-foreground mb-2">
-                по
-              </Label>
-              <Input
-                id="periodTo"
-                type="month"
-                placeholder="2025-12"
-                value={periodTo}
-                onChange={(e) => setPeriodTo(e.target.value)}
-                data-testid="input-period-to"
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <div className="md:col-span-2">
+              <Label className="text-sm font-medium text-foreground mb-2">Период</Label>
+              <DateRangeField
+                from={store.analytics.from}
+                to={store.analytics.to}
+                onChange={({ from, to }) => updatePreset("analytics", { from, to })}
+                className="grid grid-cols-1 gap-3 md:grid-cols-2"
               />
             </div>
 
@@ -149,11 +152,32 @@ export default function SimpleAnalytics() {
               </div>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
               <Button onClick={handleBuildCharts} data-testid="button-build-charts">
                 Построить
               </Button>
             </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => applyAnalyticsPeriod(store.report)}
+              data-testid="button-use-report-period"
+            >
+              Использовать период отчёта
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => applyAnalyticsPeriod(store.journal)}
+              data-testid="button-use-journal-period"
+            >
+              Использовать фильтры журнала
+            </Button>
+            <span className="text-xs text-muted-foreground self-center">
+              Отчёт: {reportPeriodLabel} · Журнал: {journalPeriodLabel}
+            </span>
           </div>
         </CardContent>
       </Card>
