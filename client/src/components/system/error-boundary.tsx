@@ -32,7 +32,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       return (
         <ErrorPage
           code={500}
-          message="Произошла ошибка. Попробуйте обновить страницу."
+          message="Что-то пошло не так. Перезагрузите страницу, чтобы продолжить работу."
           actions={<Button onClick={this.handleReload}>Перезагрузить</Button>}
         />
       );
