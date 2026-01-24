@@ -1,0 +1,18 @@
+ALTER TABLE "incidents"
+  ADD COLUMN IF NOT EXISTS "cause_code" varchar,
+  ADD COLUMN IF NOT EXISTS "cause_detailed" varchar,
+  ADD COLUMN IF NOT EXISTS "object_code" varchar,
+  ADD COLUMN IF NOT EXISTS "object_detailed" varchar,
+  ADD COLUMN IF NOT EXISTS "description" text,
+  ADD COLUMN IF NOT EXISTS "building_details" jsonb,
+  ADD COLUMN IF NOT EXISTS "livestock_lost" jsonb,
+  ADD COLUMN IF NOT EXISTS "destroyed_items" jsonb,
+  ADD COLUMN IF NOT EXISTS "floor" integer,
+  ADD COLUMN IF NOT EXISTS "total_floors" integer,
+  ADD COLUMN IF NOT EXISTS "deaths_drunk" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "deaths_co_total" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "deaths_co_children" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "injured_co_total" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "injured_co_children" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "saved_people_children" integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "time_of_day" varchar;

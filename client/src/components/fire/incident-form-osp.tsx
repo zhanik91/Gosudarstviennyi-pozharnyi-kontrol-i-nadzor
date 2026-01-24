@@ -142,6 +142,10 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
   const [selectedIncidentType, setSelectedIncidentType] = useState("fire");
   const [selectedRegion, setSelectedRegion] = useState((user as any)?.region || "");
   const isSteppeIncident = ["steppe_fire", "steppe_smolder"].includes(selectedIncidentType);
+  const userRegion = (user as any)?.region || "";
+  const userDistrict = (user as any)?.district || "";
+  const isDistrictUser = (user as any)?.role === "DISTRICT";
+  const isMchsUser = (user as any)?.role === "MCHS";
 
   const isEditMode = !!incidentId;
 
@@ -247,6 +251,9 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       if ((user as any).district) {
         form.setValue("city", (user as any).district);
       }
+    }
+    if (!isEditMode && user && (user as any).role === "DISTRICT" && (user as any).district) {
+      form.setValue("city", (user as any).district);
     }
   }, [user, form, isEditMode]);
 
@@ -418,10 +425,13 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         <FormItem>
                           <FormLabel>Область</FormLabel>
                           <Select
-                            disabled={(user as any)?.role !== 'MCHS'}
+                            disabled={!isMchsUser}
                             onValueChange={(val) => {
                                 field.onChange(val);
                                 setSelectedRegion(val);
+                                if (isDistrictUser && userDistrict) {
+                                  form.setValue("city", userDistrict);
+                                }
                             }}
                             value={field.value}
                           >
@@ -429,7 +439,9 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                               <SelectTrigger><SelectValue placeholder="Область" /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                               {REGION_NAMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                               {(isMchsUser ? REGION_NAMES : userRegion ? [userRegion] : REGION_NAMES).map((r) => (
+                                 <SelectItem key={r} value={r}>{r}</SelectItem>
+                               ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -443,7 +455,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         <FormItem>
                           <FormLabel>Город/Район</FormLabel>
                           <Select
-                             disabled={!selectedRegion || (user as any)?.role === 'DISTRICT'}
+                             disabled={!selectedRegion || isDistrictUser}
                              onValueChange={field.onChange}
                              value={field.value}
                           >
@@ -451,8 +463,20 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                                <SelectTrigger><SelectValue placeholder="Город/Район" /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                               {selectedRegion && getCitiesByRegion(selectedRegion).map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
-                               {selectedRegion && getDistrictsByRegion(selectedRegion).map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                               {selectedRegion &&
+                                 (isDistrictUser && userDistrict
+                                   ? [userDistrict]
+                                   : Array.from(
+                                       new Set([
+                                         ...getCitiesByRegion(selectedRegion).map((c) => c.name),
+                                         ...getDistrictsByRegion(selectedRegion),
+                                       ])
+                                     )
+                                 ).map((place) => (
+                                   <SelectItem key={place} value={place}>
+                                     {place}
+                                   </SelectItem>
+                                 ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
