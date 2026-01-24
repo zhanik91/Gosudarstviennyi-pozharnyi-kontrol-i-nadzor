@@ -30,6 +30,7 @@ export function useReportForm<T>({
   const [loaded, setLoaded] = useState(false);
   const initialLoadRef = useRef(false);
   const lastSavedSignatureRef = useRef<string | null>(null);
+  const latestSignatureRef = useRef<string>("");
 
   const { data, isLoading } = useQuery<ReportResponse<T>>({
     queryKey: ["/api/reports", formId, period],
@@ -99,9 +100,15 @@ export function useReportForm<T>({
   };
 
   const reportSignature = useMemo(() => stableSignature(reportData), [reportData]);
+  useEffect(() => {
+    latestSignatureRef.current = reportSignature;
+  }, [reportSignature]);
   const debounceMs = useMemo(() => {
     const length = reportSignature.length;
-    if (length > 15000) {
+    if (length > 20000) {
+      return 4000;
+    }
+    if (length > 10000) {
       return 2500;
     }
     if (length > 5000) {
@@ -117,7 +124,14 @@ export function useReportForm<T>({
     if (reportSignature === lastSavedSignatureRef.current) {
       return;
     }
+    const scheduledSignature = reportSignature;
     const timeout = window.setTimeout(() => {
+      if (scheduledSignature !== latestSignatureRef.current) {
+        return;
+      }
+      if (scheduledSignature === lastSavedSignatureRef.current) {
+        return;
+      }
       saveReport("draft", { silent: true }).catch(() => undefined);
     }, debounceMs);
     return () => window.clearTimeout(timeout);
