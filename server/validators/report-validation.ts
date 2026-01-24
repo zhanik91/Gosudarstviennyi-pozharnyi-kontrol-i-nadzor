@@ -24,11 +24,6 @@ export function validateReportData(form: string, data: Record<string, any>) {
     });
   };
 
-  // Helper to sum multiple row/field values
-  const sumRows = (rowIds: string[], field: string = "total"): number => {
-    return rowIds.reduce((sum, id) => sum + getValue(id, field), 0);
-  };
-
   const sumChildren = <T extends { id?: string; code?: string; children?: T[] }>(
     node: T,
     field: string,
@@ -63,7 +58,14 @@ export function validateReportData(form: string, data: Record<string, any>) {
     }
   };
 
-  const validateTreeTotals = <T extends { id?: string; code?: string; children?: T[] }>(
+  const formatRowLabel = (rowId: string, label?: string) => {
+    if (!label) {
+      return rowId;
+    }
+    return `${rowId} (${label})`;
+  };
+
+  const validateTreeTotals = <T extends { id?: string; code?: string; children?: T[]; label?: string; name?: string; number?: string }>(
     nodes: T[],
     fields: string[],
     getId: (item: T) => string,
@@ -78,7 +80,7 @@ export function validateReportData(form: string, data: Record<string, any>) {
           if (parentValue !== childrenSum) {
             errors.push({
               field: `${parentId}.${field}`,
-              message: `Строка ${getLabel(node)}: итог "${fieldLabel(field)}" должен равняться сумме подпунктов (${childrenSum}), сейчас ${parentValue}.`,
+              message: `Строка ${getLabel(node)}: итог по "${fieldLabel(field)}" должен равняться сумме подпунктов (${childrenSum}). Сейчас ${parentValue}.`,
             });
           }
         });
@@ -123,7 +125,7 @@ export function validateReportData(form: string, data: Record<string, any>) {
         FIRE_CAUSES,
         ["fires_total", "fires_high_risk", "damage_total", "damage_high_risk"],
         (cause) => cause.code ?? "",
-        (cause) => cause.code ?? ""
+        (cause) => formatRowLabel(cause.code ?? "", cause.name)
       );
       break;
 
@@ -135,7 +137,7 @@ export function validateReportData(form: string, data: Record<string, any>) {
         FORM_4_SOVP_ROWS,
         ["fires_total", "damage_total", "deaths_total", "injuries_total"],
         (row) => row.id ?? "",
-        (row) => row.number ?? row.id ?? ""
+        (row) => formatRowLabel(row.number ?? row.id ?? "", row.label)
       );
       break;
 
@@ -186,99 +188,12 @@ export function validateReportData(form: string, data: Record<string, any>) {
     case "co": // Form 7-CO
       Object.keys(data).forEach((rowId) => validateRowValues(rowId, ["killed_total", "injured_total"]));
 
-      const coTotalRows = FORM_7_CO_ROWS.filter(
-        (row) => row.children && row.children.length > 0 && /всего|итого/i.test(row.label)
-      );
       validateTreeTotals(
-        coTotalRows,
+        FORM_7_CO_ROWS,
         ["killed_total", "injured_total"],
         (row) => row.id ?? "",
-        (row) => row.number ?? row.id ?? ""
+        (row) => formatRowLabel(row.number ?? row.id ?? "", row.label)
       );
-
-      // Row 5: Dead by object (5.1 - 5.11)
-      const row5Total = getValue("5", "killed_total");
-      const row5Sum = sumRows(
-        ["5.1", "5.2", "5.3", "5.4", "5.5", "5.6", "5.7", "5.8", "5.9", "5.10", "5.11"],
-        "killed_total"
-      );
-      if (row5Total !== row5Sum) {
-        errors.push({
-          field: "5.killed_total",
-          message: `Строка 5: итог по погибшим должен равняться сумме подпунктов 5.1–5.11 (${row5Sum}), сейчас ${row5Total}.`,
-        });
-      }
-
-      // Row 6: Dead by place (6.1 - 6.15)
-      const row6Total = getValue("6", "killed_total");
-      const row6Sum = sumRows(
-        [
-          "6.1",
-          "6.2",
-          "6.3",
-          "6.4",
-          "6.5",
-          "6.6",
-          "6.7",
-          "6.8",
-          "6.9",
-          "6.10",
-          "6.11",
-          "6.12",
-          "6.13",
-          "6.14",
-          "6.15",
-        ],
-        "killed_total"
-      );
-      if (row6Total !== row6Sum) {
-        errors.push({
-          field: "6.killed_total",
-          message: `Строка 6: итог по погибшим должен равняться сумме подпунктов 6.1–6.15 (${row6Sum}), сейчас ${row6Total}.`,
-        });
-      }
-
-      // Row 15: Injured by object (15.1 - 15.11)
-      const row15Total = getValue("15", "injured_total");
-      const row15Sum = sumRows(
-        ["15.1", "15.2", "15.3", "15.4", "15.5", "15.6", "15.7", "15.8", "15.9", "15.10", "15.11"],
-        "injured_total"
-      );
-      if (row15Total !== row15Sum) {
-        errors.push({
-          field: "15.injured_total",
-          message: `Строка 15: итог по травмированным должен равняться сумме подпунктов 15.1–15.11 (${row15Sum}), сейчас ${row15Total}.`,
-        });
-      }
-
-      // Row 16: Injured by place (16.1 - 16.15)
-      const row16Total = getValue("16", "injured_total");
-      const row16Sum = sumRows(
-        [
-          "16.1",
-          "16.2",
-          "16.3",
-          "16.4",
-          "16.5",
-          "16.6",
-          "16.7",
-          "16.8",
-          "16.9",
-          "16.10",
-          "16.11",
-          "16.12",
-          "16.13",
-          "16.14",
-          "16.15",
-        ],
-        "injured_total"
-      );
-      if (row16Total !== row16Sum) {
-        errors.push({
-          field: "16.injured_total",
-          message: `Строка 16: итог по травмированным должен равняться сумме подпунктов 16.1–16.15 (${row16Sum}), сейчас ${row16Total}.`,
-        });
-      }
       break;
 
     default:
