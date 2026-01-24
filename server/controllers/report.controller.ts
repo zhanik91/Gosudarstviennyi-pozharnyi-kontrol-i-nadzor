@@ -1,7 +1,16 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { toScopeUser } from "../services/authz";
-import { FIRE_CAUSES, FORM_4_SOVP_ROWS, FORM_7_CO_ROWS } from "@shared/fire-forms-data";
+import {
+  FIRE_CAUSES,
+  FORM_1_OSP_ROWS,
+  FORM_4_SOVP_ROWS,
+  FORM_5_ROWS,
+  FORM_6_IGNITIONS_ROWS,
+  FORM_6_STEPPE_FIRES_ROWS,
+  FORM_7_CO_ROWS,
+  NON_FIRE_CASES,
+} from "@shared/fire-forms-data";
 
 export class ReportController {
 
@@ -90,6 +99,55 @@ export class ReportController {
     }
   }
 
+  // Метрики заполнения отчетных форм
+  async getReportsDashboard(req: Request, res: Response) {
+    try {
+      const orgUnits = await storage.getOrganizations();
+      const orgId = (req.query.orgId as string) || req.user?.orgUnitId;
+      const period = req.query.period as string;
+
+      if (!req.user?.orgUnitId) {
+        return res.status(400).json({ ok: false, msg: "org unit required" });
+      }
+
+      if (!period) {
+        return res.status(400).json({ ok: false, msg: "period required" });
+      }
+
+      const { assertOrgScope } = await import("../services/authz");
+      try {
+        assertOrgScope(orgUnits, req.user?.orgUnitId, orgId || req.user?.orgUnitId);
+      } catch (error: any) {
+        return res.status(403).json({ ok: false, msg: "forbidden" });
+      }
+
+      const resolvedOrgId = orgId || req.user?.orgUnitId;
+      const reportForms = await storage.getReportForms({
+        orgUnitId: resolvedOrgId,
+        period,
+      });
+      const formDataMap = new Map(reportForms.map((form) => [form.form, form.data]));
+
+      const summaries = REPORT_FORM_IDS.reduce<Record<string, ReportDashboardSummary>>((acc, formId) => {
+        const data = (formDataMap.get(formId) as Record<string, any> | undefined) ?? {};
+        const errors = validateReportData(formId, data);
+        const completion = getReportCompletion(formId, data);
+        acc[formId] = {
+          completionPercent: completion.completionPercent,
+          totalFields: completion.totalFields,
+          emptyFields: completion.emptyFields,
+          validationErrors: errors.length,
+        };
+        return acc;
+      }, {});
+
+      res.json({ ok: true, data: { period, forms: summaries } });
+    } catch (error) {
+      console.error("Error fetching report dashboard:", error);
+      res.status(500).json({ ok: false, msg: "Failed to fetch report dashboard" });
+    }
+  }
+
   // Валидация отчетов
   async validateReports(req: Request, res: Response) {
     try {
@@ -172,6 +230,132 @@ export class ReportController {
 }
 
 export const reportController = new ReportController();
+
+type ReportDashboardSummary = {
+  completionPercent: number;
+  totalFields: number;
+  emptyFields: number;
+  validationErrors: number;
+};
+
+const REPORT_FORM_IDS = ['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzs', '6-sspz', 'co'] as const;
+const FORM_1_FIELDS = ['total', 'urban', 'rural'] as const;
+const FORM_3_FIELDS = ['fires_total', 'fires_high_risk', 'damage_total', 'damage_high_risk'] as const;
+const FORM_4_FIELDS = ['fires_total', 'damage_total', 'deaths_total', 'injuries_total'] as const;
+const FORM_5_FIELDS = ['urban', 'rural'] as const;
+const FORM_6_FIELDS = [
+  'fires_count',
+  'steppe_area',
+  'damage_total',
+  'people_total',
+  'people_dead',
+  'people_injured',
+  'animals_total',
+  'animals_dead',
+  'animals_injured',
+  'extinguished_total',
+  'extinguished_area',
+  'extinguished_damage',
+  'garrison_people',
+  'garrison_units',
+  'mchs_people',
+  'mchs_units',
+] as const;
+const FORM_7_FIELDS = ['killed_total', 'injured_total'] as const;
+
+const flattenRows = <T extends { id?: string; children?: T[] }>(
+  rows: T[],
+  options?: { skipSections?: boolean }
+): string[] => {
+  const ids: string[] = [];
+  const walk = (items: T[]) => {
+    items.forEach((item) => {
+      const isSection = options?.skipSections && 'isSection' in item && Boolean((item as { isSection?: boolean }).isSection);
+      if (!isSection && item.id) {
+        ids.push(item.id);
+      }
+      if (item.children) {
+        walk(item.children);
+      }
+    });
+  };
+  walk(rows);
+  return ids;
+};
+
+const isEmptyValue = (value: unknown) =>
+  value === null ||
+  value === undefined ||
+  value === "" ||
+  (typeof value === "number" && Number.isNaN(value));
+
+const getReportCompletion = (form: string, data: Record<string, any>) => {
+  const getFieldValue = (rowId: string, field?: string) => {
+    if (!field) {
+      return data?.[rowId];
+    }
+    return data?.[rowId]?.[field];
+  };
+
+  let rowIds: string[] = [];
+  let fields: string[] = [];
+
+  switch (form) {
+    case "1-osp":
+      rowIds = flattenRows(FORM_1_OSP_ROWS);
+      fields = [...FORM_1_FIELDS];
+      break;
+    case "2-ssg":
+      rowIds = NON_FIRE_CASES.map((item) => item.code);
+      fields = ["value"];
+      break;
+    case "3-spvp":
+      rowIds = flattenRows(FIRE_CAUSES);
+      fields = [...FORM_3_FIELDS];
+      break;
+    case "4-sovp":
+      rowIds = flattenRows(FORM_4_SOVP_ROWS);
+      fields = [...FORM_4_FIELDS];
+      break;
+    case "5-spzs":
+      rowIds = flattenRows(FORM_5_ROWS, { skipSections: true });
+      fields = [...FORM_5_FIELDS];
+      break;
+    case "6-sspz":
+      rowIds = [...FORM_6_STEPPE_FIRES_ROWS, ...FORM_6_IGNITIONS_ROWS].map((row) => row.id);
+      fields = [...FORM_6_FIELDS];
+      break;
+    case "co":
+      rowIds = flattenRows(FORM_7_CO_ROWS);
+      fields = [...FORM_7_FIELDS];
+      break;
+    default:
+      break;
+  }
+
+  const totalFields = rowIds.length * fields.length;
+  let emptyFields = 0;
+
+  rowIds.forEach((rowId) => {
+    if (form === "2-ssg") {
+      const value = getFieldValue(rowId);
+      if (isEmptyValue(value)) {
+        emptyFields += 1;
+      }
+      return;
+    }
+    fields.forEach((field) => {
+      const value = getFieldValue(rowId, field);
+      if (isEmptyValue(value)) {
+        emptyFields += 1;
+      }
+    });
+  });
+
+  const completionPercent = totalFields === 0 ? 0 : Math.round(((totalFields - emptyFields) / totalFields) * 100);
+
+  return { completionPercent, totalFields, emptyFields };
+};
 
 function validateReportData(form: string, data: Record<string, any>) {
   const errors: Array<{ field: string; message: string }> = [];
