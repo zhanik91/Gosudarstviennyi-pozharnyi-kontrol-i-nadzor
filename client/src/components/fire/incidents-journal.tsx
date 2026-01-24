@@ -43,8 +43,14 @@ const DEFAULT_VISIBLE_COLUMNS = [
   "damage",
   "deathsTotal",
   "deathsChildren",
+  "deathsDrunk",
+  "deathsCOTotal",
+  "deathsCOChildren",
   "injuredTotal",
+  "injuredCOTotal",
+  "injuredCOChildren",
   "savedPeopleTotal",
+  "savedPeopleChildren",
   "savedProperty",
 ];
 
@@ -879,9 +885,15 @@ export default function IncidentsJournal() {
       acc.damage += parseFloat(incident.damage || "0");
       acc.deathsTotal += incident.deathsTotal || 0;
       acc.deathsChildren += incident.deathsChildren || 0;
+      acc.deathsDrunk += incident.deathsDrunk || 0;
+      acc.deathsCOTotal += incident.deathsCOTotal || 0;
+      acc.deathsCOChildren += incident.deathsCOChildren || 0;
       acc.injuredTotal += incident.injuredTotal || 0;
       acc.injuredChildren += incident.injuredChildren || 0;
+      acc.injuredCOTotal += incident.injuredCOTotal || 0;
+      acc.injuredCOChildren += incident.injuredCOChildren || 0;
       acc.savedPeopleTotal += incident.savedPeopleTotal || 0;
+      acc.savedPeopleChildren += incident.savedPeopleChildren || 0;
       acc.savedProperty += parseFloat(incident.savedProperty || "0");
       return acc;
     },
@@ -890,9 +902,15 @@ export default function IncidentsJournal() {
       damage: 0,
       deathsTotal: 0,
       deathsChildren: 0,
+      deathsDrunk: 0,
+      deathsCOTotal: 0,
+      deathsCOChildren: 0,
       injuredTotal: 0,
       injuredChildren: 0,
+      injuredCOTotal: 0,
+      injuredCOChildren: 0,
       savedPeopleTotal: 0,
+      savedPeopleChildren: 0,
       savedProperty: 0,
     }
   );
@@ -990,6 +1008,33 @@ export default function IncidentsJournal() {
       totalClassName: "text-center text-foreground font-mono",
     },
     {
+      id: "deathsDrunk",
+      label: "Погибло (алк.)",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.deathsDrunk || 0,
+      total: () => totals.deathsDrunk,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "deathsCOTotal",
+      label: "Погибло (CO)",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.deathsCOTotal || 0,
+      total: () => totals.deathsCOTotal,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "deathsCOChildren",
+      label: "Детей (CO)",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.deathsCOChildren || 0,
+      total: () => totals.deathsCOChildren,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
       id: "injuredTotal",
       label: "Травмировано",
       headerClassName: "min-w-[80px]",
@@ -999,12 +1044,39 @@ export default function IncidentsJournal() {
       totalClassName: "text-center text-foreground font-mono",
     },
     {
+      id: "injuredCOTotal",
+      label: "Травмировано (CO)",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.injuredCOTotal || 0,
+      total: () => totals.injuredCOTotal,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "injuredCOChildren",
+      label: "Детей (CO) травм.",
+      headerClassName: "min-w-[90px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.injuredCOChildren || 0,
+      total: () => totals.injuredCOChildren,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
       id: "savedPeopleTotal",
       label: "Спасено людей",
       headerClassName: "min-w-[80px]",
       cellClassName: "text-center text-foreground font-mono",
       render: (incident: Incident) => incident.savedPeopleTotal || 0,
       total: () => totals.savedPeopleTotal,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "savedPeopleChildren",
+      label: "Спасено детей",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.savedPeopleChildren || 0,
+      total: () => totals.savedPeopleChildren,
       totalClassName: "text-center text-foreground font-mono",
     },
     {

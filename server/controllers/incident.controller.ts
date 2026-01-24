@@ -18,6 +18,46 @@ function getIncidentSchemaMismatchMessage() {
   return `DB schema mismatch: missing columns ${missingColumns.join(", ")}`;
 }
 
+const parseDecimalString = (value: unknown, fallback = "0") => {
+  if (value === undefined || value === null || value === "") return fallback;
+  const normalized = typeof value === "string" ? value.replace(",", ".") : String(value);
+  const parsed = Number.parseFloat(normalized);
+  return Number.isNaN(parsed) ? fallback : parsed.toString();
+};
+
+const parseOptionalDecimalString = (value: unknown) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const normalized = typeof value === "string" ? value.replace(",", ".") : String(value);
+  const parsed = Number.parseFloat(normalized);
+  return Number.isNaN(parsed) ? undefined : parsed.toString();
+};
+
+const parseInteger = (value: unknown, fallback = 0) => {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const parseOptionalInteger = (value: unknown) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
+const parseJsonField = (value: unknown) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn("Invalid JSON payload:", error);
+      return undefined;
+    }
+  }
+  if (typeof value === "object") return value;
+  return undefined;
+};
+
 export class IncidentController {
 
   // Получить один инцидент (с жертвами)
@@ -189,11 +229,39 @@ export class IncidentController {
         createdBy,
         dateTime: req.body.dateTime ? new Date(req.body.dateTime) : new Date(),
         // Конвертируем числовые поля в строки для соответствия схеме
-        damage: req.body.damage !== undefined ? String(req.body.damage) : "0",
-        savedProperty: req.body.savedProperty !== undefined ? String(req.body.savedProperty) : "0",
-        deathsTotal: req.body.deathsTotal || 0,
-        injuredTotal: req.body.injuredTotal || 0,
-        savedPeopleTotal: req.body.savedPeopleTotal || 0,
+        damage: parseDecimalString(req.body.damage),
+        savedProperty: parseDecimalString(req.body.savedProperty),
+        steppeArea: parseDecimalString(req.body.steppeArea),
+        steppeDamage: parseDecimalString(req.body.steppeDamage),
+        steppeExtinguishedArea: parseDecimalString(req.body.steppeExtinguishedArea),
+        steppeExtinguishedDamage: parseDecimalString(req.body.steppeExtinguishedDamage),
+        deathsTotal: parseInteger(req.body.deathsTotal),
+        deathsChildren: parseInteger(req.body.deathsChildren),
+        deathsDrunk: parseInteger(req.body.deathsDrunk),
+        deathsCOTotal: parseInteger(req.body.deathsCOTotal),
+        deathsCOChildren: parseInteger(req.body.deathsCOChildren),
+        injuredTotal: parseInteger(req.body.injuredTotal),
+        injuredChildren: parseInteger(req.body.injuredChildren),
+        injuredCOTotal: parseInteger(req.body.injuredCOTotal),
+        injuredCOChildren: parseInteger(req.body.injuredCOChildren),
+        savedPeopleTotal: parseInteger(req.body.savedPeopleTotal),
+        savedPeopleChildren: parseInteger(req.body.savedPeopleChildren),
+        steppePeopleTotal: parseInteger(req.body.steppePeopleTotal),
+        steppePeopleDead: parseInteger(req.body.steppePeopleDead),
+        steppePeopleInjured: parseInteger(req.body.steppePeopleInjured),
+        steppeAnimalsTotal: parseInteger(req.body.steppeAnimalsTotal),
+        steppeAnimalsDead: parseInteger(req.body.steppeAnimalsDead),
+        steppeAnimalsInjured: parseInteger(req.body.steppeAnimalsInjured),
+        steppeExtinguishedTotal: parseInteger(req.body.steppeExtinguishedTotal),
+        steppeGarrisonPeople: parseInteger(req.body.steppeGarrisonPeople),
+        steppeGarrisonUnits: parseInteger(req.body.steppeGarrisonUnits),
+        steppeMchsPeople: parseInteger(req.body.steppeMchsPeople),
+        steppeMchsUnits: parseInteger(req.body.steppeMchsUnits),
+        floor: parseOptionalInteger(req.body.floor),
+        totalFloors: parseOptionalInteger(req.body.totalFloors),
+        buildingDetails: parseJsonField(req.body.buildingDetails),
+        livestockLost: parseJsonField(req.body.livestockLost),
+        destroyedItems: parseJsonField(req.body.destroyedItems),
         // Обязательные поля для валидации с дефолтными значениями
         region: req.body.region || user?.region || 'Шымкент',
         city: req.body.city || user?.district || '',
@@ -273,7 +341,44 @@ export class IncidentController {
         victimsData = req.body.victims;
       }
 
-      const updateData = insertIncidentSchema.partial().parse(req.body);
+      const updatePayload = {
+        ...req.body,
+        dateTime: req.body.dateTime ? new Date(req.body.dateTime) : undefined,
+        damage: parseOptionalDecimalString(req.body.damage),
+        savedProperty: parseOptionalDecimalString(req.body.savedProperty),
+        steppeArea: parseOptionalDecimalString(req.body.steppeArea),
+        steppeDamage: parseOptionalDecimalString(req.body.steppeDamage),
+        steppeExtinguishedArea: parseOptionalDecimalString(req.body.steppeExtinguishedArea),
+        steppeExtinguishedDamage: parseOptionalDecimalString(req.body.steppeExtinguishedDamage),
+        deathsTotal: parseOptionalInteger(req.body.deathsTotal),
+        deathsChildren: parseOptionalInteger(req.body.deathsChildren),
+        deathsDrunk: parseOptionalInteger(req.body.deathsDrunk),
+        deathsCOTotal: parseOptionalInteger(req.body.deathsCOTotal),
+        deathsCOChildren: parseOptionalInteger(req.body.deathsCOChildren),
+        injuredTotal: parseOptionalInteger(req.body.injuredTotal),
+        injuredChildren: parseOptionalInteger(req.body.injuredChildren),
+        injuredCOTotal: parseOptionalInteger(req.body.injuredCOTotal),
+        injuredCOChildren: parseOptionalInteger(req.body.injuredCOChildren),
+        savedPeopleTotal: parseOptionalInteger(req.body.savedPeopleTotal),
+        savedPeopleChildren: parseOptionalInteger(req.body.savedPeopleChildren),
+        steppePeopleTotal: parseOptionalInteger(req.body.steppePeopleTotal),
+        steppePeopleDead: parseOptionalInteger(req.body.steppePeopleDead),
+        steppePeopleInjured: parseOptionalInteger(req.body.steppePeopleInjured),
+        steppeAnimalsTotal: parseOptionalInteger(req.body.steppeAnimalsTotal),
+        steppeAnimalsDead: parseOptionalInteger(req.body.steppeAnimalsDead),
+        steppeAnimalsInjured: parseOptionalInteger(req.body.steppeAnimalsInjured),
+        steppeExtinguishedTotal: parseOptionalInteger(req.body.steppeExtinguishedTotal),
+        steppeGarrisonPeople: parseOptionalInteger(req.body.steppeGarrisonPeople),
+        steppeGarrisonUnits: parseOptionalInteger(req.body.steppeGarrisonUnits),
+        steppeMchsPeople: parseOptionalInteger(req.body.steppeMchsPeople),
+        steppeMchsUnits: parseOptionalInteger(req.body.steppeMchsUnits),
+        floor: parseOptionalInteger(req.body.floor),
+        totalFloors: parseOptionalInteger(req.body.totalFloors),
+        buildingDetails: parseJsonField(req.body.buildingDetails),
+        livestockLost: parseJsonField(req.body.livestockLost),
+        destroyedItems: parseJsonField(req.body.destroyedItems),
+      };
+      const updateData = insertIncidentSchema.partial().parse(updatePayload);
       const validatedVictims = victimsData
         ? victimsData.map(v => insertIncidentVictimSchema.parse(v))
         : undefined;

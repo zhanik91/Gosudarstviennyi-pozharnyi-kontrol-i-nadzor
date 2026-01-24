@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 import { Plus, Trash2 } from "lucide-react";
@@ -49,9 +50,9 @@ const ospIncidentSchema = insertIncidentSchema
     steppeMchsUnits: z.union([z.number(), z.string()]).optional(),
     // New fields
     victims: z.array(insertIncidentVictimSchema.omit({ id: true, incidentId: true, createdAt: true })).optional(),
-    buildingDetails: z.record(z.any()).optional(),
-    livestockLost: z.record(z.any()).optional(),
-    destroyedItems: z.record(z.any()).optional(),
+    buildingDetails: z.union([z.record(z.any()), z.string()]).optional(),
+    livestockLost: z.union([z.record(z.any()), z.string()]).optional(),
+    destroyedItems: z.union([z.record(z.any()), z.string()]).optional(),
   });
 
 type OSPIncidentFormData = z.infer<typeof ospIncidentSchema>;
@@ -166,13 +167,22 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       region: (user as any)?.region || "",
       city: (user as any)?.district || "",
       description: "",
+      causeDetailed: "",
+      objectDetailed: "",
+      timeOfDay: "",
       victims: [],
       deathsTotal: 0,
+      deathsDrunk: 0,
+      deathsCOTotal: 0,
+      deathsCOChildren: 0,
       injuredTotal: 0,
+      injuredCOTotal: 0,
+      injuredCOChildren: 0,
       cause: "",
       causeCode: "",
       objectType: "",
       objectCode: "",
+      savedPeopleChildren: 0,
       steppeArea: 0,
       steppeDamage: 0,
       steppePeopleTotal: 0,
@@ -188,6 +198,9 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       steppeGarrisonUnits: 0,
       steppeMchsPeople: 0,
       steppeMchsUnits: 0,
+      buildingDetails: "",
+      livestockLost: "",
+      destroyedItems: "",
     },
   });
 
@@ -196,6 +209,16 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
     if (initialData) {
       // Format date for datetime-local
       const dateVal = initialData.dateTime ? new Date(initialData.dateTime).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16);
+      const formatJsonForForm = (value: unknown) => {
+        if (!value) return "";
+        if (typeof value === "string") return value;
+        try {
+          return JSON.stringify(value, null, 2);
+        } catch (error) {
+          console.warn("Failed to serialize JSON field:", error);
+          return "";
+        }
+      };
 
       const formData = {
         ...initialData,
@@ -209,6 +232,9 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
         steppeExtinguishedDamage: initialData.steppeExtinguishedDamage ? Number(initialData.steppeExtinguishedDamage) : 0,
         // ... map other numeric fields if needed, or rely on form default handling of strings/numbers if compatible
         victims: initialData.victims || [],
+        buildingDetails: formatJsonForForm(initialData.buildingDetails),
+        livestockLost: formatJsonForForm(initialData.livestockLost),
+        destroyedItems: formatJsonForForm(initialData.destroyedItems),
       };
 
       form.reset(formData as any); // Cast to any because Zod type might strict check vs API response
@@ -233,12 +259,23 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
     // Also count children
     const deathsChildren = victims.filter(v => v.status === "dead" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
     const injuredChildren = victims.filter(v => v.status === "injured" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const savedChildren = victims.filter(v => v.status === "saved" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const coVictims = victims.filter(v => v.victimType === "co_poisoning");
+    const deathsCO = coVictims.filter(v => v.status === "dead").length;
+    const injuredCO = coVictims.filter(v => v.status === "injured").length;
+    const deathsCOChildren = coVictims.filter(v => v.status === "dead" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const injuredCOChildren = coVictims.filter(v => v.status === "injured" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
 
     form.setValue("deathsTotal", deaths);
     form.setValue("injuredTotal", injured);
     form.setValue("savedPeopleTotal", saved);
     form.setValue("deathsChildren", deathsChildren);
     form.setValue("injuredChildren", injuredChildren);
+    form.setValue("savedPeopleChildren", savedChildren);
+    form.setValue("deathsCOTotal", deathsCO);
+    form.setValue("injuredCOTotal", injuredCO);
+    form.setValue("deathsCOChildren", deathsCOChildren);
+    form.setValue("injuredCOChildren", injuredCOChildren);
 
   }, [form.watch("victims")]);
 
@@ -269,6 +306,20 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
     return Number.isNaN(numericValue) ? "0" : numericValue.toString();
   };
 
+  const normalizeJsonField = (value: unknown) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        console.warn("Invalid JSON input:", error);
+        return undefined;
+      }
+    }
+    if (typeof value === "object") return value;
+    return undefined;
+  };
+
   const mutation = useMutation({
     mutationFn: async (data: OSPIncidentFormData) => {
       const formattedData = {
@@ -280,6 +331,9 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
         steppeDamage: normalizeCurrency(data.steppeDamage),
         steppeExtinguishedArea: normalizeCurrency(data.steppeExtinguishedArea),
         steppeExtinguishedDamage: normalizeCurrency(data.steppeExtinguishedDamage),
+        buildingDetails: normalizeJsonField(data.buildingDetails),
+        livestockLost: normalizeJsonField(data.livestockLost),
+        destroyedItems: normalizeJsonField(data.destroyedItems),
       };
       
       console.log("🔄 Отправляем данные на сервер:", formattedData);
@@ -484,13 +538,39 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                       )}
                     />
                 </div>
-                 <FormField
+                <FormField
                   control={form.control}
                   name="address"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Адрес *</FormLabel>
                       <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Описание</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="Краткое описание происшествия" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="timeOfDay"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Время суток</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Напр.: 00:00-06:00" />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -543,6 +623,30 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                       />
                   </div>
                  )}
+                 {selectedIncidentType === "fire" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="causeDetailed"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Причина (детально)</FormLabel>
+                          <FormControl><Input {...field} placeholder="Напр.: 6.1" /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="objectDetailed"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Объект (детально)</FormLabel>
+                          <FormControl><Input {...field} placeholder="Напр.: 4.2" /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                 )}
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
@@ -566,6 +670,122 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         )}
                     />
                  </div>
+                 {selectedIncidentType === "fire" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="savedPeopleChildren"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Спасено детей</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value, 10))
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="deathsDrunk"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Погибло в нетрезвом состоянии</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value, 10))
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                 )}
+                 {selectedIncidentType === "co_nofire" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="deathsCOTotal"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Погибло (CO)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value, 10))
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="deathsCOChildren"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Погибло детей (CO)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value, 10))
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="injuredCOTotal"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Травмировано (CO)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value, 10))
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="injuredCOChildren"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Травмировано детей (CO)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value, 10))
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                 )}
               </TabsContent>
 
               <TabsContent value="victims" className="space-y-4 pt-4">
@@ -716,10 +936,51 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         )}
                     />
                   </div>
-                  {/* Future: Add Livestock and Destroyed Items UI here */}
-                  <div className="text-sm text-muted-foreground mt-4">
-                    * Дополнительные поля для скота и строений будут добавлены в следующем обновлении.
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="buildingDetails"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Детали строения (JSON)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder='Напр.: {"material":"кирпич","year":"1998"}'
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="livestockLost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Потери скота (JSON)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder='Напр.: {"cows":2,"sheep":5}'
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="destroyedItems"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Уничтоженное имущество (JSON)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder='Напр.: {"techniques":1,"structures":1}'
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
               </TabsContent>
 
               {isSteppeIncident && (
