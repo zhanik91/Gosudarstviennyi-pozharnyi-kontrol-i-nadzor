@@ -186,6 +186,28 @@ const parseDateValue = (value: unknown) => {
   return undefined;
 };
 
+const getErrorMessage = (error: unknown) => {
+  if (!error) return undefined;
+  if (error instanceof Error) {
+    const rawMessage = error.message;
+    const messagePart = rawMessage.includes(": ")
+      ? rawMessage.split(": ").slice(1).join(": ")
+      : rawMessage;
+    const trimmedMessage = messagePart.trim();
+    if (!trimmedMessage) return undefined;
+    try {
+      const parsed = JSON.parse(trimmedMessage) as { message?: string };
+      if (parsed?.message && typeof parsed.message === "string") {
+        return parsed.message;
+      }
+    } catch {
+      // Ignore JSON parsing errors and fallback to raw text.
+    }
+    return trimmedMessage;
+  }
+  return undefined;
+};
+
 const buildImportedIncident = (row: Record<string, unknown>, rowNumber: number) => {
   const incident: ImportedIncident = { rowNumber };
   Object.entries(row).forEach(([key, value]) => {
@@ -1000,11 +1022,12 @@ export default function IncidentsJournal() {
   ];
 
   if (error) {
+    const errorMessage = getErrorMessage(error);
     return (
       <div className="space-y-6">
         <ErrorDisplay
           title="Ошибка загрузки журнала"
-          message="Не удалось загрузить список происшествий"
+          message={errorMessage ?? "Не удалось загрузить список происшествий"}
           onRetry={() => refetch()}
           error={error as Error}
         />

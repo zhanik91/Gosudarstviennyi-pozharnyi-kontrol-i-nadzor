@@ -19,3 +19,15 @@
 - ведения документов, версий и аналитики.
 
 Репозиторий используется для дальнейшей доработки системы с помощью ИИ-агентов Replit (Jules).
+
+## Деплой и миграции
+
+Перед запуском приложения убедитесь, что в базе применены миграции `migrations/0003_*` и `migrations/0004_*`
+(они добавляют ключевые поля в таблицу `incidents`). Например:
+
+```bash
+psql "$DATABASE_URL" -f migrations/0003_add_steppe_fields.sql
+psql "$DATABASE_URL" -f migrations/0004_sync_incident_optional_columns.sql
+```
+
+После применения миграций можно запускать приложение стандартными скриптами `npm run build` / `npm run start`.
