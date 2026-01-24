@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <ErrorPage
       code={404}
-      message="Страница не найдена. Такой страницы не существует или она была перемещена."
+      message="Запрашиваемая страница не найдена. Возможно, она была удалена или перемещена."
       actions={
         <Button asChild>
           <Link href="/">На главную</Link>
