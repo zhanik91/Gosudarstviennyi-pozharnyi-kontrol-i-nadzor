@@ -147,8 +147,8 @@ export default function PackagesPanel() {
     });
   };
 
-  const handleCreateSummary = () => {
-    if (!outgoingPeriod) {
+  const handleCreateSummary = (period: string) => {
+    if (!period) {
       toast({
         title: "Ошибка",
         description: "Укажите период",
@@ -165,7 +165,7 @@ export default function PackagesPanel() {
       });
       return;
     }
-    consolidatePackageMutation.mutate({ period: outgoingPeriod, orgId });
+    consolidatePackageMutation.mutate({ period, orgId });
   };
 
   const handleShowIncoming = () => {
@@ -233,40 +233,7 @@ export default function PackagesPanel() {
                 >
                   Отправить вверх
                 </Button>
-                {canConsolidate && (
-                  <Button 
-                    variant="outline"
-                    onClick={handleCreateSummary}
-                    disabled={consolidatePackageMutation.isPending}
-                    data-testid="button-create-summary"
-                  >
-                    Сформировать свод
-                  </Button>
-                )}
               </div>
-              {canConsolidate && (
-                <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-foreground">Статус выполнения</span>
-                    <Badge variant="secondary">
-                      {consolidationStatus === "idle" && "Ожидание"}
-                      {consolidationStatus === "pending" && "В процессе"}
-                      {consolidationStatus === "success" && "Готово"}
-                      {consolidationStatus === "error" && "Ошибка"}
-                    </Badge>
-                  </div>
-                  <p className="mt-2">{consolidationMessage || "Свод еще не формировался."}</p>
-                  {consolidatedPackage && (
-                    <div className="mt-3 space-y-1 text-xs text-foreground">
-                      <div>Период: {consolidatedPackage.period}</div>
-                      <div>Пакет: {consolidatedPackage.id}</div>
-                      <div>
-                        Статус: {getStatusBadge(consolidatedPackage.status)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -296,6 +263,16 @@ export default function PackagesPanel() {
                 >
                   Показать входящие
                 </Button>
+                {canConsolidate && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleCreateSummary(incomingPeriod)}
+                    disabled={consolidatePackageMutation.isPending}
+                    data-testid="button-create-summary"
+                  >
+                    Сформировать свод
+                  </Button>
+                )}
                 <Button 
                   variant="secondary"
                   data-testid="button-my-packages"
@@ -303,6 +280,29 @@ export default function PackagesPanel() {
                   Мои пакеты
                 </Button>
               </div>
+              {canConsolidate && (
+                <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-foreground">Результат формирования</span>
+                    <Badge variant="secondary">
+                      {consolidationStatus === "idle" && "Ожидание"}
+                      {consolidationStatus === "pending" && "В процессе"}
+                      {consolidationStatus === "success" && "Готово"}
+                      {consolidationStatus === "error" && "Ошибка"}
+                    </Badge>
+                  </div>
+                  <p className="mt-2">{consolidationMessage || "Свод еще не формировался."}</p>
+                  {consolidatedPackage && (
+                    <div className="mt-3 space-y-1 text-xs text-foreground">
+                      <div>Период: {consolidatedPackage.period}</div>
+                      <div>Пакет: {consolidatedPackage.id}</div>
+                      <div>
+                        Статус: {getStatusBadge(consolidatedPackage.status)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
