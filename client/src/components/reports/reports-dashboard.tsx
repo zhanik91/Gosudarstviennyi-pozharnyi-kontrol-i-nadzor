@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +10,7 @@ import {
   CheckCircle, 
   AlertCircle, 
   Clock,
+  Percent,
   Download,
   Send,
   Flame,
@@ -38,10 +40,33 @@ interface ReportStatus {
   description: string;
 }
 
+interface ReportsSummaryResponse {
+  ok: boolean;
+  data?: {
+    period: string;
+    forms: Record<
+      string,
+      {
+        completionPercent: number;
+        totalFields: number;
+        emptyFields: number;
+        validationErrors: number;
+      }
+    >;
+  };
+}
+
 export default function ReportsDashboard() {
   const [currentMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const { data: summaryData } = useQuery<ReportsSummaryResponse>({
+    queryKey: ["/api/reports/summary", currentMonth],
+    queryFn: async () => {
+      const response = await fetch(`/api/reports/summary?period=${currentMonth}`);
+      return response.json();
+    },
   });
 
   const reports: ReportStatus[] = [
@@ -253,6 +278,7 @@ export default function ReportsDashboard() {
               <div className="space-y-3">
                 {reports.map((report) => {
                   const IconComponent = report.icon;
+                  const summary = summaryData?.data?.forms?.[report.id];
                   return (
                     <div
                       key={report.id}
@@ -263,6 +289,20 @@ export default function ReportsDashboard() {
                         <div>
                           <div className="font-medium">{report.index}</div>
                           <div className="text-sm text-muted-foreground">{report.name}</div>
+                          <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <Percent className="h-3 w-3" />
+                              {summary ? `${summary.completionPercent}% заполнено` : '—'}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-red-600">
+                              <AlertCircle className="h-3 w-3" />
+                              {summary ? `${summary.validationErrors} ошибок` : '—'}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-amber-600">
+                              <AlertTriangle className="h-3 w-3" />
+                              {summary ? `${summary.emptyFields} пустых` : '—'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       
