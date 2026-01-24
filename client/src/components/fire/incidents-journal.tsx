@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import BulkOperationsToolbar from "@/components/ui/bulk-operations-toolbar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Edit, Trash2, Search, FileDown, Filter, Plus, X } from "lucide-react";
+import { Columns, Edit, Trash2, Search, FileDown, Filter, Plus, X } from "lucide-react";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
 import type { Incident } from "@shared/schema";
 import * as XLSX from "xlsx";
@@ -29,6 +29,24 @@ const monthLabel = (year: number, month: number) =>
     month: "long",
     year: "numeric",
   });
+
+const COLUMN_STORAGE_KEY = "incidents_journal_columns_v1";
+const DEFAULT_VISIBLE_COLUMNS = [
+  "dateTime",
+  "locality",
+  "region",
+  "city",
+  "incidentType",
+  "address",
+  "cause",
+  "object",
+  "damage",
+  "deathsTotal",
+  "deathsChildren",
+  "injuredTotal",
+  "savedPeopleTotal",
+  "savedProperty",
+];
 
 type ImportedIncident = {
   rowNumber: number;
@@ -368,6 +386,7 @@ export default function IncidentsJournal() {
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_VISIBLE_COLUMNS);
 
   const [selectedIncidents, setSelectedIncidents] = useState<string[]>([]);
   // Combined modal state: if open=true, and editingIncidentId=null -> Create mode.
@@ -384,6 +403,25 @@ export default function IncidentsJournal() {
     total: number;
     errors: { rowNumber: number; error: string }[];
   } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(COLUMN_STORAGE_KEY);
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setVisibleColumns(parsed);
+      }
+    } catch (err) {
+      console.warn("Failed to parse journal column preferences:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(COLUMN_STORAGE_KEY, JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
 
   // Если нет активных фильтров — грузим полный список /api/incidents
   // Если есть фильтры — используем /api/incidents/search (у него может быть limit)
@@ -832,6 +870,130 @@ export default function IncidentsJournal() {
     }
   );
 
+  const isColumnVisible = (columnId: string) => visibleColumns.includes(columnId);
+
+  const columnDefinitions = [
+    {
+      id: "dateTime",
+      label: "Дата и время",
+      headerClassName: "min-w-[120px]",
+      cellClassName: "text-foreground",
+      render: (incident: Incident) =>
+        format(new Date(incident.dateTime), "dd.MM.yyyy HH:mm"),
+      total: () => totals.count,
+      totalClassName: "text-center text-foreground",
+    },
+    {
+      id: "locality",
+      label: "Местность",
+      headerClassName: "min-w-[100px]",
+      cellClassName: "text-foreground",
+      render: (incident: Incident) => formatLocality(incident.locality),
+    },
+    {
+      id: "region",
+      label: "Регион",
+      headerClassName: "min-w-[120px]",
+      cellClassName: "text-muted-foreground",
+      render: (incident: Incident) => incident.region || "—",
+    },
+    {
+      id: "city",
+      label: "Город/Район",
+      headerClassName: "min-w-[120px]",
+      cellClassName: "text-muted-foreground",
+      render: (incident: Incident) => incident.city || "—",
+    },
+    {
+      id: "incidentType",
+      label: "Тип события",
+      headerClassName: "min-w-[120px]",
+      cellClassName: "text-foreground",
+      render: (incident: Incident) => formatIncidentType(incident.incidentType),
+    },
+    {
+      id: "address",
+      label: "Адрес",
+      headerClassName: "min-w-[200px]",
+      cellClassName: "text-foreground",
+      render: (incident: Incident) => incident.address,
+    },
+    {
+      id: "cause",
+      label: "Причина",
+      headerClassName: "min-w-[120px]",
+      cellClassName: "text-muted-foreground",
+      render: (incident: Incident) =>
+        formatCodeLabel(incident.causeCode, incident.cause),
+    },
+    {
+      id: "object",
+      label: "Объект",
+      headerClassName: "min-w-[120px]",
+      cellClassName: "text-muted-foreground",
+      render: (incident: Incident) =>
+        formatCodeLabel(incident.objectCode, incident.objectType),
+    },
+    {
+      id: "damage",
+      label: "Ущерб (тыс. тг)",
+      headerClassName: "min-w-[100px]",
+      cellClassName: "text-right text-foreground font-mono",
+      render: (incident: Incident) =>
+        incident.damage ? parseFloat(incident.damage).toFixed(1) : "0.0",
+      total: () => totals.damage.toFixed(1),
+      totalClassName: "text-right text-foreground font-mono",
+    },
+    {
+      id: "deathsTotal",
+      label: "Погибло всего",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.deathsTotal || 0,
+      total: () => totals.deathsTotal,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "deathsChildren",
+      label: "Детей",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.deathsChildren || 0,
+      total: () => totals.deathsChildren,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "injuredTotal",
+      label: "Травмировано",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.injuredTotal || 0,
+      total: () => totals.injuredTotal,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "savedPeopleTotal",
+      label: "Спасено людей",
+      headerClassName: "min-w-[80px]",
+      cellClassName: "text-center text-foreground font-mono",
+      render: (incident: Incident) => incident.savedPeopleTotal || 0,
+      total: () => totals.savedPeopleTotal,
+      totalClassName: "text-center text-foreground font-mono",
+    },
+    {
+      id: "savedProperty",
+      label: "Спасено ценностей",
+      headerClassName: "min-w-[120px]",
+      cellClassName: "text-right text-foreground font-mono",
+      render: (incident: Incident) =>
+        incident.savedProperty
+          ? parseFloat(incident.savedProperty).toFixed(1)
+          : "0.0",
+      total: () => totals.savedProperty.toFixed(1),
+      totalClassName: "text-right text-foreground font-mono",
+    },
+  ];
+
   if (error) {
     return (
       <div className="space-y-6">
@@ -935,9 +1097,55 @@ export default function IncidentsJournal() {
                                     Сбросить
                                   </Button>
                               </div>
-                           </div>
+                            </div>
                         </div>
                     </PopoverContent>
+                 </Popover>
+
+                 <Popover>
+                   <PopoverTrigger asChild>
+                     <Button variant="outline" size="sm">
+                       <Columns className="h-4 w-4 mr-2" />
+                       Столбцы
+                     </Button>
+                   </PopoverTrigger>
+                   <PopoverContent className="w-72 p-4" align="start">
+                     <div className="space-y-3">
+                       <div className="flex items-center justify-between">
+                         <h4 className="font-medium text-sm">Отображение столбцов</h4>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => setVisibleColumns(DEFAULT_VISIBLE_COLUMNS)}
+                         >
+                           Сбросить
+                         </Button>
+                       </div>
+                       <div className="space-y-2">
+                         {columnDefinitions.map((column) => (
+                           <label
+                             key={column.id}
+                             className="flex items-center gap-2 text-sm text-foreground"
+                           >
+                             <Checkbox
+                               checked={isColumnVisible(column.id)}
+                               onCheckedChange={(checked) => {
+                                 setVisibleColumns((prev) => {
+                                   if (checked) {
+                                     return prev.includes(column.id)
+                                       ? prev
+                                       : [...prev, column.id];
+                                   }
+                                   return prev.filter((id) => id !== column.id);
+                                 });
+                               }}
+                             />
+                             {column.label}
+                           </label>
+                         ))}
+                       </div>
+                     </div>
+                   </PopoverContent>
                  </Popover>
 
                  {hasFilters && (
@@ -1039,27 +1247,26 @@ export default function IncidentsJournal() {
                     />
                   </th>
                   <th className="text-left p-2 border-r border-border font-medium min-w-[40px]">№</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Дата и время</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[100px]">Местность</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Регион</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Город/Район</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Тип события</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[200px]">Адрес</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Причина</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Объект</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[100px]">Ущерб (тыс. тг)</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[80px]">Погибло всего</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[80px]">Детей</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[80px]">Травмировано</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[80px]">Спасено людей</th>
-                  <th className="text-left p-2 border-r border-border font-medium min-w-[120px]">Спасено ценностей</th>
+                  {columnDefinitions
+                    .filter((column) => isColumnVisible(column.id))
+                    .map((column) => (
+                      <th
+                        key={column.id}
+                        className={`text-left p-2 border-r border-border font-medium ${column.headerClassName ?? ""}`}
+                      >
+                        {column.label}
+                      </th>
+                    ))}
                   <th className="text-left p-2 font-medium min-w-[100px]">Действия</th>
                 </tr>
               </thead>
               <tbody>
                 {incidents.length === 0 ? (
                   <tr>
-                    <td colSpan={17} className="p-8 text-center text-muted-foreground border-b">
+                    <td
+                      colSpan={2 + visibleColumns.length + 1}
+                      className="p-8 text-center text-muted-foreground border-b"
+                    >
                       {isLoading
                         ? "Загрузка журнала..."
                         : "Журнал пуст. Для создания записи нажмите кнопку «Добавить»."}
@@ -1088,48 +1295,16 @@ export default function IncidentsJournal() {
                         <td className="p-2 border-r border-border text-foreground font-mono">
                           {currentOffset + index + 1}
                         </td>
-                        <td className="p-2 border-r border-border text-foreground">
-                          {format(new Date(incident.dateTime), "dd.MM.yyyy HH:mm")}
-                        </td>
-                        <td className="p-2 border-r border-border text-foreground">
-                          {formatLocality(incident.locality)}
-                        </td>
-                        <td className="p-2 border-r border-border text-muted-foreground">
-                          {incident.region || "—"}
-                        </td>
-                        <td className="p-2 border-r border-border text-muted-foreground">
-                          {incident.city || "—"}
-                        </td>
-                        <td className="p-2 border-r border-border text-foreground">
-                          {formatIncidentType(incident.incidentType)}
-                        </td>
-                        <td className="p-2 border-r border-border text-foreground">
-                          {incident.address}
-                        </td>
-                        <td className="p-2 border-r border-border text-muted-foreground">
-                          {formatCodeLabel(incident.causeCode, incident.cause)}
-                        </td>
-                        <td className="p-2 border-r border-border text-muted-foreground">
-                          {formatCodeLabel(incident.objectCode, incident.objectType)}
-                        </td>
-                        <td className="p-2 border-r border-border text-right text-foreground font-mono">
-                          {incident.damage ? parseFloat(incident.damage).toFixed(1) : "0.0"}
-                        </td>
-                        <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                          {incident.deathsTotal || 0}
-                        </td>
-                        <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                          {incident.deathsChildren || 0}
-                        </td>
-                        <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                          {incident.injuredTotal || 0}
-                        </td>
-                        <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                          {incident.savedPeopleTotal || 0}
-                        </td>
-                        <td className="p-2 border-r border-border text-right text-foreground font-mono">
-                          {incident.savedProperty ? parseFloat(incident.savedProperty).toFixed(1) : "0.0"}
-                        </td>
+                        {columnDefinitions
+                          .filter((column) => isColumnVisible(column.id))
+                          .map((column) => (
+                            <td
+                              key={column.id}
+                              className={`p-2 border-r border-border ${column.cellClassName ?? ""}`}
+                            >
+                              {column.render(incident)}
+                            </td>
+                          ))}
                         <td className="p-2">
                           <div className="flex gap-1">
                             <Button
@@ -1159,30 +1334,16 @@ export default function IncidentsJournal() {
                     <tr className="bg-primary/10 border-t-2 border-primary font-semibold">
                       <td className="p-2 border-r border-border"></td>
                       <td className="p-2 border-r border-border text-foreground">ИТОГО:</td>
-                      <td className="p-2 border-r border-border text-center text-foreground">{totals.count}</td>
-                      <td className="p-2 border-r border-border"></td>
-                      <td className="p-2 border-r border-border"></td>
-                      <td className="p-2 border-r border-border"></td>
-                      <td className="p-2 border-r border-border"></td>
-                      <td className="p-2 border-r border-border"></td>
-                      <td className="p-2 border-r border-border text-right text-foreground font-mono">
-                        {totals.damage.toFixed(1)}
-                      </td>
-                      <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                        {totals.deathsTotal}
-                      </td>
-                      <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                        {totals.deathsChildren}
-                      </td>
-                      <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                        {totals.injuredTotal}
-                      </td>
-                      <td className="p-2 border-r border-border text-center text-foreground font-mono">
-                        {totals.savedPeopleTotal}
-                      </td>
-                      <td className="p-2 border-r border-border text-right text-foreground font-mono">
-                        {totals.savedProperty.toFixed(1)}
-                      </td>
+                      {columnDefinitions
+                        .filter((column) => isColumnVisible(column.id))
+                        .map((column) => (
+                          <td
+                            key={`total-${column.id}`}
+                            className={`p-2 border-r border-border ${column.totalClassName ?? ""}`}
+                          >
+                            {column.total ? column.total() : ""}
+                          </td>
+                        ))}
                       <td className="p-2"></td>
                     </tr>
                   </>
