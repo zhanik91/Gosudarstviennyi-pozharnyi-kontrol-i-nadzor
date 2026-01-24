@@ -25,6 +25,77 @@ export class IncidentStorage {
     steppe_smolder: "Тление степи",
     co_nofire: "Отравление CO без пожара",
   };
+  private incidentSchemaCheckPromise?: Promise<void>;
+  private missingIncidentColumns: string[] = [];
+
+  private async ensureIncidentSchemaChecked() {
+    if (!this.incidentSchemaCheckPromise) {
+      this.incidentSchemaCheckPromise = this.checkIncidentSchema();
+    }
+    await this.incidentSchemaCheckPromise;
+  }
+
+  private async checkIncidentSchema() {
+    const requiredColumns = [
+      "steppe_area",
+      "steppe_damage",
+      "steppe_people_total",
+      "steppe_people_dead",
+      "steppe_people_injured",
+      "steppe_animals_total",
+      "steppe_animals_dead",
+      "steppe_animals_injured",
+      "steppe_extinguished_total",
+      "steppe_extinguished_area",
+      "steppe_extinguished_damage",
+      "steppe_garrison_people",
+      "steppe_garrison_units",
+      "steppe_mchs_people",
+      "steppe_mchs_units",
+      "cause_code",
+      "cause_detailed",
+      "object_code",
+      "object_detailed",
+      "description",
+      "building_details",
+      "livestock_lost",
+      "destroyed_items",
+      "floor",
+      "total_floors",
+      "deaths_drunk",
+      "deaths_co_total",
+      "deaths_co_children",
+      "injured_co_total",
+      "injured_co_children",
+      "saved_people_children",
+      "time_of_day",
+    ];
+
+    try {
+      const result = await db.execute(
+        sql`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'incidents'`
+      );
+      const existingColumns = new Set(
+        result.rows.map((row: { column_name: string }) => row.column_name)
+      );
+      this.missingIncidentColumns = requiredColumns.filter(
+        (column) => !existingColumns.has(column)
+      );
+
+      if (this.missingIncidentColumns.length > 0) {
+        console.warn(
+          "[IncidentStorage] Missing incidents columns:",
+          this.missingIncidentColumns
+        );
+      }
+    } catch (error) {
+      console.error("[IncidentStorage] Failed to check incidents schema:", error);
+    }
+  }
+
+  getMissingIncidentColumns() {
+    return this.missingIncidentColumns;
+  }
 
   private getPeriodKey(date: Date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -128,6 +199,7 @@ export class IncidentStorage {
         offset: number;
       }
   > {
+    await this.ensureIncidentSchemaChecked();
     const conditions: any[] = [];
 
     if (filters?.orgUnitId) {
@@ -227,6 +299,7 @@ export class IncidentStorage {
       damage: number;
     }>;
   }> {
+    await this.ensureIncidentSchemaChecked();
     const conditions: any[] = await this.getOrganizationConditions(params);
 
     const { startDate, endDate } = this.getDateRange({
@@ -291,6 +364,7 @@ export class IncidentStorage {
     includeSubOrgs?: boolean;
     scopeUser?: ScopeUser;
   }) {
+    await this.ensureIncidentSchemaChecked();
     const orgConditions = await this.getOrganizationConditions(params);
     const currentPeriod = this.getDateRange({
       periodFrom: params.periodFrom,
@@ -706,11 +780,13 @@ export class IncidentStorage {
   }
 
   async getIncident(id: string): Promise<Incident | undefined> {
+    await this.ensureIncidentSchemaChecked();
     const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
     return incident;
   }
 
   async createIncident(incidentData: InsertIncident & { victims?: InsertIncidentVictim[] }): Promise<Incident> {
+    await this.ensureIncidentSchemaChecked();
     const { victims, ...data } = incidentData;
     const normalizedData = {
       ...data,
@@ -728,6 +804,7 @@ export class IncidentStorage {
   }
 
   async updateIncident(id: string, incidentData: Partial<InsertIncident> & { victims?: InsertIncidentVictim[] }): Promise<Incident> {
+    await this.ensureIncidentSchemaChecked();
     const { victims, ...data } = incidentData;
     const updateData = {
       ...data,
@@ -755,10 +832,12 @@ export class IncidentStorage {
   }
 
   async getIncidentVictims(incidentId: string) {
+    await this.ensureIncidentSchemaChecked();
     return await db.select().from(incidentVictims).where(eq(incidentVictims.incidentId, incidentId));
   }
 
   async deleteIncident(id: string): Promise<void> {
+    await this.ensureIncidentSchemaChecked();
     await db.delete(incidents).where(eq(incidents.id, id));
   }
 
@@ -773,6 +852,7 @@ export class IncidentStorage {
     totalInjured: number;
     totalDamage: number;
   }> {
+    await this.ensureIncidentSchemaChecked();
     const conditions = await this.getOrganizationConditions({
       orgUnitId: params.orgUnitId,
       includeSubOrgs: params.includeSubOrgs,
@@ -811,6 +891,7 @@ export class IncidentStorage {
   }
 
   async getIncidentsCount(): Promise<number> {
+    await this.ensureIncidentSchemaChecked();
     const allIncidents = await db.select().from(incidents);
     return allIncidents.length;
   }
@@ -837,6 +918,7 @@ export class IncidentStorage {
         offset: number;
       }
   > {
+    await this.ensureIncidentSchemaChecked();
     const conditions = [];
 
     if (query) {
@@ -931,6 +1013,7 @@ export class IncidentStorage {
 
   // Advanced Analytics (Charts/Maps)
   async getAdvancedAnalytics(params: any): Promise<any> {
+    await this.ensureIncidentSchemaChecked();
     const { period, orgUnitId, includeSubOrgs, scopeUser } = params;
     const scopeConditions = await this.getOrganizationConditions({
       orgUnitId,
@@ -1001,6 +1084,7 @@ export class IncidentStorage {
     includeChildren?: boolean;
     scopeUser?: ScopeUser;
   }) {
+    await this.ensureIncidentSchemaChecked();
     const conditions: any[] = await this.getOrganizationConditions({
       orgUnitId: params.orgId,
       includeSubOrgs: params.includeChildren,
@@ -1717,6 +1801,7 @@ export class IncidentStorage {
     includeChildren?: boolean;
     scopeUser?: ScopeUser;
   }): Promise<any> {
+    await this.ensureIncidentSchemaChecked();
     const baseConditions = [];
     const ospIncidentTypes = ['fire', 'steppe_fire'] as const;
     const steppeTypes = ['steppe_fire', 'steppe_smolder'] as const;

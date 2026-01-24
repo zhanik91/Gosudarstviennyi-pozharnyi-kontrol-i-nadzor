@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { insertIncidentSchema, insertIncidentVictimSchema } from "@shared/schema";
 import { toScopeUser } from "../services/authz";
+import { ZodError } from "zod";
 
 async function canAccessOrgUnit(user: any, orgUnitId?: string | null) {
   if (!user || !orgUnitId) return false;
@@ -9,6 +10,12 @@ async function canAccessOrgUnit(user: any, orgUnitId?: string | null) {
   if (user.role === "DISTRICT") return user.orgUnitId === orgUnitId;
   const hierarchy = await storage.getOrganizationHierarchy(user.orgUnitId);
   return hierarchy.some((org) => org.id === orgUnitId);
+}
+
+function getIncidentSchemaMismatchMessage() {
+  const missingColumns = storage.getMissingIncidentColumns?.() ?? [];
+  if (missingColumns.length === 0) return null;
+  return `DB schema mismatch: missing columns ${missingColumns.join(", ")}`;
 }
 
 export class IncidentController {
@@ -39,7 +46,8 @@ export class IncidentController {
       res.json({ ...incident, victims });
     } catch (error) {
       console.error("Error fetching incident:", error);
-      res.status(500).json({ message: "Failed to fetch incident" });
+      const schemaMessage = getIncidentSchemaMismatchMessage();
+      res.status(500).json({ message: schemaMessage ?? "Failed to fetch incident" });
     }
   }
 
@@ -72,7 +80,8 @@ export class IncidentController {
       res.json(incidents);
     } catch (error) {
       console.error("Error fetching incidents:", error);
-      res.status(500).json({ message: "Failed to fetch incidents" });
+      const schemaMessage = getIncidentSchemaMismatchMessage();
+      res.status(500).json({ message: schemaMessage ?? "Failed to fetch incidents" });
     }
   }
 
@@ -147,7 +156,8 @@ export class IncidentController {
       res.json(incidents);
     } catch (error) {
       console.error("Error searching incidents:", error);
-      res.status(500).json({ message: "Failed to search incidents" });
+      const schemaMessage = getIncidentSchemaMismatchMessage();
+      res.status(500).json({ message: schemaMessage ?? "Failed to search incidents" });
     }
   }
 
@@ -228,14 +238,15 @@ export class IncidentController {
       res.json(incident);
     } catch (error) {
       console.error("Error creating incident:", error);
-      if (error instanceof Error) {
+      if (error instanceof ZodError) {
         res.status(400).json({
           message: `Ошибка валидации: ${error.message}`,
           details: error.cause
         });
-      } else {
-        res.status(500).json({ message: "Неизвестная ошибка создания происшествия" });
+        return;
       }
+      const schemaMessage = getIncidentSchemaMismatchMessage();
+      res.status(500).json({ message: schemaMessage ?? "Неизвестная ошибка создания происшествия" });
     }
   }
 
@@ -286,7 +297,8 @@ export class IncidentController {
       res.json(updatedIncident);
     } catch (error) {
       console.error("Error updating incident:", error);
-      res.status(500).json({ message: "Failed to update incident" });
+      const schemaMessage = getIncidentSchemaMismatchMessage();
+      res.status(500).json({ message: schemaMessage ?? "Failed to update incident" });
     }
   }
 
@@ -322,7 +334,8 @@ export class IncidentController {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting incident:", error);
-      res.status(500).json({ message: "Failed to delete incident" });
+      const schemaMessage = getIncidentSchemaMismatchMessage();
+      res.status(500).json({ message: schemaMessage ?? "Failed to delete incident" });
     }
   }
 }
