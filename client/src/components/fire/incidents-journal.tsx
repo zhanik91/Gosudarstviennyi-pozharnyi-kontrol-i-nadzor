@@ -385,6 +385,7 @@ export default function IncidentsJournal() {
     region: "",
   });
   const [page, setPage] = useState(1);
+  const [pageInput, setPageInput] = useState("1");
   const [pageSize, setPageSize] = useState(100);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_VISIBLE_COLUMNS);
 
@@ -541,6 +542,10 @@ export default function IncidentsJournal() {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
 
   const deleteIncidentMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -1379,9 +1384,36 @@ export default function IncidentsJournal() {
                 >
                   Назад
                 </Button>
-                <span className="text-muted-foreground">
-                  Страница {page} из {totalPages}
-                </span>
+                <label className="flex items-center gap-2 text-muted-foreground">
+                  Страница
+                  <Input
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    value={pageInput}
+                    onChange={(event) => setPageInput(event.target.value)}
+                    onBlur={() => {
+                      const parsed = Number(pageInput);
+                      if (Number.isNaN(parsed)) {
+                        setPageInput(String(page));
+                        return;
+                      }
+                      setPage(Math.min(totalPages, Math.max(1, Math.floor(parsed))));
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        const parsed = Number(pageInput);
+                        if (Number.isNaN(parsed)) {
+                          setPageInput(String(page));
+                          return;
+                        }
+                        setPage(Math.min(totalPages, Math.max(1, Math.floor(parsed))));
+                      }
+                    }}
+                    className="h-8 w-20"
+                  />
+                  <span>из {totalPages}</span>
+                </label>
                 <Button
                   variant="outline"
                   size="sm"

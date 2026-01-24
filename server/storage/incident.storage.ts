@@ -161,8 +161,14 @@ export class IncidentStorage {
       }
     }
 
-    const limit = filters?.limit;
-    const offset = filters?.offset ?? 0;
+    const limit =
+      typeof filters?.limit === "number" && Number.isFinite(filters.limit)
+        ? Math.max(1, Math.floor(filters.limit))
+        : undefined;
+    const offset =
+      typeof filters?.offset === "number" && Number.isFinite(filters.offset)
+        ? Math.max(0, Math.floor(filters.offset))
+        : 0;
 
     const query = db.select().from(incidents).orderBy(desc(incidents.dateTime));
 
@@ -809,7 +815,20 @@ export class IncidentStorage {
     return allIncidents.length;
   }
 
-  async searchIncidents(query: string, filters: any = {}): Promise<
+  async searchIncidents(
+    query: string,
+    filters: {
+      orgUnitId?: string;
+      includeSubOrgs?: boolean;
+      region?: string;
+      incidentType?: string;
+      dateFrom?: string | Date;
+      dateTo?: string | Date;
+      scopeUser?: ScopeUser;
+      limit?: number;
+      offset?: number;
+    } = {}
+  ): Promise<
     | any[]
     | {
         items: any[];
@@ -866,8 +885,14 @@ export class IncidentStorage {
       }
     }
 
-    const limit = typeof filters.limit === "number" ? filters.limit : undefined;
-    const offset = typeof filters.offset === "number" ? filters.offset : 0;
+    const limit =
+      typeof filters.limit === "number" && Number.isFinite(filters.limit)
+        ? Math.max(1, Math.floor(filters.limit))
+        : undefined;
+    const offset =
+      typeof filters.offset === "number" && Number.isFinite(filters.offset)
+        ? Math.max(0, Math.floor(filters.offset))
+        : 0;
 
     const queryBuilder = db.select().from(incidents).orderBy(desc(incidents.dateTime));
 
