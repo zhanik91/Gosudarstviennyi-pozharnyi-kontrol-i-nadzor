@@ -129,15 +129,14 @@ export default function Home() {
               icon={FileCheck}
               iconBg="bg-orange-500/20"
               iconColor="text-orange-400"
-              title="Журнал заключений аудитов"
-              description="Учёт заключений аудитов в области пожарной безопасности, импорт/экспорт данных, период освобождения от проверок"
+              title="Журналы и списки"
+              description="Аудиты в области пожарной безопасности и профессиональные противопожарные службы"
               primaryAction={{
-                label: "Открыть журнал",
-                href: "/audit-conclusions"
+                label: "Журнал заключений аудитов",
+                href: "/audit-conclusions",
               }}
               secondaryActions={[
-                { label: "Импорт", href: "/audit-conclusions" },
-                { label: "Экспорт", href: "/audit-conclusions" }
+                { label: "Список профессиональных противопожарных служб", href: "#" }
               ]}
             />
           </div>

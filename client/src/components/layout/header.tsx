@@ -21,11 +21,11 @@ import { Button } from "@/components/ui/button";
 import { MchsEmblem } from "@/components/mchs-emblem";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  Activity,
   Bell,
   BookOpen,
   ChartBarBig,
   CircleUser,
+  ClipboardList,
   FileText,
   Headset,
   Layers,
@@ -73,6 +73,23 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
+    label: "Журналы и списки",
+    items: [
+      {
+        title: "Журнал заключений аудитов",
+        description: "Учёт аудитов и заключений пожарной безопасности",
+        href: "/audit-conclusions",
+        icon: FileText,
+      },
+      {
+        title: "Список профессиональных противопожарных служб",
+        description: "Перечень зарегистрированных служб",
+        href: "#",
+        icon: ClipboardList,
+      },
+    ],
+  },
+  {
     label: "Отчёты",
     items: [
       {
@@ -80,12 +97,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         description: "Дашборды, сравнения регионов и тренды",
         href: "/analytics",
         icon: ChartBarBig,
-      },
-      {
-        title: "Журнал заключений",
-        description: "Аудиты, контроль выполнения и акты",
-        href: "/audit-conclusions",
-        icon: Activity,
       },
     ],
   },
