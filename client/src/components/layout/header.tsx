@@ -76,15 +76,21 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Журналы и списки",
     items: [
       {
+        title: "Модуль журналов и списков",
+        description: "Все журналы и перечни в одном интерфейсе",
+        href: "/journals-lists",
+        icon: ClipboardList,
+      },
+      {
         title: "Журнал заключений аудитов",
         description: "Учёт аудитов и заключений пожарной безопасности",
-        href: "/audit-conclusions",
+        href: "/journals-lists?tab=audits",
         icon: FileText,
       },
       {
         title: "Список профессиональных противопожарных служб",
         description: "Перечень зарегистрированных служб",
-        href: "#",
+        href: "/journals-lists?tab=pps",
         icon: ClipboardList,
       },
     ],

@@ -225,7 +225,11 @@ function DateField({
   );
 }
 
-export default function AuditJournalPage() {
+type AuditJournalPageProps = {
+  embedded?: boolean;
+};
+
+export default function AuditJournalPage({ embedded = false }: AuditJournalPageProps) {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [periodFrom, setPeriodFrom] = useState<string>("");
   const [periodTo, setPeriodTo] = useState<string>("");
@@ -570,7 +574,11 @@ export default function AuditJournalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
+    <div
+      className={`bg-slate-950 text-slate-100 p-6 ${
+        embedded ? "rounded-2xl border border-slate-800" : "min-h-screen"
+      }`}
+    >
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">

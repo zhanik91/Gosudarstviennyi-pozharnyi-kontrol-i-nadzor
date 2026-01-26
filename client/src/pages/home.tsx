@@ -121,7 +121,7 @@ export default function Home() {
               secondaryActions={[
                 { label: "Основные НПА", href: "#" },
                 { label: "Приказы МЧС", href: "#" },
-                { label: "Техрегламенты/СНиП/СП", href: "#" }
+                { label: "Техрегламенты", href: "#" }
               ]}
             />
 
@@ -132,11 +132,12 @@ export default function Home() {
               title="Журналы и списки"
               description="Аудиты в области пожарной безопасности и профессиональные противопожарные службы"
               primaryAction={{
-                label: "Журнал заключений аудитов",
-                href: "/audit-conclusions",
+                label: "Открыть модуль",
+                href: "/journals-lists",
               }}
               secondaryActions={[
-                { label: "Список профессиональных противопожарных служб", href: "#" }
+                { label: "Журнал заключений аудитов", href: "/journals-lists?tab=audits" },
+                { label: "Профессиональные противопожарные службы", href: "/journals-lists?tab=pps" }
               ]}
             />
           </div>
