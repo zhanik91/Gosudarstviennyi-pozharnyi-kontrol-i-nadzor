@@ -4,14 +4,14 @@ import { getQueryFn } from "@/lib/queryClient";
 
 export type DashboardMetrics = {
   incidents: number;
-  packages: number;
-  usersOnline: number;
-  reportsReady: number;
+  objects: number;
+  users: number;
+  reports: number;
 };
 
 export function useDashboardMetrics() {
   return useQuery<DashboardMetrics>({
-    queryKey: ["/api/dashboard/metrics"],
+    queryKey: ["/api/stats/dashboard"],
     queryFn: getQueryFn({ on401: "throw" }),
     retry: 1,
     refetchInterval: 30000,
