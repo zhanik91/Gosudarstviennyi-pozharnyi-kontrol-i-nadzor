@@ -1334,7 +1334,7 @@ export class IncidentStorage {
     const { incidentRows, victimRows } = await this.getReportDataset(params);
 
     const fireIncidents = incidentRows.filter((incident) =>
-      ["fire", "steppe_fire"].includes(incident.incidentType ?? "")
+      ["fire", "steppe_fire", "nonfire", "steppe_smolder", "co_nofire"].includes(incident.incidentType ?? "")
     );
     const sumByLocality = (
       incidentsList: typeof incidentRows,
@@ -1533,13 +1533,13 @@ export class IncidentStorage {
         addFromIncidents("5", (incident) => Number(incident.savedProperty || 0));
 
         const livestockMap: Record<string, string> = {
-          cows: "6.1",
-          sheep: "6.2",
-          horse: "6.3",
-          camel: "6.4",
-          pig: "6.5",
-          rodents: "6.6",
-          birds: "6.7",
+          cows: "6.1.1",
+          sheep: "6.2.1",
+          horse: "6.3.1",
+          camel: "6.4.1",
+          pig: "6.5.1",
+          rodents: "6.6.1",
+          birds: "6.7.1",
         };
 
         residentialIncidents.forEach((incident) => {
