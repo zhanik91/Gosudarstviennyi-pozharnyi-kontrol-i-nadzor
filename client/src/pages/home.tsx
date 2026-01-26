@@ -103,8 +103,8 @@ export default function Home() {
                 href: "/controlled-objects"
               }}
               secondaryActions={[
-                { label: "Документация", href: "#" },
-                { label: "Графики проверок", href: "#" }
+                { label: "Реестр объектов", href: "/controlled-objects?tab=registry" },
+                { label: "Списки проверок", href: "/controlled-objects?tab=preventive" }
               ]}
             />
 
