@@ -81,5 +81,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Additional Integrations
 - **Chart.js**: Data visualization
+- **Leaflet.js**: Interactive maps via CDN (v1.9.4) for geospatial visualization
+- **Nominatim API**: Address geocoding for coordinate lookup
 - **Replit Development**: Hot reload and development environment
 - **OpenAI**: Integrated via Replit AI Integrations for the AI Assistant.
+
+## Interactive Maps Feature
+- **Map Component**: LeafletMap component at `client/src/components/maps/leaflet-map.tsx`
+- **Page**: Interactive maps page at `/maps`
+- **Database Tables**: 
+  - `incidents` table extended with `latitude` and `longitude` fields
+  - `control_objects` table for supervised facilities with coordinates, status, and risk levels
+- **API Endpoints**:
+  - `GET /api/maps/data` - Returns incidents with coordinates for map display
+  - `GET/POST/PUT/DELETE /api/control-objects` - CRUD operations for control objects
+- **Coordinate Input Methods**:
+  1. Manual latitude/longitude entry in incident form
+  2. Click on map to select coordinates
+  3. Address geocoding via Nominatim OpenStreetMap API
+- **Map Features**: Layer toggles, region filtering, marker popups with incident/object details, Kazakhstan boundary limits
