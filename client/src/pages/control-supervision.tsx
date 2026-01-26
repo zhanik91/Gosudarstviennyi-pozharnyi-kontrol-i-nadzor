@@ -463,8 +463,8 @@ export default function ControlSupervisionPage() {
         <div className="border-b border-slate-800">
           <nav className="flex space-x-8 overflow-x-auto">
             {[
-              { id: "registry", label: "📋 Реестр" },
-              { id: "preventive", label: "🧾 Профилактические списки" },
+              { id: "registry", label: "📋 Реестр объектов" },
+              { id: "preventive", label: "🧾 Списки профилактического контроля и надзора" },
             ].map((tab) => (
               <button
                 key={tab.id}
