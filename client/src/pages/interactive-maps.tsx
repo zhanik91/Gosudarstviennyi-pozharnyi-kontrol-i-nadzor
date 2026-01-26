@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Map, Filter, TrendingUp, AlertTriangle, Flame, Users, Home, DollarSign } from 'lucide-react';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { ErrorDisplay } from '@/components/ui/error-display';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MapData {
   regions: {
@@ -84,10 +85,32 @@ const RISK_LABELS = {
 };
 
 export default function InteractiveMaps() {
+  const { user } = useAuth();
+  const userRole = (user as any)?.role;
+  const isMchsUser = userRole === "MCHS" || userRole === "admin";
+  const userRegion = (user as any)?.region || "";
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<string>('month');
   const [mapView, setMapView] = useState<'incidents' | 'heatmap' | 'risk'>('incidents');
   const [showLegend, setShowLegend] = useState(true);
+
+  useEffect(() => {
+    if (!userRegion || isMchsUser) return;
+    setSelectedRegion(userRegion);
+  }, [isMchsUser, userRegion]);
+
+  const availableRegions = useMemo(() => {
+    if (isMchsUser || !userRegion) return KAZAKHSTAN_REGIONS;
+    return [userRegion];
+  }, [isMchsUser, userRegion]);
+
+  const handleRegionSelect = (region: string) => {
+    if (!isMchsUser && userRegion) {
+      setSelectedRegion(userRegion);
+      return;
+    }
+    setSelectedRegion(region);
+  };
 
   // Получение данных для карты
   const { data: mapData, isLoading } = useQuery<MapData>({
@@ -130,7 +153,7 @@ export default function InteractiveMaps() {
             <div 
               key={region.name}
               className={`p-3 rounded-lg cursor-pointer transition-colors ${RISK_COLORS[region.riskLevel]} bg-opacity-20 hover:bg-opacity-30`}
-              onClick={() => setSelectedRegion(region.name)}
+              onClick={() => handleRegionSelect(region.name)}
               data-testid={`region-${region.name.replace(/\s+/g, '-').toLowerCase()}`}
             >
               <div className="text-center">
@@ -198,13 +221,13 @@ export default function InteractiveMaps() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Регион</label>
-              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+              <Select value={selectedRegion} onValueChange={handleRegionSelect}>
                 <SelectTrigger data-testid="select-region">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все регионы</SelectItem>
-                  {KAZAKHSTAN_REGIONS.map(region => (
+                  {isMchsUser && <SelectItem value="all">Все регионы</SelectItem>}
+                  {availableRegions.map(region => (
                     <SelectItem key={region} value={region}>
                       {region}
                     </SelectItem>
