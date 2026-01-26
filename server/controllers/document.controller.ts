@@ -76,7 +76,7 @@ export class DocumentController {
       };
 
       if (scopeUser) {
-        filters.scope = scopeUser;
+        filters.scopeUser = scopeUser;
       }
 
       if (user?.role === "MCHS" && req.query.orgUnitId) {

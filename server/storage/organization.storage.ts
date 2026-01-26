@@ -1,10 +1,18 @@
 import { db } from "./db";
 import { orgUnits, type OrgUnit, type InsertOrgUnit, incidents } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { applyScopeCondition, type ScopeUser } from "../services/authz";
 
 export class OrganizationStorage {
-  async getOrganizations(): Promise<OrgUnit[]> {
-    return await db.select().from(orgUnits).where(eq(orgUnits.isActive, true));
+  async getOrganizations(scopeUser?: ScopeUser): Promise<OrgUnit[]> {
+    const conditions = [eq(orgUnits.isActive, true)];
+    if (scopeUser) {
+      const scopeCondition = applyScopeCondition(scopeUser, orgUnits.regionName, orgUnits.unitName);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+    }
+    return await db.select().from(orgUnits).where(and(...conditions));
   }
 
   async getOrganization(id: string): Promise<OrgUnit | undefined> {

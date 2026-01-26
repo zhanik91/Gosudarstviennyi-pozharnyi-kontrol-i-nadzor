@@ -1,6 +1,7 @@
 import { db } from "./db";
-import { auditLogs, type AuditLog, type InsertAuditLog } from "@shared/schema";
+import { auditLogs, users, type AuditLog, type InsertAuditLog } from "@shared/schema";
 import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { applyScopeCondition, type ScopeUser } from "../services/authz";
 
 export class AuditStorage {
   async createAuditLog(logData: InsertAuditLog): Promise<AuditLog> {
@@ -17,8 +18,9 @@ export class AuditStorage {
     action?: string;
     dateFrom?: Date;
     dateTo?: Date;
+    scopeUser?: ScopeUser;
   }): Promise<AuditLog[]> {
-    let query = db.select().from(auditLogs);
+    let query = db.select({ audit: auditLogs }).from(auditLogs);
     const conditions = [];
 
     if (filters?.userId) {
@@ -37,10 +39,19 @@ export class AuditStorage {
       conditions.push(lte(auditLogs.createdAt, filters.dateTo));
     }
 
+    if (filters?.scopeUser) {
+      const scopeCondition = applyScopeCondition(filters.scopeUser, users.region, users.district);
+      if (scopeCondition) {
+        query = query.leftJoin(users, eq(auditLogs.userId, users.id));
+        conditions.push(scopeCondition);
+      }
+    }
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
 
-    return await query.orderBy(desc(auditLogs.createdAt)) as AuditLog[];
+    const rows = await query.orderBy(desc(auditLogs.createdAt));
+    return rows.map((row) => row.audit) as AuditLog[];
   }
 }

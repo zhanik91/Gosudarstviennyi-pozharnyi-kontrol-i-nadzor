@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { incidents, packages, type Package, type InsertPackage } from "@shared/schema";
+import { incidents, orgUnits, packages, type Package, type InsertPackage } from "@shared/schema";
 import { eq, and, desc, gte, inArray, lte, sql } from "drizzle-orm";
-import { isAdmin, type ScopeUser } from "../services/authz";
+import { applyScopeCondition, type ScopeUser } from "../services/authz";
 import { OrganizationStorage } from "./organization.storage";
 
 const orgStorage = new OrganizationStorage();
@@ -13,7 +13,7 @@ export class PackageStorage {
     period?: string;
     scopeUser?: ScopeUser;
   }): Promise<Package[]> {
-    let query = db.select().from(packages);
+    let query = db.select({ pkg: packages }).from(packages);
     const conditions = [];
 
     if (filters?.orgUnitId) {
@@ -28,17 +28,21 @@ export class PackageStorage {
       conditions.push(eq(packages.period, filters.period));
     }
 
-    // Packages доступны только админам МЧС
-    // ДЧС и ОЧС не имеют доступа к пакетам отчетности
-    if (filters?.scopeUser && !isAdmin(filters.scopeUser)) {
-      return [];
+    if (filters?.scopeUser) {
+      const scopeCondition = applyScopeCondition(filters.scopeUser, orgUnits.regionName, orgUnits.unitName);
+      if (scopeCondition) {
+        query = query.innerJoin(orgUnits, eq(packages.orgUnitId, orgUnits.id));
+        conditions.push(scopeCondition);
+      }
     }
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
 
-    return await query.orderBy(desc(packages.createdAt)) as Package[];
+    const rows = await query
+      .orderBy(desc(packages.createdAt));
+    return rows.map((row) => row.pkg) as Package[];
   }
 
   async getPackage(id: string): Promise<Package | undefined> {
