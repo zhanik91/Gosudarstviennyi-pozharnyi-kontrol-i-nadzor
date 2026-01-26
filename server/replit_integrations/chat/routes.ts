@@ -93,9 +93,9 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      // Stream response from OpenAI with system prompt
+      // Stream response from OpenRouter (DeepSeek/Qwen) with system prompt
       const stream = await openai.chat.completions.create({
-        model: "gpt-4.1",
+        model: "deepseek/deepseek-r1", // Можно заменить на "qwen/qwen-2.5-72b-instruct"
         messages: [
           { role: "system", content: FIRE_SAFETY_SYSTEM_PROMPT },
           ...chatMessages,
