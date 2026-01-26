@@ -120,8 +120,8 @@ export default function Home() {
               }}
               secondaryActions={[
                 { label: "Основные НПА", href: "#" },
-                { label: "Приказы МЧС", href: "#" },
-                { label: "Техрегламенты", href: "#" }
+                { label: "Приказы", href: "#" },
+                { label: "и др.", href: "#" }
               ]}
             />
 
@@ -136,8 +136,8 @@ export default function Home() {
                 href: "/journals-lists",
               }}
               secondaryActions={[
-                { label: "Журнал заключений аудитов", href: "/journals-lists?tab=audits" },
-                { label: "Профессиональные противопожарные службы", href: "/journals-lists?tab=pps" }
+                { label: "Аудиты", href: "/journals-lists?tab=audits" },
+                { label: "ППС", href: "/journals-lists?tab=pps" }
               ]}
             />
           </div>
