@@ -311,6 +311,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { registerChatRoutes } = await import('./replit_integrations/chat');
   registerChatRoutes(app);
 
+  // === НОРМАТИВНЫЕ ДОКУМЕНТЫ ===
+  const { normativeDocuments } = await import('@shared/schema');
+  const { desc, asc } = await import('drizzle-orm');
+
+  // Get all normative documents
+  app.get('/api/normative-documents', async (req: any, res) => {
+    try {
+      const docs = await db.select().from(normativeDocuments).orderBy(asc(normativeDocuments.sortOrder), desc(normativeDocuments.createdAt));
+      res.json(docs);
+    } catch (error) {
+      console.error('Error fetching normative documents:', error);
+      res.status(500).json({ message: 'Ошибка загрузки документов' });
+    }
+  });
+
+  // Create normative document (admin only)
+  app.post('/api/normative-documents', isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user?.role;
+      if (userRole !== 'admin' && userRole !== 'MCHS') {
+        return res.status(403).json({ message: 'Доступ запрещен' });
+      }
+      const [doc] = await db.insert(normativeDocuments).values({
+        ...req.body,
+        createdBy: req.user?.id
+      }).returning();
+      res.json(doc);
+    } catch (error) {
+      console.error('Error creating normative document:', error);
+      res.status(500).json({ message: 'Ошибка создания документа' });
+    }
+  });
+
+  // Update normative document (admin only)
+  app.put('/api/normative-documents/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user?.role;
+      if (userRole !== 'admin' && userRole !== 'MCHS') {
+        return res.status(403).json({ message: 'Доступ запрещен' });
+      }
+      const [doc] = await db.update(normativeDocuments)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(normativeDocuments.id, req.params.id))
+        .returning();
+      res.json(doc);
+    } catch (error) {
+      console.error('Error updating normative document:', error);
+      res.status(500).json({ message: 'Ошибка обновления документа' });
+    }
+  });
+
+  // Delete normative document (admin only)
+  app.delete('/api/normative-documents/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user?.role;
+      if (userRole !== 'admin' && userRole !== 'MCHS') {
+        return res.status(403).json({ message: 'Доступ запрещен' });
+      }
+      await db.delete(normativeDocuments).where(eq(normativeDocuments.id, req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting normative document:', error);
+      res.status(500).json({ message: 'Ошибка удаления документа' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

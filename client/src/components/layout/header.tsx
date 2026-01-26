@@ -77,8 +77,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       },
       {
         title: "Нормативные документы",
-        description: "Ключевые НПА, методики, приказы и регламенты",
-        href: "/regulatory-documents",
+        description: "Законы, техрегламенты, ППБ РК и другие НПА",
+        href: "/normative-documents",
         icon: FileText,
       },
     ],

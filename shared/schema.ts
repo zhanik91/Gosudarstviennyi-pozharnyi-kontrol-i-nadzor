@@ -475,6 +475,33 @@ export type WorkflowInstance = typeof workflowInstances.$inferSelect;
 export type InsertWorkflowInstance = typeof workflowInstances.$inferInsert;
 export type InsertOrgUnit = z.infer<typeof insertOrgUnitSchema>;
 
+// Normative documents (regulatory documents with links to Adilet)
+export const normativeDocuments = pgTable('normative_documents', {
+  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  title: varchar('title', { length: 500 }).notNull(),
+  shortTitle: varchar('short_title', { length: 100 }),
+  documentNumber: varchar('document_number', { length: 100 }),
+  documentDate: varchar('document_date', { length: 50 }),
+  category: varchar('category', { length: 100 }).notNull(),
+  description: text('description'),
+  externalUrl: varchar('external_url', { length: 1000 }).notNull(),
+  source: varchar('source', { length: 100 }).default('adilet'),
+  isActive: boolean('is_active').default(true),
+  sortOrder: integer('sort_order').default(0),
+  createdBy: varchar('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const insertNormativeDocumentSchema = createInsertSchema(normativeDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type NormativeDocument = typeof normativeDocuments.$inferSelect;
+export type InsertNormativeDocument = z.infer<typeof insertNormativeDocumentSchema>;
+
 export type Incident = typeof incidents.$inferSelect;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 

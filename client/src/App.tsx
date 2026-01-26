@@ -27,6 +27,7 @@ import FireExtinguishersCalculator from "@/pages/calculators/fire-extinguishers"
 import NGPSCalculator from "@/pages/calculators/ngps";
 import ExplosionCategoryCalculator from "@/pages/calculators/explosion-category";
 import AIAssistantPage from "@/pages/ai-assistant";
+import NormativeDocumentsPage from "@/pages/normative-documents";
 
 type ProtectedRouteProps = {
   component: ComponentType;
@@ -106,6 +107,7 @@ function Router() {
       <Route path="/calculators/ngps" component={protectedRoute(NGPSCalculator)} />
       <Route path="/calculators/explosion-category" component={protectedRoute(ExplosionCategoryCalculator)} />
       <Route path="/ai-assistant" component={protectedRoute(AIAssistantPage)} />
+      <Route path="/normative-documents" component={protectedRoute(NormativeDocumentsPage)} />
       <Route component={protectedRoute(NotFound)} />
     </Switch>
   );
