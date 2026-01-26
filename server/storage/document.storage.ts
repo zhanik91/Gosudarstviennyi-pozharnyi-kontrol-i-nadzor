@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { auditLogs, documents, notifications, users } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { isAdmin, type ScopeUser } from "../services/authz";
+import { applyScopeCondition, type ScopeUser } from "../services/authz";
 
 export class DocumentStorage {
   private formatRelativeTime(date: Date): string {
@@ -23,7 +23,13 @@ export class DocumentStorage {
     return document;
   }
 
-  async getDocuments(filters: any = {}): Promise<any[]> {
+  async getDocuments(filters: {
+    orgUnitId?: string;
+    documentType?: string;
+    status?: string;
+    period?: string;
+    scopeUser?: ScopeUser;
+  } = {}): Promise<any[]> {
     let query = db.select().from(documents);
     const conditions = [];
 
@@ -31,10 +37,12 @@ export class DocumentStorage {
     if (filters.documentType) conditions.push(eq(documents.documentType, filters.documentType));
     if (filters.status) conditions.push(eq(documents.status, filters.status));
     if (filters.period) conditions.push(eq(documents.period, filters.period));
-    
-    // Документы доступны только админам МЧС
-    if (filters.scope && !isAdmin(filters.scope)) {
-      return [];
+
+    if (filters.scopeUser) {
+      const scopeCondition = applyScopeCondition(filters.scopeUser, documents.region);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
     }
 
     if (conditions.length > 0) {

@@ -1,13 +1,15 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { insertOrgUnitSchema } from "@shared/schema";
+import { toScopeUser } from "../services/authz";
 
 export class OrganizationController {
 
   // Получить список организаций
   async getOrganizations(req: Request, res: Response) {
     try {
-      const orgUnits = await storage.getOrganizations();
+      const user = await storage.getUser(req.user?.id || req.user?.username);
+      const orgUnits = await storage.getOrganizations(toScopeUser(user));
       res.json(orgUnits);
     } catch (error) {
       console.error("Error fetching orgUnits:", error);

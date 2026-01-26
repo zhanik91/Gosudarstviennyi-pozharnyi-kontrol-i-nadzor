@@ -113,6 +113,7 @@ export class ReportController {
       const reportForms = await storage.getReportForms({
         orgUnitId: resolvedOrgId,
         period,
+        scopeUser: toScopeUser(req.user),
       });
       const formDataMap = new Map(reportForms.map((form) => [form.form, form.data]));
 
