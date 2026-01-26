@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import InteractiveMaps from "@/pages/interactive-maps";
 
-type TabType = 'journal' | 'reports' | 'charts' | 'packages' | 'forms';
+type TabType = 'journal' | 'reports' | 'charts' | 'maps' | 'packages' | 'forms';
 
 export default function FireModule() {
   const [activeTab, setActiveTab] = useState<TabType>('journal');
@@ -39,7 +40,7 @@ export default function FireModule() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') as TabType;
-    if (tab && ['journal', 'reports', 'charts', 'packages', 'forms'].includes(tab)) {
+    if (tab && ['journal', 'reports', 'charts', 'maps', 'packages', 'forms'].includes(tab)) {
       setActiveTab(tab);
     }
   }, []);
@@ -88,6 +89,7 @@ export default function FireModule() {
               { id: 'journal', label: '📋 Журнал пожаров' },
               { id: 'forms', label: '📄 Отчетные формы' },
               { id: 'charts', label: '📊 Диаграммы' },
+              { id: 'maps', label: '🗺️ Интерактивные карты' },
               { id: 'packages', label: '📦 Пакеты данных' }
             ].map((tab) => (
               <button
@@ -116,6 +118,7 @@ export default function FireModule() {
           {activeTab === 'forms' && <ReportsDashboard />}
           {activeTab === 'reports' && <ReportsPanel />}
           {activeTab === 'charts' && <SimpleAnalytics />}
+          {activeTab === 'maps' && <InteractiveMaps />}
           {activeTab === 'packages' && <PackagesPanel />}
         </div>
         <Footer />
