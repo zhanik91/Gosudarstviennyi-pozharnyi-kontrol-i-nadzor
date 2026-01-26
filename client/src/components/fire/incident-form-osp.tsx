@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 import { Plus, Trash2 } from "lucide-react";
+import { LocationPicker } from "@/components/maps/location-picker";
 
 // Updated schema to include victims array
 const ospIncidentSchema = insertIncidentSchema
@@ -560,72 +561,17 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                   )}
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <div className="md:col-span-3">
-                    <FormLabel className="text-sm font-medium">Координаты для карты</FormLabel>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      Введите координаты вручную или нажмите кнопку для геокодирования по адресу
-                    </p>
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="latitude"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Широта</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="48.0196" value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <FormLabel className="text-sm font-medium mb-2 block">Местоположение на карте</FormLabel>
+                  <LocationPicker
+                    latitude={form.watch("latitude")}
+                    longitude={form.watch("longitude")}
+                    address={form.watch("address")}
+                    onLocationSelect={(lat, lng) => {
+                      form.setValue("latitude", lat);
+                      form.setValue("longitude", lng);
+                    }}
                   />
-                  <FormField
-                    control={form.control}
-                    name="longitude"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Долгота</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="66.9237" value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={async () => {
-                        const address = form.getValues("address");
-                        const region = form.getValues("region");
-                        if (!address) {
-                          toast({ title: "Укажите адрес", variant: "destructive" });
-                          return;
-                        }
-                        try {
-                          const searchQuery = `${address}, ${region || ''}, Kazakhstan`;
-                          const response = await fetch(
-                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
-                          );
-                          const data = await response.json();
-                          if (data.length > 0) {
-                            form.setValue("latitude", data[0].lat);
-                            form.setValue("longitude", data[0].lon);
-                            toast({ title: "Координаты найдены", description: `${data[0].lat}, ${data[0].lon}` });
-                          } else {
-                            toast({ title: "Адрес не найден", variant: "destructive" });
-                          }
-                        } catch (error) {
-                          toast({ title: "Ошибка геокодирования", variant: "destructive" });
-                        }
-                      }}
-                    >
-                      Найти по адресу
-                    </Button>
-                  </div>
                 </div>
                 
                 <FormField
