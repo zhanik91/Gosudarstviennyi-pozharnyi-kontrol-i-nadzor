@@ -50,10 +50,6 @@ export function useReportForm<T>({
     }
     const computed = extractData(data.data);
     setReportData(computed);
- codex/restrict-data-saving-in-savereport
-    lastSavedSignatureRef.current = stableSignature(computed);
-
- main
     setLoaded(true);
     initialLoadRef.current = true;
   }, [data, extractData]);
