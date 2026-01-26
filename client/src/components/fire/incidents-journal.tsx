@@ -9,7 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import BulkOperationsToolbar from "@/components/ui/bulk-operations-toolbar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Columns, Edit, Trash2, Search, FileDown, Filter, Plus, X } from "lucide-react";
+import { Columns, Edit, Trash2, Search, FileDown, Filter, Plus, X, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ErrorDisplay } from "@/components/ui/error-boundary";
 import { DateRangeField } from "@/components/ui/date-range-field";
 import { usePeriodStore } from "@/hooks/use-period-store";
@@ -554,7 +560,7 @@ export default function IncidentsJournal() {
     }
   };
 
-  const handleBulkExport = () => {
+  const handleExport = (exportFormat: "csv" | "xlsx") => {
     const dataToExport = selectedIncidents.length > 0
       ? incidents.filter((incident: Incident) => selectedIncidents.includes(incident.id))
       : incidents;
@@ -568,35 +574,60 @@ export default function IncidentsJournal() {
       return;
     }
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      "Дата,Тип,Адрес,Причина,Ущерб,Погибшие,Травмированные\n" +
-      dataToExport
-        .map(
-          (incident: Incident) =>
-            `${incident.dateTime},${incident.incidentType},${incident.address},${formatCodeLabel(
-              incident.causeCode,
-              incident.cause,
-              ""
-            )},${incident.damage || 0},${incident.deathsTotal || 0},${incident.injuredTotal || 0}`
-        )
-        .join("\n");
+    const exportData = dataToExport.map((incident: Incident, index: number) => ({
+      "№": index + 1,
+      "Дата": incident.dateTime ? format(new Date(incident.dateTime), "dd.MM.yyyy HH:mm") : "",
+      "Тип": incident.incidentType === "fire" ? "Пожар" : 
+             incident.incidentType === "steppe_fire" ? "Степной пожар" : incident.incidentType,
+      "Регион": REGION_NAMES[incident.region as keyof typeof REGION_NAMES] || incident.region || "",
+      "Район/Город": incident.city || "",
+      "Местность": incident.locality === "cities" ? "Город" : 
+                   incident.locality === "rural" ? "Село" : incident.locality || "",
+      "Адрес": incident.address || "",
+      "Причина": formatCodeLabel(incident.causeCode, incident.cause, ""),
+      "Объект": formatCodeLabel(incident.objectCode, incident.object, ""),
+      "Ущерб (тыс.тг)": incident.damage || 0,
+      "Погибшие всего": incident.deathsTotal || 0,
+      "Погибшие дети": incident.deathsChildren || 0,
+      "Погибшие в н/с": incident.deathsDrunk || 0,
+      "Погибшие от CO": incident.deathsCOTotal || 0,
+      "Травмированные всего": incident.injuredTotal || 0,
+      "Травмированные дети": incident.injuredChildren || 0,
+      "Травмированные от CO": incident.injuredCOTotal || 0,
+      "Спасено людей": incident.savedPeopleTotal || 0,
+      "Спасено имущества (тыс.тг)": incident.savedProperty || 0,
+    }));
 
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute(
-      "download",
-      `incidents_export_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.click();
+    const filename = `журнал_пожаров_${new Date().toISOString().split("T")[0]}`;
+
+    if (exportFormat === "xlsx") {
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Журнал пожаров");
+      ws["!cols"] = [
+        { wch: 5 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
+        { wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 25 }, { wch: 15 },
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 },
+        { wch: 18 }, { wch: 18 }, { wch: 15 }, { wch: 22 },
+      ];
+      XLSX.writeFile(wb, `${filename}.xlsx`);
+    } else {
+      const headers = Object.keys(exportData[0]).join(",");
+      const rows = exportData.map(row => Object.values(row).map(v => `"${v}"`).join(",")).join("\n");
+      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers + "\n" + rows;
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", `${filename}.csv`);
+      link.click();
+    }
 
     toast({
-      title: "Успех",
-      description: selectedIncidents.length > 0 
-        ? `Экспортировано ${selectedIncidents.length} выбранных записей`
-        : `Экспортировано ${dataToExport.length} записей`,
+      title: "Экспорт завершён",
+      description: `${exportFormat.toUpperCase()}: ${dataToExport.length} записей`,
     });
   };
+
+  const handleBulkExport = () => handleExport("xlsx");
 
   const handleBulkEdit = () => {
     if (selectedIncidents.length === 0) return;
@@ -1231,15 +1262,27 @@ export default function IncidentsJournal() {
                   Добавить
                 </Button>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBulkExport}
-                  data-testid="button-export"
-                >
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Экспорт
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid="button-export"
+                    >
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Экспорт
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                      📊 Excel (.xlsx)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("csv")}>
+                      📄 CSV (.csv)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 <input
                   type="file"

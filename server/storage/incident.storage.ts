@@ -511,6 +511,19 @@ export class IncidentStorage {
       .where(and(...baseConditions, inArray(incidents.incidentType, ospIncidentTypes)))
       .groupBy(incidents.locality);
 
+    const form1RegionRows = await db
+      .select({
+        region: incidents.region,
+        count: sql<number>`count(*)`,
+        deaths: sql<number>`sum(deaths_total)`,
+        injured: sql<number>`sum(injured_total)`,
+        damage: sql<number>`sum(damage)`,
+      })
+      .from(incidents)
+      .where(and(...baseConditions, inArray(incidents.incidentType, ospIncidentTypes)))
+      .groupBy(incidents.region)
+      .orderBy(sql`count(*) DESC`);
+
     const form1Totals = form1LocalityRows.reduce(
       (acc, row) => ({
         deaths: acc.deaths + Number(row.deaths || 0),
@@ -799,6 +812,13 @@ export class IncidentStorage {
         locality: form1LocalityRows.map((row) => ({
           locality: row.locality ?? "unknown",
           label: row.locality === "cities" ? "Город" : row.locality === "rural" ? "Село" : "Не указано",
+          count: Number(row.count) || 0,
+          deaths: Number(row.deaths) || 0,
+          injured: Number(row.injured) || 0,
+          damage: Number(row.damage) || 0,
+        })),
+        regions: form1RegionRows.map((row) => ({
+          label: row.region ?? "Не указан",
           count: Number(row.count) || 0,
           deaths: Number(row.deaths) || 0,
           injured: Number(row.injured) || 0,

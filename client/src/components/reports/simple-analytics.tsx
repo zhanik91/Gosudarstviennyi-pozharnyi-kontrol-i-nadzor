@@ -84,6 +84,7 @@ export default function SimpleAnalytics() {
 
   const form1Monthly = (analytics as any)?.form1?.monthly ?? [];
   const form1Locality = (analytics as any)?.form1?.locality ?? [];
+  const form1Regions = (analytics as any)?.form1?.regions ?? [];
   const form1Totals = (analytics as any)?.form1?.totals ?? { deaths: 0, injured: 0, damage: 0 };
 
   const form2Causes = (analytics as any)?.form2?.causes ?? [];
@@ -312,6 +313,40 @@ export default function SimpleAnalytics() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Пожары по регионам Казахстана</CardTitle>
+            <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+            <p className="text-sm text-muted-foreground">
+              Статистика пожаров по всем областям и городам республиканского значения
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isAnalyticsLoading ? (
+              <div className="flex items-center justify-center h-[400px] text-sm text-muted-foreground">
+                Загрузка данных...
+              </div>
+            ) : form1Regions.length === 0 ? (
+              <div className="flex items-center justify-center h-[400px] text-sm text-muted-foreground">
+                Нет данных за выбранный период
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={form1Regions} layout="vertical" margin={{ left: 150 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
+                  <YAxis type="category" dataKey="label" fontSize={11} width={140} />
+                  <Tooltip formatter={tooltipValueFormatter} />
+                  <Legend />
+                  <Bar dataKey="count" fill="#0088FE" name="Пожары" />
+                  <Bar dataKey="deaths" fill="#FF4444" name="Погибшие" />
+                  <Bar dataKey="injured" fill="#FFBB28" name="Травмированные" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Форма 2-ССГ */}
