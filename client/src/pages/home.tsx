@@ -111,15 +111,16 @@ export default function Home() {
               icon={FileText}
               iconBg="bg-green-500/20"
               iconColor="text-green-400"
-              title="CRM и Документооборот"
-              description="Управление документами, облачное хранилище, автоматическая генерация PDF отчетов, версионирование"
+              title="Нормативные документы"
+              description="Помощник госинспектора: ключевые НПА, методики, приказы, правила и регламенты"
               primaryAction={{
-                label: "Открыть CRM",
-                href: "/document-management"
+                label: "Открыть НПА",
+                href: "/regulatory-documents"
               }}
               secondaryActions={[
-                { label: "Документы", href: "/document-management" },
-                { label: "Аналитика", href: "/crm" }
+                { label: "Основные НПА", href: "#" },
+                { label: "Приказы МЧС", href: "#" },
+                { label: "Техрегламенты/СНиП/СП", href: "#" }
               ]}
             />
 
