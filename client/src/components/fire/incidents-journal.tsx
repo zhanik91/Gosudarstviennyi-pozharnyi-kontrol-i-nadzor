@@ -585,7 +585,7 @@ export default function IncidentsJournal() {
                    incident.locality === "rural" ? "Село" : incident.locality || "",
       "Адрес": incident.address || "",
       "Причина": formatCodeLabel(incident.causeCode, incident.cause, ""),
-      "Объект": formatCodeLabel(incident.objectCode, incident.object, ""),
+      "Объект": formatCodeLabel(incident.objectCode, incident.objectType, ""),
       "Ущерб (тыс.тг)": incident.damage || 0,
       "Погибшие всего": incident.deathsTotal || 0,
       "Погибшие дети": incident.deathsChildren || 0,

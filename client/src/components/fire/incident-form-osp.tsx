@@ -48,8 +48,8 @@ const ospIncidentSchema = insertIncidentSchema
     steppeGarrisonUnits: z.union([z.number(), z.string()]).optional(),
     steppeMchsPeople: z.union([z.number(), z.string()]).optional(),
     steppeMchsUnits: z.union([z.number(), z.string()]).optional(),
-    // New fields
-    victims: z.array(insertIncidentVictimSchema.omit({ id: true, incidentId: true, createdAt: true })).optional(),
+    // New fields - insertIncidentVictimSchema already omits id and createdAt in shared/schema.ts
+    victims: z.array(insertIncidentVictimSchema.omit({ incidentId: true })).optional(),
     buildingDetails: z.union([z.record(z.any()), z.string()]).optional(),
     livestockLost: z.union([z.record(z.any()), z.string()]).optional(),
     destroyedItems: z.union([z.record(z.any()), z.string()]).optional(),

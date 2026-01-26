@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Map, Filter, TrendingUp, AlertTriangle, Flame, Users, Home, DollarSign, Plus, MapPin, Building, Search } from 'lucide-react';
+import { Map, Filter, TrendingUp, AlertTriangle, Flame, Users, Home, DollarSign, MapPin, Building, ExternalLink } from 'lucide-react';
+import { Link } from 'wouter';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { LeafletMap } from '@/components/maps/leaflet-map';
 import { useAuth } from '@/hooks/useAuth';
@@ -56,20 +54,6 @@ interface Forecast {
   probability: number;
 }
 
-interface ControlObjectForm {
-  name: string;
-  category: string;
-  address: string;
-  region: string;
-  district: string;
-  latitude: string;
-  longitude: string;
-  riskLevel: string;
-  description: string;
-  contactPerson: string;
-  contactPhone: string;
-}
-
 const KAZAKHSTAN_REGIONS = [
   'Алматинская область',
   'Акмолинская область', 
@@ -91,17 +75,6 @@ const KAZAKHSTAN_REGIONS = [
   'Алматы',
   'Астана',
   'Шымкент'
-];
-
-const OBJECT_CATEGORIES = [
-  { value: 'residential', label: 'Жилые здания' },
-  { value: 'commercial', label: 'Коммерческие объекты' },
-  { value: 'industrial', label: 'Промышленные объекты' },
-  { value: 'educational', label: 'Образовательные учреждения' },
-  { value: 'medical', label: 'Медицинские учреждения' },
-  { value: 'cultural', label: 'Культурные объекты' },
-  { value: 'transport', label: 'Транспортные объекты' },
-  { value: 'other', label: 'Прочие' },
 ];
 
 const RISK_COLORS = {
@@ -132,23 +105,6 @@ export default function InteractiveMaps() {
   const [activeTab, setActiveTab] = useState<string>('map');
   const [showIncidents, setShowIncidents] = useState(true);
   const [showObjects, setShowObjects] = useState(true);
-  const [showAddObjectDialog, setShowAddObjectDialog] = useState(false);
-  const [searchAddress, setSearchAddress] = useState('');
-  const [isGeocoding, setIsGeocoding] = useState(false);
-  
-  const [objectForm, setObjectForm] = useState<ControlObjectForm>({
-    name: '',
-    category: 'residential',
-    address: '',
-    region: '',
-    district: '',
-    latitude: '',
-    longitude: '',
-    riskLevel: 'medium',
-    description: '',
-    contactPerson: '',
-    contactPhone: '',
-  });
 
   useEffect(() => {
     if (!userRegion || isMchsUser) return;
@@ -197,29 +153,6 @@ export default function InteractiveMaps() {
     queryKey: ['/api/forecasts'],
   });
 
-  const createObjectMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/control-objects', data);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/control-objects'] });
-      setShowAddObjectDialog(false);
-      resetForm();
-      toast({
-        title: 'Объект добавлен',
-        description: 'Объект контроля успешно создан',
-      });
-    },
-    onError: () => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось создать объект',
-        variant: 'destructive',
-      });
-    }
-  });
-
   const deleteObjectMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await apiRequest('DELETE', `/api/control-objects/${id}`);
@@ -234,112 +167,10 @@ export default function InteractiveMaps() {
     },
   });
 
-  const resetForm = () => {
-    setObjectForm({
-      name: '',
-      category: 'residential',
-      address: '',
-      region: '',
-      district: '',
-      latitude: '',
-      longitude: '',
-      riskLevel: 'medium',
-      description: '',
-      contactPerson: '',
-      contactPhone: '',
-    });
-    setSearchAddress('');
-  };
-
-  const handleGeocodeAddress = async () => {
-    if (!searchAddress.trim()) return;
-    
-    setIsGeocoding(true);
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress + ', Kazakhstan')}&limit=1`
-      );
-      const data = await response.json();
-      
-      if (data.length > 0) {
-        const { lat, lon, display_name } = data[0];
-        setObjectForm(prev => ({
-          ...prev,
-          latitude: lat,
-          longitude: lon,
-          address: display_name,
-        }));
-        toast({
-          title: 'Адрес найден',
-          description: `Координаты: ${parseFloat(lat).toFixed(6)}, ${parseFloat(lon).toFixed(6)}`,
-        });
-      } else {
-        toast({
-          title: 'Адрес не найден',
-          description: 'Попробуйте уточнить адрес',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Ошибка поиска',
-        description: 'Не удалось найти адрес',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGeocoding(false);
-    }
-  };
-
-  const handleMapClick = (lat: number, lng: number) => {
-    setObjectForm(prev => ({
-      ...prev,
-      latitude: lat.toFixed(7),
-      longitude: lng.toFixed(7),
-    }));
-    setShowAddObjectDialog(true);
-  };
-
-  const handleAddMarker = (data: Partial<MarkerData>) => {
-    if (data.type === 'object' && data.latitude && data.longitude) {
-      setObjectForm(prev => ({
-        ...prev,
-        latitude: data.latitude!.toFixed(7),
-        longitude: data.longitude!.toFixed(7),
-      }));
-      setShowAddObjectDialog(true);
-    }
-  };
-
   const handleDeleteMarker = (id: string, type: 'incident' | 'object') => {
     if (type === 'object') {
       deleteObjectMutation.mutate(id);
     }
-  };
-
-  const handleSubmitObject = () => {
-    if (!objectForm.name || !objectForm.address || !objectForm.latitude || !objectForm.longitude) {
-      toast({
-        title: 'Заполните обязательные поля',
-        description: 'Название, адрес и координаты обязательны',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    createObjectMutation.mutate({
-      name: objectForm.name,
-      category: objectForm.category,
-      address: objectForm.address,
-      region: objectForm.region || selectedRegion,
-      district: objectForm.district,
-      latitude: objectForm.latitude,
-      longitude: objectForm.longitude,
-      riskLevel: objectForm.riskLevel,
-      description: objectForm.description,
-      contactPerson: objectForm.contactPerson,
-      contactPhone: objectForm.contactPhone,
-    });
   };
 
   if (isLoading) return <LoadingIndicator />;
@@ -355,183 +186,13 @@ export default function InteractiveMaps() {
           <p className="text-gray-600 dark:text-gray-400">Геоинформационная система анализа пожарной безопасности</p>
         </div>
         
-        <Dialog open={showAddObjectDialog} onOpenChange={setShowAddObjectDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Добавить объект
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Добавить объект контроля</DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Определение координат
-                </h4>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Поиск по адресу</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Введите адрес для геокодирования..."
-                        value={searchAddress}
-                        onChange={(e) => setSearchAddress(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleGeocodeAddress()}
-                      />
-                      <Button onClick={handleGeocodeAddress} disabled={isGeocoding}>
-                        <Search className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Или кликните на карту для выбора точки
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Широта</Label>
-                      <Input
-                        placeholder="48.0196"
-                        value={objectForm.latitude}
-                        onChange={(e) => setObjectForm(prev => ({ ...prev, latitude: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label>Долгота</Label>
-                      <Input
-                        placeholder="66.9237"
-                        value={objectForm.longitude}
-                        onChange={(e) => setObjectForm(prev => ({ ...prev, longitude: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label>Название объекта *</Label>
-                  <Input
-                    placeholder="ТРЦ Мега Алматы"
-                    value={objectForm.name}
-                    onChange={(e) => setObjectForm(prev => ({ ...prev, name: e.target.value }))}
-                  />
-                </div>
-                
-                <div>
-                  <Label>Категория</Label>
-                  <Select 
-                    value={objectForm.category} 
-                    onValueChange={(v) => setObjectForm(prev => ({ ...prev, category: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {OBJECT_CATEGORIES.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>Уровень риска</Label>
-                  <Select 
-                    value={objectForm.riskLevel} 
-                    onValueChange={(v) => setObjectForm(prev => ({ ...prev, riskLevel: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Низкий</SelectItem>
-                      <SelectItem value="medium">Средний</SelectItem>
-                      <SelectItem value="high">Высокий</SelectItem>
-                      <SelectItem value="critical">Критический</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="col-span-2">
-                  <Label>Адрес *</Label>
-                  <Input
-                    placeholder="Полный адрес объекта"
-                    value={objectForm.address}
-                    onChange={(e) => setObjectForm(prev => ({ ...prev, address: e.target.value }))}
-                  />
-                </div>
-                
-                <div>
-                  <Label>Регион</Label>
-                  <Select 
-                    value={objectForm.region} 
-                    onValueChange={(v) => setObjectForm(prev => ({ ...prev, region: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите регион" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {KAZAKHSTAN_REGIONS.map(region => (
-                        <SelectItem key={region} value={region}>{region}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>Район</Label>
-                  <Input
-                    placeholder="Район"
-                    value={objectForm.district}
-                    onChange={(e) => setObjectForm(prev => ({ ...prev, district: e.target.value }))}
-                  />
-                </div>
-                
-                <div>
-                  <Label>Контактное лицо</Label>
-                  <Input
-                    placeholder="ФИО ответственного"
-                    value={objectForm.contactPerson}
-                    onChange={(e) => setObjectForm(prev => ({ ...prev, contactPerson: e.target.value }))}
-                  />
-                </div>
-                
-                <div>
-                  <Label>Телефон</Label>
-                  <Input
-                    placeholder="+7 (XXX) XXX-XX-XX"
-                    value={objectForm.contactPhone}
-                    onChange={(e) => setObjectForm(prev => ({ ...prev, contactPhone: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="col-span-2">
-                  <Label>Описание</Label>
-                  <Input
-                    placeholder="Дополнительная информация об объекте"
-                    value={objectForm.description}
-                    onChange={(e) => setObjectForm(prev => ({ ...prev, description: e.target.value }))}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => { setShowAddObjectDialog(false); resetForm(); }}>
-                Отмена
-              </Button>
-              <Button onClick={handleSubmitObject} disabled={createObjectMutation.isPending}>
-                {createObjectMutation.isPending ? 'Сохранение...' : 'Сохранить'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Link href="/control-supervision?tab=registry">
+          <Button variant="outline">
+            <Building className="w-4 h-4 mr-2" />
+            Управление объектами
+            <ExternalLink className="w-3 h-3 ml-2" />
+          </Button>
+        </Link>
       </div>
 
       <Card>
