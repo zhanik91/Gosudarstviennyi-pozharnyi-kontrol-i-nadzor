@@ -597,33 +597,50 @@ export class IncidentStorage {
 
     // --- FORM 5 DETAILED STATS (Aggregated from incident_victims) ---
     // This query joins incidents and incident_victims to get detailed breakdown for fire deaths/injuries
-    const form5Victims = await db
-      .select({
-         gender: incidentVictims.gender,
-         ageGroup: incidentVictims.ageGroup,
-         socialStatus: incidentVictims.socialStatus,
-         condition: incidentVictims.condition,
-         deathCause: incidentVictims.deathCause,
-         deathPlace: incidentVictims.deathPlace,
-         status: incidentVictims.status,
-         count: sql<number>`count(*)`
-      })
-      .from(incidentVictims)
-      .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
-      .where(and(
-         ...baseConditions,
-         eq(incidents.incidentType, "fire"),
-         or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
-      ))
-      .groupBy(
-         incidentVictims.gender,
-         incidentVictims.ageGroup,
-         incidentVictims.socialStatus,
-         incidentVictims.condition,
-         incidentVictims.deathCause,
-         incidentVictims.deathPlace,
-         incidentVictims.status
-      );
+    let form5Victims: {
+      gender: string;
+      ageGroup: string;
+      socialStatus: string | null;
+      condition: string | null;
+      deathCause: string | null;
+      deathPlace: string | null;
+      status: string;
+      count: number;
+    }[] = [];
+
+    try {
+      form5Victims = await db
+        .select({
+          gender: incidentVictims.gender,
+          ageGroup: incidentVictims.ageGroup,
+          socialStatus: incidentVictims.socialStatus,
+          condition: incidentVictims.condition,
+          deathCause: incidentVictims.deathCause,
+          deathPlace: incidentVictims.deathPlace,
+          status: incidentVictims.status,
+          count: sql<number>`count(*)`,
+        })
+        .from(incidentVictims)
+        .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
+        .where(
+          and(
+            ...baseConditions,
+            eq(incidents.incidentType, "fire"),
+            or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
+          )
+        )
+        .groupBy(
+          incidentVictims.gender,
+          incidentVictims.ageGroup,
+          incidentVictims.socialStatus,
+          incidentVictims.condition,
+          incidentVictims.deathCause,
+          incidentVictims.deathPlace,
+          incidentVictims.status
+        );
+    } catch (error) {
+      console.error("[IncidentStorage] Failed to load form5 victims:", error);
+    }
 
     const steppeTypes = ["steppe_fire", "steppe_smolder"] as const;
 
@@ -695,37 +712,56 @@ export class IncidentStorage {
       .groupBy(incidents.region);
 
     // --- FORM 7 DETAILED STATS (Aggregated from incident_victims) ---
-    const form7Victims = await db
-      .select({
-         gender: incidentVictims.gender,
-         ageGroup: incidentVictims.ageGroup,
-         socialStatus: incidentVictims.socialStatus,
-         condition: incidentVictims.condition,
-         deathCause: incidentVictims.deathCause,
-         deathPlace: incidentVictims.deathPlace,
-         status: incidentVictims.status,
-         incidentObjectCode: incidents.objectCode,
-         incidentDateTime: incidents.dateTime,
-         count: sql<number>`count(*)`
-      })
-      .from(incidentVictims)
-      .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
-      .where(and(
-         ...baseConditions,
-         eq(incidents.incidentType, "co_nofire"),
-         or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
-      ))
-      .groupBy(
-         incidentVictims.gender,
-         incidentVictims.ageGroup,
-         incidentVictims.socialStatus,
-         incidentVictims.condition,
-         incidentVictims.deathCause,
-         incidentVictims.deathPlace,
-         incidentVictims.status,
-         incidents.objectCode,
-         incidents.dateTime
-      );
+    let form7Victims: {
+      gender: string;
+      ageGroup: string;
+      socialStatus: string | null;
+      condition: string | null;
+      deathCause: string | null;
+      deathPlace: string | null;
+      status: string;
+      incidentObjectCode: string | null;
+      incidentDateTime: Date;
+      count: number;
+    }[] = [];
+
+    try {
+      form7Victims = await db
+        .select({
+          gender: incidentVictims.gender,
+          ageGroup: incidentVictims.ageGroup,
+          socialStatus: incidentVictims.socialStatus,
+          condition: incidentVictims.condition,
+          deathCause: incidentVictims.deathCause,
+          deathPlace: incidentVictims.deathPlace,
+          status: incidentVictims.status,
+          incidentObjectCode: incidents.objectCode,
+          incidentDateTime: incidents.dateTime,
+          count: sql<number>`count(*)`,
+        })
+        .from(incidentVictims)
+        .innerJoin(incidents, eq(incidents.id, incidentVictims.incidentId))
+        .where(
+          and(
+            ...baseConditions,
+            eq(incidents.incidentType, "co_nofire"),
+            or(eq(incidentVictims.status, "dead"), eq(incidentVictims.status, "injured"))
+          )
+        )
+        .groupBy(
+          incidentVictims.gender,
+          incidentVictims.ageGroup,
+          incidentVictims.socialStatus,
+          incidentVictims.condition,
+          incidentVictims.deathCause,
+          incidentVictims.deathPlace,
+          incidentVictims.status,
+          incidents.objectCode,
+          incidents.dateTime
+        );
+    } catch (error) {
+      console.error("[IncidentStorage] Failed to load form7 victims:", error);
+    }
 
     const form7Totals = form7RegionRows.reduce(
       (acc, row) => ({
