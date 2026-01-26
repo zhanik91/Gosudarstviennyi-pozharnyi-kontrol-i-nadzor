@@ -173,11 +173,11 @@ export default function Header() {
                   <NavigationMenuTrigger className="bg-transparent text-sm font-medium text-slate-100 transition-colors duration-200 hover:bg-primary/20 focus:bg-primary/25">
                     {group.label}
                   </NavigationMenuTrigger>
-                  <NavigationMenuContent className="rounded-xl border bg-white/95 shadow-xl transition-[opacity,transform] duration-200">
+                  <NavigationMenuContent className="rounded-xl border border-border bg-popover text-popover-foreground shadow-xl transition-[opacity,transform] duration-200">
                     <div className="grid gap-3 p-4 md:w-[600px] lg:w-[720px] md:grid-cols-2">
                       {group.items.map((item) => (
                         <NavigationMenuLink key={item.title} asChild>
-                          <Link href={item.href} className="flex h-full gap-3 rounded-lg border border-transparent bg-muted/60 px-3 py-3 text-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                          <Link href={item.href} className="flex h-full gap-3 rounded-lg border border-transparent bg-secondary/40 px-3 py-3 text-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary">
                               <item.icon className="h-5 w-5" />
                             </div>
