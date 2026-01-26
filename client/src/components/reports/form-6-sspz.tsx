@@ -36,11 +36,11 @@ interface SteppeFireData {
 
 export default function Form6SSPZ() {
   const now = new Date();
-  const [reportMonth] = useState(
+  const [reportMonth, setReportMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   );
-  const [reportYear] = useState(now.getFullYear().toString());
-  const [region] = useState("Республика Казахстан (Свод)");
+  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
+  const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
   const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
@@ -48,6 +48,7 @@ export default function Form6SSPZ() {
   const { reportData, isLoading, saveReport } = useReportForm<SteppeFireData>({
     formId: "6-sspz",
     period,
+    region,
     extractData: (payload) => {
       const map: Record<string, SteppeFireData> = {};
       const steppeRows = payload?.steppeRows ?? [];
@@ -353,8 +354,8 @@ export default function Form6SSPZ() {
             <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Отчетный период</Label>
-                <Select value={reportMonth} disabled>
-                  <SelectTrigger disabled>
+                <Select value={reportMonth} onValueChange={setReportMonth}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Месяц" />
                   </SelectTrigger>
                   <SelectContent>
@@ -366,8 +367,8 @@ export default function Form6SSPZ() {
               </div>
               <div className="w-24">
                 <Label>&nbsp;</Label>
-                <Select value={reportYear} disabled>
-                  <SelectTrigger disabled>
+                <Select value={reportYear} onValueChange={setReportYear}>
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -380,8 +381,8 @@ export default function Form6SSPZ() {
             </div>
             <div>
               <Label>Регион</Label>
-              <Select value={region} disabled>
-                <SelectTrigger disabled>
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

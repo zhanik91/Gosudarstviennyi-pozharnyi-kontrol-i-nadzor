@@ -23,6 +23,7 @@ export class ReportController {
       const includeChildren = req.query.includeChildren === 'true';
       const period = req.query.period as string;
       const form = req.query.form as string;
+      const region = req.query.region as string | undefined;
 
       if (!form) {
         return res.status(400).json({ ok: false, msg: "form required" });
@@ -56,6 +57,7 @@ export class ReportController {
         orgId: resolvedOrgId,
         period,
         form,
+        region,
         includeChildren,
         scopeUser: toScopeUser(req.user),
       });
