@@ -87,12 +87,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         href: "/audit-conclusions",
         icon: Activity,
       },
-      {
-        title: "Уведомления и Workflow",
-        description: "Согласования, напоминания и SLA",
-        href: "/notifications",
-        icon: Bell,
-      },
     ],
   },
   {
@@ -266,14 +260,6 @@ export default function Header() {
                     <div className="flex items-center gap-2 cursor-pointer w-full">
                       <FileText className="h-4 w-4" />
                       Документация
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/notifications">
-                    <div className="flex items-center gap-2 cursor-pointer w-full">
-                      <Bell className="h-4 w-4" />
-                      Уведомления
                     </div>
                   </Link>
                 </DropdownMenuItem>
