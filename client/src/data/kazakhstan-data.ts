@@ -515,12 +515,15 @@ export function getRegionByCode(code: string) {
   return REGIONS.find(region => region.code === code);
 }
 
-export function getDistrictsByRegion(regionCode: string) {
-  return DISTRICTS[regionCode] || [];
+export function getDistrictsByRegion(regionName: string) {
+  const region = ADMINISTRATIVE_REGIONS.find(r => r.name === regionName);
+  return region?.districts || [];
 }
 
-export function getCitiesByRegion(regionCode: string) {
-  return MAJOR_CITIES.filter(city => city.region === regionCode);
+export function getCitiesByRegion(regionName: string) {
+  const region = REGIONS.find(r => r.name === regionName);
+  if (!region) return [];
+  return MAJOR_CITIES.filter(city => city.region === region.code);
 }
 
 export function getCauseByCode(code: string) {

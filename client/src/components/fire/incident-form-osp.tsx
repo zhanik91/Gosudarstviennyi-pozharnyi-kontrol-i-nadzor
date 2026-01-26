@@ -250,21 +250,22 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
   });
 
   // Calculate totals automatically when victims change
+  type VictimEntry = { status?: string; ageGroup?: string; age?: number; victimType?: string };
   useEffect(() => {
-    const victims = form.getValues("victims") || [];
-    const deaths = victims.filter(v => v.status === "dead").length;
-    const injured = victims.filter(v => v.status === "injured").length;
-    const saved = victims.filter(v => v.status === "saved").length;
+    const victims = (form.getValues("victims") || []) as VictimEntry[];
+    const deaths = victims.filter((v: VictimEntry) => v.status === "dead").length;
+    const injured = victims.filter((v: VictimEntry) => v.status === "injured").length;
+    const saved = victims.filter((v: VictimEntry) => v.status === "saved").length;
 
     // Also count children
-    const deathsChildren = victims.filter(v => v.status === "dead" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
-    const injuredChildren = victims.filter(v => v.status === "injured" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
-    const savedChildren = victims.filter(v => v.status === "saved" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
-    const coVictims = victims.filter(v => v.victimType === "co_poisoning");
-    const deathsCO = coVictims.filter(v => v.status === "dead").length;
-    const injuredCO = coVictims.filter(v => v.status === "injured").length;
-    const deathsCOChildren = coVictims.filter(v => v.status === "dead" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
-    const injuredCOChildren = coVictims.filter(v => v.status === "injured" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const deathsChildren = victims.filter((v: VictimEntry) => v.status === "dead" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const injuredChildren = victims.filter((v: VictimEntry) => v.status === "injured" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const savedChildren = victims.filter((v: VictimEntry) => v.status === "saved" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const coVictims = victims.filter((v: VictimEntry) => v.victimType === "co_poisoning");
+    const deathsCO = coVictims.filter((v: VictimEntry) => v.status === "dead").length;
+    const injuredCO = coVictims.filter((v: VictimEntry) => v.status === "injured").length;
+    const deathsCOChildren = coVictims.filter((v: VictimEntry) => v.status === "dead" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
+    const injuredCOChildren = coVictims.filter((v: VictimEntry) => v.status === "injured" && (v.ageGroup === "child" || (v.age && v.age < 18))).length;
 
     form.setValue("deathsTotal", deaths);
     form.setValue("injuredTotal", injured);
@@ -324,13 +325,13 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
     mutationFn: async (data: OSPIncidentFormData) => {
       const formattedData = {
         ...data,
-        dateTime: new Date(data.dateTime).toISOString(),
-        damage: normalizeCurrency(data.damage),
-        savedProperty: normalizeCurrency(data.savedProperty),
-        steppeArea: normalizeCurrency(data.steppeArea),
-        steppeDamage: normalizeCurrency(data.steppeDamage),
-        steppeExtinguishedArea: normalizeCurrency(data.steppeExtinguishedArea),
-        steppeExtinguishedDamage: normalizeCurrency(data.steppeExtinguishedDamage),
+        dateTime: new Date(data.dateTime as string).toISOString(),
+        damage: normalizeCurrency(data.damage as string | number | undefined),
+        savedProperty: normalizeCurrency(data.savedProperty as string | number | undefined),
+        steppeArea: normalizeCurrency(data.steppeArea as string | number | undefined),
+        steppeDamage: normalizeCurrency(data.steppeDamage as string | number | undefined),
+        steppeExtinguishedArea: normalizeCurrency(data.steppeExtinguishedArea as string | number | undefined),
+        steppeExtinguishedDamage: normalizeCurrency(data.steppeExtinguishedDamage as string | number | undefined),
         buildingDetails: normalizeJsonField(data.buildingDetails),
         livestockLost: normalizeJsonField(data.livestockLost),
         destroyedItems: normalizeJsonField(data.destroyedItems),
