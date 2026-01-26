@@ -184,6 +184,63 @@ export class PackageController {
     }
   }
 
+  // Просмотр пакета
+  async viewPackage(req: Request, res: Response) {
+    try {
+      const user = await storage.getUser(req.user?.id || req.user?.username);
+      const pkg = await storage.getPackage(req.params.id);
+
+      if (!pkg) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      const canAccess = await canAccessOrgUnit(user, pkg.orgUnitId);
+      if (!canAccess) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      res.json({
+        package: pkg,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Error viewing package:", error);
+      res.status(500).json({ message: "Failed to view package" });
+    }
+  }
+
+  // Скачать пакет
+  async downloadPackage(req: Request, res: Response) {
+    try {
+      const user = await storage.getUser(req.user?.id || req.user?.username);
+      const pkg = await storage.getPackage(req.params.id);
+
+      if (!pkg) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      const canAccess = await canAccessOrgUnit(user, pkg.orgUnitId);
+      if (!canAccess) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const payload = {
+        package: pkg,
+        generatedAt: new Date().toISOString(),
+      };
+
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="package-${pkg.period}-${pkg.id}.json"`
+      );
+      res.send(JSON.stringify(payload, null, 2));
+    } catch (error) {
+      console.error("Error downloading package:", error);
+      res.status(500).json({ message: "Failed to download package" });
+    }
+  }
+
   // Консолидация (merged from server/routes/packages.ts)
   async consolidatePackage(req: Request, res: Response) {
     try {

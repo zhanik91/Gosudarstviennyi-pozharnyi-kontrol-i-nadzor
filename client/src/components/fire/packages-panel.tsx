@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -20,31 +29,64 @@ export default function PackagesPanel() {
   >("idle");
   const [consolidationMessage, setConsolidationMessage] = useState<string>("");
   const [consolidatedPackage, setConsolidatedPackage] = useState<Package | null>(null);
+  const [filterMode, setFilterMode] = useState<"all" | "mine" | "incoming">("all");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterPeriod, setFilterPeriod] = useState("");
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
+  const [actionPackageId, setActionPackageId] = useState<string | null>(null);
+  const [actionReason, setActionReason] = useState("");
+  const [actionError, setActionError] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const userRole = (user as any)?.role;
   const canConsolidate = userRole === "MCHS" || userRole === "DCHS";
+  const userOrgUnitId = (user as any)?.orgUnitId;
+
+  const packageQueryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filterStatus) {
+      params.set("status", filterStatus);
+    } else if (filterMode === "incoming") {
+      params.set("status", "submitted");
+    }
+    if (filterPeriod) {
+      params.set("period", filterPeriod);
+    }
+    if (filterMode === "mine" && userOrgUnitId) {
+      params.set("orgUnitId", userOrgUnitId);
+    }
+    return params.toString();
+  }, [filterMode, filterPeriod, filterStatus, userOrgUnitId]);
 
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["/api/packages"],
+    queryKey: ["/api/packages", packageQueryParams],
+    queryFn: async () => {
+      const url = packageQueryParams ? `/api/packages?${packageQueryParams}` : "/api/packages";
+      const response = await apiRequest("GET", url);
+      return (await response.json()) as Package[];
+    },
   });
 
-  const submitPackageMutation = useMutation({
-    mutationFn: async (packageId: string) => {
-      await apiRequest("PUT", `/api/packages/${packageId}/submit`);
+  const createPackageMutation = useMutation({
+    mutationFn: async ({ period, orgUnitId }: { period: string; orgUnitId: string }) => {
+      const response = await apiRequest("POST", "/api/packages", { period, orgUnitId });
+      const createdPackage = (await response.json()) as Package;
+      await apiRequest("PUT", `/api/packages/${createdPackage.id}/submit`);
+      return createdPackage;
     },
     onSuccess: () => {
       toast({
         title: "Успех",
-        description: "Пакет отправлен на рассмотрение",
+        description: "Пакет создан и отправлен на рассмотрение",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
     },
     onError: (error) => {
       toast({
         title: "Ошибка",
-        description: error.message || "Не удалось отправить пакет",
+        description: error.message || "Не удалось создать пакет",
         variant: "destructive",
       });
     },
@@ -131,6 +173,14 @@ export default function PackagesPanel() {
     },
   });
 
+  const resetActionDialog = () => {
+    setActionDialogOpen(false);
+    setActionType(null);
+    setActionPackageId(null);
+    setActionReason("");
+    setActionError("");
+  };
+
   const handleSubmitUp = () => {
     if (!outgoingPeriod) {
       toast({
@@ -140,11 +190,15 @@ export default function PackagesPanel() {
       });
       return;
     }
-    // In a real app, would create and submit package for the period
-    toast({
-      title: "Информация",
-      description: "Функция в разработке",
-    });
+    if (!userOrgUnitId) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось определить организацию",
+        variant: "destructive",
+      });
+      return;
+    }
+    createPackageMutation.mutate({ period: outgoingPeriod, orgUnitId: userOrgUnitId });
   };
 
   const handleCreateSummary = (period: string) => {
@@ -169,8 +223,10 @@ export default function PackagesPanel() {
   };
 
   const handleShowIncoming = () => {
-    // Refresh packages list with incoming filter
-    queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
+    setFilterMode("incoming");
+    if (incomingPeriod) {
+      setFilterPeriod(incomingPeriod);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -191,16 +247,53 @@ export default function PackagesPanel() {
     );
   };
 
-  const handleApprove = (packageId: string) => {
-    if (confirm("Утвердить пакет?")) {
-      approvePackageMutation.mutate(packageId);
-    }
+  const openActionDialog = (type: "approve" | "reject", packageId: string) => {
+    setActionType(type);
+    setActionPackageId(packageId);
+    setActionReason("");
+    setActionError("");
+    setActionDialogOpen(true);
   };
 
-  const handleReject = (packageId: string) => {
-    const reason = prompt("Укажите причину возврата:");
-    if (reason) {
-      rejectPackageMutation.mutate({ packageId, reason });
+  const handleConfirmAction = () => {
+    if (!actionPackageId || !actionType) {
+      return;
+    }
+    if (actionType === "reject") {
+      if (!actionReason.trim()) {
+        setActionError("Укажите причину возврата");
+        return;
+      }
+      rejectPackageMutation.mutate({ packageId: actionPackageId, reason: actionReason.trim() });
+      resetActionDialog();
+      return;
+    }
+    approvePackageMutation.mutate(actionPackageId);
+    resetActionDialog();
+  };
+
+  const handleViewPackage = (packageId: string) => {
+    window.open(`/api/packages/${packageId}/view`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleDownloadPackage = async (pkg: Package) => {
+    try {
+      const response = await apiRequest("GET", `/api/packages/${pkg.id}/download`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `package-${pkg.period}-${pkg.id}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось скачать пакет",
+        variant: "destructive",
+      });
     }
   };
 
@@ -273,12 +366,6 @@ export default function PackagesPanel() {
                     Сформировать свод
                   </Button>
                 )}
-                <Button 
-                  variant="secondary"
-                  data-testid="button-my-packages"
-                >
-                  Мои пакеты
-                </Button>
               </div>
               {canConsolidate && (
                 <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
@@ -310,8 +397,62 @@ export default function PackagesPanel() {
 
       {/* Packages Table */}
       <Card className="bg-card border border-border overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <h3 className="text-lg font-semibold text-foreground">Список пакетов</h3>
+        <div className="border-b border-border p-4 space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <h3 className="text-lg font-semibold text-foreground">Список пакетов</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={filterMode === "mine" ? "default" : "secondary"}
+                onClick={() => setFilterMode("mine")}
+                data-testid="filter-my-packages"
+              >
+                Мои пакеты
+              </Button>
+              <Button
+                variant={filterMode === "incoming" ? "default" : "secondary"}
+                onClick={() => setFilterMode("incoming")}
+                data-testid="filter-incoming-packages"
+              >
+                Входящие
+              </Button>
+              <Button
+                variant={filterMode === "all" ? "default" : "secondary"}
+                onClick={() => setFilterMode("all")}
+                data-testid="filter-all-packages"
+              >
+                Все
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="filterPeriod">По периоду</Label>
+              <Input
+                id="filterPeriod"
+                placeholder="2025-01"
+                value={filterPeriod}
+                onChange={(e) => setFilterPeriod(e.target.value)}
+                data-testid="filter-period"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="filterStatus">По статусу</Label>
+              <select
+                id="filterStatus"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                data-testid="filter-status"
+              >
+                <option value="">Все</option>
+                <option value="draft">Черновик</option>
+                <option value="submitted">На рассмотрении</option>
+                <option value="under_review">Рассматривается</option>
+                <option value="approved">Утверждено</option>
+                <option value="rejected">Возвращено</option>
+              </select>
+            </div>
+          </div>
         </div>
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-sm">
@@ -347,6 +488,7 @@ export default function PackagesPanel() {
                         variant="ghost" 
                         size="sm" 
                         className="text-primary hover:text-primary/80"
+                        onClick={() => handleViewPackage(pkg.id)}
                         data-testid={`button-view-${pkg.id}`}
                       >
                         <Eye className="w-4 h-4" />
@@ -355,6 +497,7 @@ export default function PackagesPanel() {
                         variant="ghost" 
                         size="sm" 
                         className="text-accent hover:text-accent/80"
+                        onClick={() => handleDownloadPackage(pkg)}
                         data-testid={`button-download-${pkg.id}`}
                       >
                         <Download className="w-4 h-4" />
@@ -365,7 +508,7 @@ export default function PackagesPanel() {
                             variant="ghost" 
                             size="sm" 
                             className="text-green-400 hover:text-green-300"
-                            onClick={() => handleApprove(pkg.id)}
+                            onClick={() => openActionDialog("approve", pkg.id)}
                             disabled={approvePackageMutation.isPending}
                             data-testid={`button-approve-${pkg.id}`}
                           >
@@ -375,7 +518,7 @@ export default function PackagesPanel() {
                             variant="ghost" 
                             size="sm" 
                             className="text-destructive hover:text-destructive/80"
-                            onClick={() => handleReject(pkg.id)}
+                            onClick={() => openActionDialog("reject", pkg.id)}
                             disabled={rejectPackageMutation.isPending}
                             data-testid={`button-reject-${pkg.id}`}
                           >
@@ -391,6 +534,51 @@ export default function PackagesPanel() {
           </table>
         </div>
       </Card>
+
+      <Dialog open={actionDialogOpen} onOpenChange={(open) => (open ? setActionDialogOpen(true) : resetActionDialog())}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {actionType === "reject" ? "Возврат пакета" : "Подтверждение утверждения"}
+            </DialogTitle>
+            <DialogDescription>
+              {actionType === "reject"
+                ? "Укажите причину возврата пакета и подтвердите действие."
+                : "Подтвердите утверждение пакета перед отправкой решения."}
+            </DialogDescription>
+          </DialogHeader>
+          {actionType === "reject" && (
+            <div className="space-y-2">
+              <Label htmlFor="rejectReason">Причина возврата</Label>
+              <Textarea
+                id="rejectReason"
+                value={actionReason}
+                onChange={(e) => {
+                  setActionReason(e.target.value);
+                  if (actionError) {
+                    setActionError("");
+                  }
+                }}
+                placeholder="Опишите причину возврата..."
+                data-testid="input-reject-reason"
+              />
+              {actionError && <p className="text-sm text-destructive">{actionError}</p>}
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="secondary" onClick={resetActionDialog}>
+              Отмена
+            </Button>
+            <Button
+              onClick={handleConfirmAction}
+              disabled={approvePackageMutation.isPending || rejectPackageMutation.isPending}
+              data-testid="button-confirm-action"
+            >
+              {actionType === "reject" ? "Вернуть пакет" : "Утвердить пакет"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
