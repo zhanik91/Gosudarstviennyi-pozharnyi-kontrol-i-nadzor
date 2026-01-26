@@ -48,7 +48,9 @@ const DEFAULT_VISIBLE_COLUMNS = [
 
 type ImportedIncident = {
   rowNumber: number;
+  date?: string;
   dateTime?: string;
+  time?: string;
   incidentType?: string;
   address?: string;
   cause?: string;
@@ -110,14 +112,19 @@ const detectCsvDelimiter = (line: string) => {
   return ";";
 };
 
-const normalizeHeader = (value: string) => value.trim().toLowerCase();
+const normalizeHeader = (value: string) =>
+  value.replace(/^\uFEFF/, "").trim().toLowerCase();
 
 const headerMap: Record<string, keyof ImportedIncident> = {
   дата: "dateTime",
+  время: "time",
+  "дата события": "dateTime",
+  "дата происшествия": "dateTime",
   "дата и время": "dateTime",
   "дата/время": "dateTime",
   тип: "incidentType",
   "тип события": "incidentType",
+  "тип происшествия": "incidentType",
   адрес: "address",
   причина: "cause",
   ущерб: "damage",
@@ -232,6 +239,7 @@ const getErrorMessage = (error: unknown) => {
 
 const buildImportedIncident = (row: Record<string, unknown>, rowNumber: number) => {
   const incident: ImportedIncident = { rowNumber };
+  let timeValue: string | undefined;
   Object.entries(row).forEach(([key, value]) => {
     if (key === "incidentType") {
       incident.incidentType = normalizeIncidentType(String(value ?? ""));
@@ -243,6 +251,10 @@ const buildImportedIncident = (row: Record<string, unknown>, rowNumber: number) 
     }
     if (key === "dateTime") {
       incident.dateTime = parseDateValue(value);
+      return;
+    }
+    if (key === "time") {
+      timeValue = String(value ?? "").trim();
       return;
     }
     if (key === "damage") {
@@ -259,6 +271,17 @@ const buildImportedIncident = (row: Record<string, unknown>, rowNumber: number) 
     }
     (incident as Record<string, unknown>)[key] = typeof value === "string" ? value.trim() : value;
   });
+  if (incident.dateTime && timeValue) {
+    const baseDate = new Date(incident.dateTime);
+    if (!Number.isNaN(baseDate.getTime())) {
+      const match = timeValue.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (match) {
+        const [, hours, minutes, seconds = "0"] = match;
+        baseDate.setHours(Number(hours), Number(minutes), Number(seconds), 0);
+        incident.dateTime = baseDate.toISOString();
+      }
+    }
+  }
   return incident;
 };
 
