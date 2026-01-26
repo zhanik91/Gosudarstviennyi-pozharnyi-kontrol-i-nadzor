@@ -28,49 +28,50 @@ interface ControlledObject {
   riskLevel: 'low' | 'medium' | 'high';
 }
 
-const DEMO_OBJECTS: ControlledObject[] = [
-  {
-    id: 'obj-001',
-    name: 'ТОО "Алматы Плаза"',
-    type: 'Торгово-развлекательный центр',
-    address: 'г. Алматы, ул. Сейфуллина, 517',
-    status: 'compliant',
-    lastInspection: '2024-12-15',
-    nextInspection: '2025-06-15',
-    violations: 0,
-    riskLevel: 'low'
-  },
-  {
-    id: 'obj-002',
-    name: 'АО "КазМунайГаз"',
-    type: 'Промышленное предприятие',
-    address: 'г. Алматы, ул. Кунаева, 16',
-    status: 'violation',
-    lastInspection: '2024-11-20',
-    nextInspection: '2025-02-20',
-    violations: 3,
-    riskLevel: 'high'
-  },
-  {
-    id: 'obj-003',
-    name: 'Гостиница "Рикс"',
-    type: 'Гостиничное предприятие',
-    address: 'г. Алматы, пр. Достык, 36',
-    status: 'inspection',
-    lastInspection: '2024-10-10',
-    nextInspection: '2025-01-10',
-    violations: 1,
-    riskLevel: 'medium'
-  }
-];
-
 export default function ControlledObjectsRegistry() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedObject, setSelectedObject] = useState<ControlledObject | null>(null);
 
+  // Получаем реальные данные из API с параметром фильтрации
+  const queryParams = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
+  const { data: apiObjects = [], isLoading } = useQuery<any[]>({
+    queryKey: ['/api/control-objects', statusFilter],
+    queryFn: async () => {
+      const res = await fetch(`/api/control-objects${queryParams}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch control objects');
+      return res.json();
+    }
+  });
+
+  // Преобразуем данные API в формат компонента (API возвращает {title, details:{...}})
+  // Примечание: Поля lastInspection, nextInspection, violations отсутствуют в схеме БД
+  const objects: ControlledObject[] = apiObjects.map((obj: any) => ({
+    id: obj.id,
+    name: obj.title || 'Без названия',
+    type: obj.details?.category || obj.details?.subcategory || 'Объект',
+    address: obj.details?.address || '',
+    status: mapControlObjectStatus(obj.details?.status),
+    lastInspection: '-',  // Поле отсутствует в текущей схеме
+    nextInspection: '-',  // Поле отсутствует в текущей схеме  
+    violations: 0,        // Поле отсутствует в текущей схеме
+    riskLevel: obj.details?.riskLevel || 'low',
+  }));
+  
+  // Маппинг статусов из схемы БД к статусам UI
+  function mapControlObjectStatus(dbStatus: string | undefined): ControlledObject['status'] {
+    switch (dbStatus) {
+      case 'active': return 'compliant';
+      case 'inactive': 
+      case 'closed': return 'compliant';
+      case 'under_inspection': return 'inspection';
+      case 'violation': return 'violation';
+      default: return 'compliant';
+    }
+  }
+
   // Фильтрация объектов
-  const filteredObjects = DEMO_OBJECTS.filter(obj => {
+  const filteredObjects = objects.filter(obj => {
     const matchesSearch = obj.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          obj.address.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || obj.status === statusFilter;
@@ -117,6 +118,17 @@ export default function ControlledObjectsRegistry() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Загрузка объектов...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Заголовок */}
@@ -124,7 +136,7 @@ export default function ControlledObjectsRegistry() {
         <div>
           <h2 className="text-2xl font-bold">Реестр контролируемых объектов</h2>
           <p className="text-muted-foreground">
-            Перечень объектов пожарного надзора и контроль их состояния
+            Перечень объектов пожарного надзора и контроль их состояния ({filteredObjects.length})
           </p>
         </div>
         <Button data-testid="button-add-object">
@@ -256,13 +268,17 @@ export default function ControlledObjectsRegistry() {
                   <div>
                     <div className="font-medium">Последняя проверка</div>
                     <div className="text-muted-foreground">
-                      {new Date(obj.lastInspection).toLocaleDateString('ru-RU')}
+                      {obj.lastInspection && obj.lastInspection !== '-' 
+                        ? new Date(obj.lastInspection).toLocaleDateString('ru-RU') 
+                        : 'Не указана'}
                     </div>
                   </div>
                   <div>
                     <div className="font-medium">Следующая проверка</div>
                     <div className="text-muted-foreground">
-                      {new Date(obj.nextInspection).toLocaleDateString('ru-RU')}
+                      {obj.nextInspection && obj.nextInspection !== '-' 
+                        ? new Date(obj.nextInspection).toLocaleDateString('ru-RU') 
+                        : 'Не запланирована'}
                     </div>
                   </div>
                 </div>
@@ -343,11 +359,15 @@ export default function ControlledObjectsRegistry() {
                 <div className="space-y-2 text-sm">
                   <div>
                     <strong>Последняя проверка:</strong><br />
-                    {new Date(selectedObject.lastInspection).toLocaleDateString('ru-RU')}
+                    {selectedObject.lastInspection && selectedObject.lastInspection !== '-' 
+                      ? new Date(selectedObject.lastInspection).toLocaleDateString('ru-RU') 
+                      : 'Не указана'}
                   </div>
                   <div>
                     <strong>Следующая проверка:</strong><br />
-                    {new Date(selectedObject.nextInspection).toLocaleDateString('ru-RU')}
+                    {selectedObject.nextInspection && selectedObject.nextInspection !== '-' 
+                      ? new Date(selectedObject.nextInspection).toLocaleDateString('ru-RU') 
+                      : 'Не запланирована'}
                   </div>
                   <div>
                     <strong>Активных нарушений:</strong> {selectedObject.violations}

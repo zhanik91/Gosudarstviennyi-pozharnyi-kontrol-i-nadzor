@@ -212,11 +212,30 @@ export class IncidentController {
       console.log("📝 Creating incident for user:", user);
       console.log("📍 Request body region/city:", req.body.region, req.body.city);
 
-      // Для админа используем значения по умолчанию, если организация не задана
-      const orgUnitId =
-        user?.role === "MCHS" && req.body.orgUnitId
-          ? req.body.orgUnitId
+      // Для админа/MCHS используем значения по умолчанию, если организация не задана
+      let orgUnitId =
+        user?.role === "MCHS" || user?.role === "admin"
+          ? req.body.orgUnitId || user?.orgUnitId
           : user?.orgUnitId;
+      
+      // Если нет orgUnitId, пытаемся найти или создать дефолтную организацию
+      if (!orgUnitId && (user?.role === "admin" || user?.role === "MCHS")) {
+        const orgs = await storage.getOrganizations();
+        if (orgs.length > 0) {
+          orgUnitId = orgs[0].id;
+        } else {
+          // Создаём дефолтную организацию МЧС
+          const defaultOrg = await storage.createOrganization({
+            name: "МЧС Республики Казахстан",
+            type: "MCHS",
+            parentId: null,
+            regionName: "",
+            unitName: "",
+          });
+          orgUnitId = defaultOrg.id;
+        }
+      }
+      
       if (!orgUnitId) {
         return res.status(400).json({ message: "Org unit is required for incident creation" });
       }
