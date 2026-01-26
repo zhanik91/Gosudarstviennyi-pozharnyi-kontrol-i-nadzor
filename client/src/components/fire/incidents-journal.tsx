@@ -555,16 +555,23 @@ export default function IncidentsJournal() {
   };
 
   const handleBulkExport = () => {
-    if (selectedIncidents.length === 0) return;
+    const dataToExport = selectedIncidents.length > 0
+      ? incidents.filter((incident: Incident) => selectedIncidents.includes(incident.id))
+      : incidents;
 
-    const selectedData = incidents.filter((incident: Incident) =>
-      selectedIncidents.includes(incident.id)
-    );
+    if (dataToExport.length === 0) {
+      toast({
+        title: "Нет данных",
+        description: "Нет записей для экспорта",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const csvContent =
       "data:text/csv;charset=utf-8," +
       "Дата,Тип,Адрес,Причина,Ущерб,Погибшие,Травмированные\n" +
-      selectedData
+      dataToExport
         .map(
           (incident: Incident) =>
             `${incident.dateTime},${incident.incidentType},${incident.address},${formatCodeLabel(
@@ -585,7 +592,9 @@ export default function IncidentsJournal() {
 
     toast({
       title: "Успех",
-      description: `Экспортировано ${selectedIncidents.length} записей`,
+      description: selectedIncidents.length > 0 
+        ? `Экспортировано ${selectedIncidents.length} выбранных записей`
+        : `Экспортировано ${dataToExport.length} записей`,
     });
   };
 
@@ -1226,7 +1235,6 @@ export default function IncidentsJournal() {
                   variant="outline"
                   size="sm"
                   onClick={handleBulkExport}
-                  disabled={selectedIncidents.length === 0}
                   data-testid="button-export"
                 >
                   <FileDown className="h-4 w-4 mr-2" />
