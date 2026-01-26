@@ -146,7 +146,8 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
   const userRegion = (user as any)?.region || "";
   const userDistrict = (user as any)?.district || "";
   const isDistrictUser = (user as any)?.role === "DISTRICT";
-  const isMchsUser = (user as any)?.role === "MCHS";
+  const userRole = (user as any)?.role;
+  const isMchsUser = userRole === "MCHS" || userRole === "admin";
 
   const isEditMode = !!incidentId;
 
