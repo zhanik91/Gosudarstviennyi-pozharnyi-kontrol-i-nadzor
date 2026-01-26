@@ -1244,10 +1244,14 @@ export class IncidentStorage {
       endDate.setHours(23, 59, 59, 999);
       conditions.push(gte(incidents.dateTime, startDate));
       conditions.push(lte(incidents.dateTime, endDate));
+      console.log(`[getReportDataset] Filtered by period: ${params.period} (${startDate.toISOString()} - ${endDate.toISOString()})`);
     }
 
-    if (params.region) {
+    if (params.region && params.region !== "Республика Казахстан (Свод)") {
       conditions.push(eq(incidents.region, params.region));
+      console.log(`[getReportDataset] Filtered by region: ${params.region}`);
+    } else {
+      console.log(`[getReportDataset] No region filter applied (Republic-wide)`);
     }
 
     const incidentRows = await db
@@ -1256,6 +1260,7 @@ export class IncidentStorage {
         incidentType: incidents.incidentType,
         locality: incidents.locality,
         region: incidents.region,
+        dateTime: incidents.dateTime,
         causeCode: incidents.causeCode,
         causeDetailed: incidents.causeDetailed,
         objectCode: incidents.objectCode,
@@ -1293,6 +1298,9 @@ export class IncidentStorage {
       })
       .from(incidents)
       .where(and(...conditions));
+
+    console.log(`[getReportDataset] Query conditions:`, conditions.map(c => c?.toString() || 'unknown'));
+    console.log(`[getReportDataset] Found ${incidentRows.length} incidents`);
 
     const incidentIds = incidentRows.map((row) => row.id);
     const victimRows = incidentIds.length
@@ -1350,22 +1358,27 @@ export class IncidentStorage {
     switch (params.form) {
       case "1-osp": {
         const coIncidents = incidentRows.filter((incident) => incident.incidentType === "co_nofire");
+        const fireIncidentsForForm1 = incidentRows.filter((incident) => 
+          ["fire", "steppe_fire", "nonfire", "steppe_smolder"].includes(incident.incidentType ?? "")
+        );
         const values: Record<string, { total: number; urban: number; rural: number }> = {};
 
-        values["1"] = sumByLocality(fireIncidents, () => 1);
-        values["2"] = sumByLocality(fireIncidents, (incident) => Number(incident.damage || 0));
-        values["3"] = sumByLocality(fireIncidents, (incident) => Number(incident.deathsTotal || 0));
-        values["3.1"] = sumByLocality(fireIncidents, (incident) => Number(incident.deathsChildren || 0));
-        values["3.2"] = sumByLocality(fireIncidents, (incident) => Number(incident.deathsDrunk || 0));
+        values["1"] = sumByLocality(fireIncidentsForForm1, () => 1);
+        values["2"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.damage || 0));
+        values["3"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.deathsTotal || 0));
+        values["3.1"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.deathsChildren || 0));
+        values["3.2"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.deathsDrunk || 0));
         values["4"] = sumByLocality(coIncidents, (incident) => Number(incident.deathsCOTotal || 0));
         values["4.1"] = sumByLocality(coIncidents, (incident) => Number(incident.deathsCOChildren || 0));
-        values["5"] = sumByLocality(fireIncidents, (incident) => Number(incident.injuredTotal || 0));
-        values["5.1"] = sumByLocality(fireIncidents, (incident) => Number(incident.injuredChildren || 0));
+        values["5"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.injuredTotal || 0));
+        values["5.1"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.injuredChildren || 0));
         values["6"] = sumByLocality(coIncidents, (incident) => Number(incident.injuredCOTotal || 0));
         values["6.1"] = sumByLocality(coIncidents, (incident) => Number(incident.injuredCOChildren || 0));
-        values["7"] = sumByLocality(fireIncidents, (incident) => Number(incident.savedPeopleTotal || 0));
-        values["7.1"] = sumByLocality(fireIncidents, (incident) => Number(incident.savedPeopleChildren || 0));
-        values["8"] = sumByLocality(fireIncidents, (incident) => Number(incident.savedProperty || 0));
+        values["7"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.savedPeopleTotal || 0));
+        values["7.1"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.savedPeopleChildren || 0));
+        values["8"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.savedProperty || 0));
+
+        console.log(`[getReportFormData] Form 1-OSP aggregated values:`, values);
 
         const attachValues = (rows: typeof FORM_1_OSP_ROWS) =>
           rows.map((row) => ({
