@@ -18,10 +18,12 @@ type SaveStatus = "draft" | "submitted";
 export function useReportForm<T>({
   formId,
   period,
+  region,
   extractData,
 }: {
   formId: string;
   period?: string;
+  region?: string;
   extractData: (payload: ReportResponse<T>["data"]) => Record<string, any>;
 }) {
   const { toast } = useToast();
@@ -30,9 +32,17 @@ export function useReportForm<T>({
   const initialLoadRef = useRef(false);
 
   const { data, isLoading } = useQuery<ReportResponse<T>>({
-    queryKey: ["/api/reports", formId, period],
+    queryKey: ["/api/reports", formId, period, region],
     queryFn: async () => {
-      const response = await fetch(`/api/reports?form=${formId}&period=${period}`);
+      const params = new URLSearchParams();
+      params.set("form", formId);
+      if (period) {
+        params.set("period", period);
+      }
+      if (region) {
+        params.set("region", region);
+      }
+      const response = await fetch(`/api/reports?${params.toString()}`);
       return response.json();
     },
     enabled: Boolean(period),
@@ -42,7 +52,7 @@ export function useReportForm<T>({
     setLoaded(false);
     setReportData({});
     initialLoadRef.current = false;
-  }, [formId, period]);
+  }, [formId, period, region]);
 
   useEffect(() => {
     if (!data?.data) {

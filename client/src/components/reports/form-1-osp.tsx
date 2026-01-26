@@ -23,11 +23,11 @@ interface ValidationError {
 
 export default function Form1OSP() {
   const now = new Date();
-  const [reportMonth] = useState(
+  const [reportMonth, setReportMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   );
-  const [reportYear] = useState(now.getFullYear().toString());
-  const [region] = useState("Республика Казахстан (Свод)");
+  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
+  const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
@@ -36,6 +36,7 @@ export default function Form1OSP() {
   const { reportData, isLoading, saveReport } = useReportForm<RowData>({
     formId: "1-osp",
     period,
+    region,
     extractData: (payload) => {
       const rows = payload?.rows ?? [];
       const map: Record<string, RowData> = {};
@@ -310,7 +311,7 @@ export default function Form1OSP() {
             <div>
               <Label>Форма отчета</Label>
               <Select defaultValue="1-osp" disabled>
-                <SelectTrigger disabled>
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,8 +322,8 @@ export default function Form1OSP() {
             <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Отчетный период</Label>
-                <Select value={reportMonth} disabled>
-                  <SelectTrigger disabled>
+                <Select value={reportMonth} onValueChange={setReportMonth}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Месяц" />
                   </SelectTrigger>
                   <SelectContent>
@@ -334,8 +335,8 @@ export default function Form1OSP() {
               </div>
               <div className="w-24">
                 <Label>&nbsp;</Label>
-                <Select value={reportYear} disabled>
-                  <SelectTrigger disabled>
+                <Select value={reportYear} onValueChange={setReportYear}>
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -348,10 +349,10 @@ export default function Form1OSP() {
             </div>
             <div>
               <Label>Регион</Label>
-              <Select value={region} disabled>
-                <SelectTrigger disabled>
-                  <SelectValue />
-                </SelectTrigger>
+                <Select value={region} onValueChange={setRegion}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                 <SelectContent>
                   {regions.map(r => (
                     <SelectItem key={r} value={r}>{r}</SelectItem>

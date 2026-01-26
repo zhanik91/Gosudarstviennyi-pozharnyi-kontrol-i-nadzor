@@ -1170,6 +1170,7 @@ export class IncidentStorage {
   private async getReportDataset(params: {
     orgId: string;
     period?: string;
+    region?: string;
     includeChildren?: boolean;
     scopeUser?: ScopeUser;
   }) {
@@ -1187,6 +1188,10 @@ export class IncidentStorage {
       endDate.setHours(23, 59, 59, 999);
       conditions.push(gte(incidents.dateTime, startDate));
       conditions.push(lte(incidents.dateTime, endDate));
+    }
+
+    if (params.region) {
+      conditions.push(eq(incidents.region, params.region));
     }
 
     const incidentRows = await db
@@ -1258,6 +1263,7 @@ export class IncidentStorage {
     orgId: string;
     period?: string;
     form?: string;
+    region?: string;
     includeChildren?: boolean;
     scopeUser?: ScopeUser;
   }): Promise<any> {
