@@ -13,6 +13,8 @@ import { Columns, Edit, Trash2, Search, FileDown, Filter, Plus, X } from "lucide
 import { ErrorDisplay } from "@/components/ui/error-boundary";
 import { DateRangeField } from "@/components/ui/date-range-field";
 import { usePeriodStore } from "@/hooks/use-period-store";
+import { useAuth } from "@/hooks/useAuth";
+import { REGION_NAMES } from "@/data/kazakhstan-data";
 import type { Incident } from "@shared/schema";
 import * as XLSX from "xlsx";
 import IncidentFormOSP from "./incident-form-osp";
@@ -241,6 +243,10 @@ export default function IncidentsJournal() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { store, updatePreset } = usePeriodStore();
+  const { user } = useAuth();
+  const userRole = (user as any)?.role;
+  const isMchsUser = userRole === "MCHS" || userRole === "admin";
+  const userRegion = (user as any)?.region || "";
 
   const [filters, setFilters] = useState({
     searchQuery: "",
@@ -300,6 +306,14 @@ export default function IncidentsJournal() {
   useEffect(() => {
     updatePreset("journal", { from: filters.dateFrom, to: filters.dateTo });
   }, [filters.dateFrom, filters.dateTo, updatePreset]);
+
+  useEffect(() => {
+    if (!userRegion || isMchsUser) return;
+    setFilters((prev) => ({
+      ...prev,
+      region: userRegion,
+    }));
+  }, [isMchsUser, userRegion]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1023,13 +1037,21 @@ export default function IncidentsJournal() {
 
                               <div className="flex flex-col gap-1">
                                 <Label htmlFor="region-filter" className="text-sm">Регион</Label>
-                                <Input
+                                <select
                                   id="region-filter"
                                   value={filters.region}
                                   onChange={(e) => setFilters({ ...filters, region: e.target.value })}
-                                  placeholder="Регион"
-                                  data-testid="input-region"
-                                />
+                                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                  disabled={!isMchsUser && Boolean(userRegion)}
+                                  data-testid="select-region"
+                                >
+                                  <option value="">Все регионы</option>
+                                  {(isMchsUser ? REGION_NAMES : userRegion ? [userRegion] : REGION_NAMES).map((region) => (
+                                    <option key={region} value={region}>
+                                      {region}
+                                    </option>
+                                  ))}
+                                </select>
                               </div>
 
                               <div className="pt-2 flex justify-end">
@@ -1042,7 +1064,7 @@ export default function IncidentsJournal() {
                                         dateFrom: "",
                                         dateTo: "",
                                         incidentType: "",
-                                        region: "",
+                                        region: isMchsUser ? "" : userRegion,
                                       })
                                     }
                                   >

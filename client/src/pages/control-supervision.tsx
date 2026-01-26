@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
+import { useAuth } from "@/hooks/useAuth";
 
 /** ===== Типы ===== */
 type Status = "Активный" | "Не функционирует";
@@ -212,6 +213,13 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 
 /** ===== Компонент страницы ===== */
 export default function ControlSupervisionPage() {
+  const { user } = useAuth();
+  const userRole = (user as any)?.role;
+  const isMchsUser = userRole === "MCHS" || userRole === "admin";
+  const userRegion = (user as any)?.region || "";
+  const userDistrict = (user as any)?.district || "";
+  const isDistrictUser = !isMchsUser && Boolean(userDistrict);
+
   // данные
   const [rows, setRows] = useState<ControlledObject[]>([]);
   useEffect(() => {
@@ -241,8 +249,8 @@ export default function ControlSupervisionPage() {
 
   const blank: ControlledObject = {
     id:"",
-    region: REGIONS[0],
-    district:"",
+    region: userRegion || REGIONS[0],
+    district: userDistrict || "",
     subjectName:"",
     subjectBIN:"",
     objectName:"",
@@ -265,6 +273,38 @@ export default function ControlSupervisionPage() {
 
   // импорт/экспорт
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user || isMchsUser || !userRegion) return;
+    setRegionFilter(userRegion);
+    setDistrictFilter(userDistrict || "Все");
+  }, [isMchsUser, user, userDistrict, userRegion]);
+
+  const availableRegions = useMemo(() => {
+    if (isMchsUser || !userRegion) return REGIONS;
+    return [userRegion];
+  }, [isMchsUser, userRegion]);
+
+  const availableDistricts = useMemo(() => {
+    if (isMchsUser) {
+      return regionFilter !== "Все" ? (ADMIN2[regionFilter] || []) : [];
+    }
+    if (!userRegion) return [];
+    if (userDistrict) return [userDistrict];
+    return ADMIN2[userRegion] || [];
+  }, [isMchsUser, regionFilter, userDistrict, userRegion]);
+
+  const availableFormRegions = useMemo(() => {
+    if (isMchsUser || !userRegion) return REGIONS;
+    return [userRegion];
+  }, [isMchsUser, userRegion]);
+
+  const availableFormDistricts = useMemo(() => {
+    if (isMchsUser) return ADMIN2[form.region] || [];
+    if (!userRegion) return [];
+    if (userDistrict) return [userDistrict];
+    return ADMIN2[userRegion] || [];
+  }, [form.region, isMchsUser, userDistrict, userRegion]);
 
   /** ===== Фильтрация ===== */
   const filtered = useMemo(() => {
@@ -296,6 +336,12 @@ export default function ControlSupervisionPage() {
 
   const onSave = () => {
     const prepared: ControlledObject = { ...form, id: form.id || crypto.randomUUID() };
+    if (!isMchsUser && userRegion) {
+      prepared.region = userRegion;
+      if (userDistrict) {
+        prepared.district = userDistrict;
+      }
+    }
     const errs = validate(prepared);
     setErrors(errs);
     if (Object.keys(errs).length) return;
@@ -430,7 +476,8 @@ export default function ControlSupervisionPage() {
             <button
               className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700"
               onClick={() => {
-                setRegionFilter("Все"); setDistrictFilter("Все");
+                setRegionFilter(isMchsUser ? "Все" : (userRegion || "Все"));
+                setDistrictFilter(isMchsUser ? "Все" : (userDistrict || "Все"));
                 setLevelFilter("Все"); setCatFilter("Все");
                 setStatusFilter("Все"); setQ("");
               }}
@@ -453,10 +500,11 @@ export default function ControlSupervisionPage() {
               <select
                 value={regionFilter}
                 onChange={(e) => { setRegionFilter(e.target.value); setDistrictFilter("Все"); }}
+                disabled={!isMchsUser && Boolean(userRegion)}
                 className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
               >
                 <option>Все</option>
-                {REGIONS.map(r => <option key={r}>{r}</option>)}
+                {availableRegions.map(r => <option key={r}>{r}</option>)}
               </select>
             </div>
 
@@ -465,10 +513,11 @@ export default function ControlSupervisionPage() {
               <select
                 value={districtFilter}
                 onChange={(e) => setDistrictFilter(e.target.value)}
+                disabled={isDistrictUser}
                 className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
               >
                 <option>Все</option>
-                {(regionFilter !== "Все" ? (ADMIN2[regionFilter] || []) : []).map(d => <option key={d}>{d}</option>)}
+                {availableDistricts.map(d => <option key={d}>{d}</option>)}
               </select>
             </div>
 
@@ -625,8 +674,9 @@ export default function ControlSupervisionPage() {
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                 value={form.region}
                 onChange={(e) => setForm(s => ({...s, region: e.target.value, district:""}))}
+                disabled={!isMchsUser && Boolean(userRegion)}
               >
-                {REGIONS.map(r => <option key={r}>{r}</option>)}
+                {availableFormRegions.map(r => <option key={r}>{r}</option>)}
               </select>
             </Field>
             <Field label="Район / ГОС">
@@ -634,9 +684,10 @@ export default function ControlSupervisionPage() {
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                 value={form.district}
                 onChange={(e) => setForm(s => ({...s, district: e.target.value}))}
+                disabled={isDistrictUser}
               >
                 <option value="">— выберите —</option>
-                {(ADMIN2[form.region] || []).map(d => <option key={d} value={d}>{d}</option>)}
+                {availableFormDistricts.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </Field>
 
