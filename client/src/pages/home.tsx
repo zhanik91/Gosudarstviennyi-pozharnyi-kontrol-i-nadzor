@@ -5,7 +5,7 @@ import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
-import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell, Map } from "lucide-react";
+import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 export default function Home() {
@@ -86,6 +86,7 @@ export default function Home() {
                 href: "/fire-module"
               }}
               secondaryActions={[
+                { label: "Карты", href: "/fire-module?tab=maps" },
                 { label: "Отчёты", href: "/fire-module?tab=reports" },
                 { label: "Журнал", href: "/fire-module?tab=journal" }
               ]}
@@ -137,22 +138,6 @@ export default function Home() {
               secondaryActions={[
                 { label: "Уведомления", href: "/notifications" },
                 { label: "Согласования", href: "/notifications" }
-              ]}
-            />
-
-            <ModuleCard
-              icon={Map}
-              iconBg="bg-blue-500/20"
-              iconColor="text-blue-400"
-              title="Интерактивные карты"
-              description="Геоинформационная система, визуализация происшествий по регионам, прогнозирование рисков"
-              primaryAction={{
-                label: "Открыть карты",
-                href: "/maps"
-              }}
-              secondaryActions={[
-                { label: "Карта рисков", href: "/maps" },
-                { label: "Прогнозы", href: "/maps" }
               ]}
             />
 
