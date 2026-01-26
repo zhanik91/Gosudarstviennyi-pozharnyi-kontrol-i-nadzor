@@ -429,3 +429,6 @@ export type InsertPackage = z.infer<typeof insertPackageSchema>;
 
 // Export document schemas
 export * from './document-schema';
+
+// Export chat schemas for AI assistant
+export * from './models/chat';

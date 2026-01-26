@@ -170,6 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === AI Chat Integration ===
+  const { registerChatRoutes } = await import('./replit_integrations/chat');
+  registerChatRoutes(app);
+
   const httpServer = createServer(app);
   return httpServer;
 }

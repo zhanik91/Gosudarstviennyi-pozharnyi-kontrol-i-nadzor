@@ -58,7 +58,7 @@
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.39.1",
-    "drizzle-zod": "^0.7.0",
+    "drizzle-zod": "^0.7.1",
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
     "express-rate-limit": "^8.0.1",
@@ -72,7 +72,10 @@
     "nanoid": "^5.1.5",
     "next-themes": "^0.4.6",
     "nodemailer": "^7.0.5",
+    "openai": "^6.16.0",
     "openid-client": "^6.6.4",
+    "p-limit": "^7.2.0",
+    "p-retry": "^7.1.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "qrcode": "^1.5.4",
@@ -91,8 +94,8 @@
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "xlsx": "^0.18.5",
-    "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod": "^3.25.76",
+    "zod-validation-error": "^3.5.4"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
@@ -111,10 +114,10 @@
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
-    "vitest": "^1.6.0",
     "tsx": "^4.19.1",
     "typescript": "^5.9.3",
-    "vite": "^4.5.3"
+    "vite": "^4.5.3",
+    "vitest": "^1.6.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

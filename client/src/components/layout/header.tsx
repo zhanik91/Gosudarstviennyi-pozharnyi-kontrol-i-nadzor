@@ -23,6 +23,8 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   Bell,
   BookOpen,
+  Bot,
+  Calculator,
   ChartBarBig,
   CircleUser,
   ClipboardList,
@@ -120,6 +122,23 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         description: "Организации, контакты и интеграции",
         href: "/crm",
         icon: Sparkles,
+      },
+    ],
+  },
+  {
+    label: "Инструменты",
+    items: [
+      {
+        title: "Калькуляторы",
+        description: "Расчёты огнетушителей, категорий помещений и НГПС/ПСС",
+        href: "/calculators",
+        icon: Calculator,
+      },
+      {
+        title: "ИИ-Ассистент",
+        description: "Консультации по НПА РК и пожарной безопасности",
+        href: "/ai-assistant",
+        icon: Bot,
       },
     ],
   },

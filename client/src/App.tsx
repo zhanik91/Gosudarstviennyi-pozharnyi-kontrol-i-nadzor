@@ -22,6 +22,11 @@ import Home from "@/pages/home";
 import FireModule from "@/pages/fire-module";
 import ControlSupervision from "@/pages/control-supervision";
 import LoginPage from "@/pages/login";
+import CalculatorsPage from "@/pages/calculators";
+import FireExtinguishersCalculator from "@/pages/calculators/fire-extinguishers";
+import NGPSCalculator from "@/pages/calculators/ngps";
+import ExplosionCategoryCalculator from "@/pages/calculators/explosion-category";
+import AIAssistantPage from "@/pages/ai-assistant";
 
 type ProtectedRouteProps = {
   component: ComponentType;
@@ -96,6 +101,11 @@ function Router() {
       <Route path="/crm" component={protectedRoute(CRMDashboard)} />
       <Route path="/analytics" component={protectedRoute(AdvancedAnalytics)} />
       <Route path="/admin" component={protectedRoute(AdminPanel)} />
+      <Route path="/calculators" component={protectedRoute(CalculatorsPage)} />
+      <Route path="/calculators/fire-extinguishers" component={protectedRoute(FireExtinguishersCalculator)} />
+      <Route path="/calculators/ngps" component={protectedRoute(NGPSCalculator)} />
+      <Route path="/calculators/explosion-category" component={protectedRoute(ExplosionCategoryCalculator)} />
+      <Route path="/ai-assistant" component={protectedRoute(AIAssistantPage)} />
       <Route component={protectedRoute(NotFound)} />
     </Switch>
   );
