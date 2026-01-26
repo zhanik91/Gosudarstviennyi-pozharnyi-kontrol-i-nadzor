@@ -104,11 +104,7 @@ export default function Home() {
               }}
               secondaryActions={[
                 { label: "Реестр объектов", href: "/controlled-objects?tab=registry" },
- codex/add-tabs-for-4xr5gw
-                { label: "Списки проверок", href: "/controlled-objects?tab=preventive" }
-
                 { label: "Списки профилактического контроля и надзора", href: "/controlled-objects?tab=preventive" }
- main
               ]}
             />
 
