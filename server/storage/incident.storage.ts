@@ -1359,7 +1359,7 @@ export class IncidentStorage {
       case "1-osp": {
         const coIncidents = incidentRows.filter((incident) => incident.incidentType === "co_nofire");
         const fireIncidentsForForm1 = incidentRows.filter((incident) => 
-          ["fire", "steppe_fire", "nonfire", "steppe_smolder"].includes(incident.incidentType ?? "")
+          ["fire", "steppe_fire", "nonfire", "steppe_smolder", "co_nofire"].includes(incident.incidentType ?? "")
         );
         const values: Record<string, { total: number; urban: number; rural: number }> = {};
 
