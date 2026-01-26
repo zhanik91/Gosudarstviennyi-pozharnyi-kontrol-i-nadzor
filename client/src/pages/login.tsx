@@ -219,7 +219,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-center text-sm text-slate-500 dark:text-slate-400 pt-8">
-                  <p>© 2025 Комитет противопожарной службы МЧС РК</p>
+                  <p>© 2026 Комитет противопожарной службы МЧС РК</p>
                 </div>
               </motion.div>
             </div>
