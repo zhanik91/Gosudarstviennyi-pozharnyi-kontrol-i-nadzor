@@ -73,8 +73,14 @@ export class ReportController {
   // Получение статистики дашборда
   async getDashboardStats(req: Request, res: Response) {
     try {
+      const now = new Date();
+      const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const incidentStats = await storage.getIncidentStats({
+        period,
+        scopeUser: toScopeUser(req.user),
+      });
       const stats = {
-        incidents: await storage.getIncidentsCount(),
+        incidents: incidentStats.totalIncidents,
         objects: await storage.getObjectsCount(),
         reports: await storage.getReportsCount(),
         users: await storage.getUsersCount()

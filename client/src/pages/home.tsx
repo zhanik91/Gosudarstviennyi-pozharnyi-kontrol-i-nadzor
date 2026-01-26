@@ -5,7 +5,7 @@ import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
-import { Shield, Building, Activity, Package, Users, FileCheck } from "lucide-react";
+import { Shield, Building, Activity, Users, FileCheck } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 export default function Home() {
@@ -135,25 +135,18 @@ export default function Home() {
               dataTestId="stat-incidents"
             />
             <StatsCard
-              icon={Package}
+              icon={Building}
               iconColor="text-accent"
-              label="Активные пакеты"
-              value={renderMetricValue(metrics?.packages)}
-              dataTestId="stat-packages"
+              label="Объекты на учёте"
+              value={renderMetricValue(metrics?.objects)}
+              dataTestId="stat-objects"
             />
             <StatsCard
               icon={Users}
               iconColor="text-green-400"
-              label="Пользователи онлайн"
-              value={renderMetricValue(metrics?.usersOnline)}
+              label="Пользователей в системе"
+              value={renderMetricValue(metrics?.users)}
               dataTestId="stat-users"
-            />
-            <StatsCard
-              icon={FileCheck}
-              iconColor="text-blue-400"
-              label="Отчёты готовы"
-              value={renderMetricValue(metrics?.reportsReady)}
-              dataTestId="stat-reports"
             />
           </div>
         </div>
