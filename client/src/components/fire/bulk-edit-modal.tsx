@@ -50,6 +50,9 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, selectedCo
         description: `Обновлено ${selectedCount} записей`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
       onClose();
       resetForm();
     },

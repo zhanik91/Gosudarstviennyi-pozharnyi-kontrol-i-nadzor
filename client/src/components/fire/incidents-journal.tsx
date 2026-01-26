@@ -479,6 +479,9 @@ export default function IncidentsJournal() {
       // Обновляем и общий список, и поиск
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
     },
     onError: (err: any) => {
       toast({
@@ -584,6 +587,9 @@ export default function IncidentsJournal() {
       setSelectedIncidents([]);
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
     }
   };
 
@@ -678,6 +684,9 @@ export default function IncidentsJournal() {
 
         queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
         queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
       } catch (err) {
         toast({
           title: "Ошибка импорта",
@@ -1476,6 +1485,9 @@ export default function IncidentsJournal() {
                   setIsModalOpen(false);
                   queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
                   queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
                 }}
               />
             </div>
