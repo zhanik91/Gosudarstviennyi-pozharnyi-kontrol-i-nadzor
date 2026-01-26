@@ -306,18 +306,7 @@ export default function Form1OSP() {
           {isLoading && (
             <div className="text-sm text-muted-foreground">Загрузка данных...</div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
-            <div>
-              <Label>Форма отчета</Label>
-              <Select defaultValue="1-osp" disabled>
-                <SelectTrigger disabled>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-osp">Приложение 1 (Общие сведения)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-2">
             <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Отчетный период</Label>
