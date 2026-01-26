@@ -103,6 +103,19 @@ export function LeafletMap({
   const [newMarkerType, setNewMarkerType] = useState<'incident' | 'object'>('incident');
   const [selectedExistingId, setSelectedExistingId] = useState<string>('');
   const [isMarkMode, setIsMarkMode] = useState(false);
+  
+  // Refs для отслеживания текущего состояния (должны быть объявлены ДО useEffect)
+  const isMarkModeRef = useRef(isMarkMode);
+  const editableRef = useRef(editable);
+  
+  // Синхронизируем refs с текущими значениями
+  useEffect(() => {
+    isMarkModeRef.current = isMarkMode;
+  }, [isMarkMode]);
+  
+  useEffect(() => {
+    editableRef.current = editable;
+  }, [editable]);
 
   const createIncidentIcon = useCallback(() => {
     const L = window.L;
@@ -147,21 +160,53 @@ export function LeafletMap({
 
     markersLayerRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
-
-    if (editable || isMarkMode) {
-      map.on('click', (e: any) => {
-        const { lat, lng } = e.latlng;
-        setClickedPosition([lat, lng]);
-        setShowAddDialog(true);
-        onMapClick?.(lat, lng);
-      });
-    }
+    
+    // Устанавливаем Leaflet обработчик клика сразу при инициализации
+    map.on('click', (e: any) => {
+      // Проверяем режим через ref для актуального значения
+      if (!isMarkModeRef.current && !editableRef.current) return;
+      
+      const { lat, lng } = e.latlng;
+      setClickedPosition([lat, lng]);
+      setShowAddDialog(true);
+    });
 
     return () => {
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, [editable, onMapClick]);
+  }, []);
+  
+  // DOM-обработчик клика как резервный вариант
+  const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Проверяем режим отметки или редактирования
+    if ((!isMarkMode && !editable) || !mapInstanceRef.current) return;
+    
+    // Проверяем, что клик не на элементах управления
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('.leaflet-control') || target.closest('[role="dialog"]')) {
+      return;
+    }
+    
+    // Leaflet обработчик уже должен был сработать, но на всякий случай проверяем
+    // Не вызываем повторно если диалог уже открыт
+    if (showAddDialog) return;
+    
+    // Получаем координаты клика относительно контейнера карты
+    const rect = mapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Преобразуем пиксели в координаты карты
+    const map = mapInstanceRef.current;
+    const point = map.containerPointToLatLng([x, y]);
+    
+    setClickedPosition([point.lat, point.lng]);
+    setShowAddDialog(true);
+    onMapClick?.(point.lat, point.lng);
+  }, [isMarkMode, editable, onMapClick, showAddDialog]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
@@ -398,14 +443,14 @@ export function LeafletMap({
                 <SelectContent className="max-h-[300px]">
                   {existingItems.length > 0 ? (
                     existingItems.map((item: any) => (
-                      <SelectItem key={item.id} value={item.id}>
+                      <SelectItem key={String(item.id)} value={String(item.id)}>
                         {newMarkerType === 'incident' 
-                          ? `${new Date(item.dateTime).toLocaleDateString()} - ${item.address || 'Без адреса'}`
+                          ? `${item.dateTime ? new Date(item.dateTime).toLocaleDateString('ru-RU') : 'Дата неизвестна'} - ${item.address || 'Без адреса'}`
                           : item.name || item.title || 'Без названия'}
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="none" disabled>Список пуст</SelectItem>
+                    <SelectItem value="__empty__">Список пуст</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -423,7 +468,7 @@ export function LeafletMap({
               }}>
                 Отмена
               </Button>
-              <Button onClick={handleAddMarker} disabled={!selectedExistingId}>
+              <Button onClick={handleAddMarker} disabled={!selectedExistingId || selectedExistingId === '__empty__'}>
                 Сохранить отметку
               </Button>
             </div>
@@ -431,7 +476,11 @@ export function LeafletMap({
         </DialogContent>
       </Dialog>
 
-      <div ref={mapRef} className="w-full h-full min-h-[500px]" />
+      <div 
+        ref={mapRef} 
+        className={`w-full h-full min-h-[500px] ${isMarkMode ? 'cursor-crosshair' : ''}`}
+        onClick={handleContainerClick}
+      />
     </div>
   );
 }
