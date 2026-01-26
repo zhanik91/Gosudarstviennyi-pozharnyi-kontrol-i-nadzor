@@ -8,6 +8,24 @@ The portal handles fire incident logging, generates official statistical reports
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Updates (January 26, 2026)
+
+### Калькуляторы и ИИ-Ассистент
+- **КАЛЬКУЛЯТОРЫ**: Добавлены 3 калькулятора пожарной безопасности:
+  1. Калькулятор первичных средств пожаротушения (огнетушители) - по ППБ РК, СТ РК 1487-2006
+  2. Калькулятор требований НГПС/ПСС - по Приказу МЧС №281
+  3. Калькулятор категории взрывопожароопасности - по СП РК 2.02-101-2022
+- **ИИ-АССИСТЕНТ**: Добавлен чат-бот с GPT-4.1 для консультаций по НПА РК и пожарной безопасности
+- **НАВИГАЦИЯ**: Добавлен раздел "Инструменты" в главное меню
+- **ИНТЕГРАЦИЯ**: Подключен OpenAI через Replit AI Integrations
+
+### Технические детали
+- Созданы страницы калькуляторов в client/src/pages/calculators/
+- Добавлен AI Assistant в client/src/pages/ai-assistant.tsx
+- Backend для чата в server/replit_integrations/chat/
+- Таблицы conversations и messages для хранения истории чата
+- Исправлена ошибка отсутствующей колонки org_unit_id в packages
+
 ## Recent Updates (January 27, 2025)
 
 ### Полное выполнение плана улучшений ✅
