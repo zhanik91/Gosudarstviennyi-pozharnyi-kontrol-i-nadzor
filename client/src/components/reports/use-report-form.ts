@@ -10,7 +10,6 @@ interface ReportResponse<T> {
     rows?: T[];
     steppeRows?: T[];
     ignitionRows?: T[];
-    savedData?: Record<string, any> | null;
   };
 }
 
@@ -51,12 +50,9 @@ export function useReportForm<T>({
     if (!data?.data) {
       return;
     }
-    const savedData = data.data.savedData ?? null;
     const computed = extractData(data.data);
-    const nextData =
-      savedData && Object.keys(savedData).length > 0 ? savedData : computed;
-    setReportData(nextData);
-    lastSavedSignatureRef.current = stableSignature(nextData);
+    setReportData(computed);
+    lastSavedSignatureRef.current = stableSignature(computed);
     setLoaded(true);
     initialLoadRef.current = true;
   }, [data, extractData]);
@@ -71,7 +67,6 @@ export function useReportForm<T>({
       body: JSON.stringify({
         form: formId,
         period,
-        data: reportData,
         status,
       }),
     });
