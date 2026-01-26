@@ -322,10 +322,10 @@ export default function ReportsDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-50 dark:bg-blue-900/20">
+          <Card className="bg-card">
             <CardContent className="p-6">
-              <h3 className="font-semibold mb-2">Требования к отчетности</h3>
-              <div className="text-sm text-muted-foreground space-y-1">
+              <h3 className="font-semibold mb-2 text-foreground">Требования к отчетности</h3>
+              <div className="text-sm text-foreground space-y-1">
                 <p>• Формы заполняются на государственном и русском языках</p>
                 <p>• Ущерб указывается в тысячах тенге с точностью до одного десятичного знака</p>
                 <p>• Формы подписываются руководителем департамента</p>
