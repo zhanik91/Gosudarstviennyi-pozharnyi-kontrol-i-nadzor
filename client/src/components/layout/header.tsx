@@ -59,9 +59,9 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Layers,
       },
       {
-        title: "CRM и документооборот",
-        description: "Хранилище документов, согласования и шаблоны",
-        href: "/document-management",
+        title: "Нормативные документы",
+        description: "Ключевые НПА, методики, приказы и регламенты",
+        href: "/regulatory-documents",
         icon: FileText,
       },
       {
