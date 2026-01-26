@@ -100,12 +100,12 @@ export function registerBulkIncidentRoutes(app: Express) {
       }
 
       const results = [];
-      const errors: { rowNumber: number; message: string }[] = [];
+      const errors: { rowNumber: number; error: string }[] = [];
 
       for (let index = 0; index < incidents.length; index += 1) {
         const row = incidents[index];
         if (!row || typeof row !== "object") {
-          errors.push({ rowNumber: index + 1, message: "Некорректная структура строки" });
+          errors.push({ rowNumber: index + 1, error: "Некорректная структура строки" });
           continue;
         }
         const { rowNumber: sourceRowNumber, ...rowData } = row as Record<string, any>;
@@ -116,22 +116,22 @@ export function registerBulkIncidentRoutes(app: Express) {
         const dateTime = parseDateInput(rowData?.dateTime);
 
         if (!incidentType) {
-          errors.push({ rowNumber, message: "Не указан тип происшествия" });
+          errors.push({ rowNumber, error: "Не указан тип происшествия" });
           continue;
         }
         if (!address) {
-          errors.push({ rowNumber, message: "Не указан адрес" });
+          errors.push({ rowNumber, error: "Не указан адрес" });
           continue;
         }
         if (!dateTime) {
-          errors.push({ rowNumber, message: "Не указана дата/время" });
+          errors.push({ rowNumber, error: "Не указана дата/время" });
           continue;
         }
 
         const orgUnitId =
           user?.role === "MCHS" && rowData?.orgUnitId ? rowData.orgUnitId : user?.orgUnitId;
         if (!orgUnitId) {
-          errors.push({ rowNumber, message: "Не определена организация" });
+          errors.push({ rowNumber, error: "Не определена организация" });
           continue;
         }
 
@@ -162,7 +162,7 @@ export function registerBulkIncidentRoutes(app: Express) {
         const parsed = insertIncidentSchema.safeParse(normalizedData);
         if (!parsed.success) {
           const message = parsed.error.issues.map((issue) => issue.message).join("; ");
-          errors.push({ rowNumber, message: `Ошибка валидации: ${message}` });
+          errors.push({ rowNumber, error: `Ошибка валидации: ${message}` });
           continue;
         }
 

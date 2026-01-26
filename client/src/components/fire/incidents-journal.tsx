@@ -61,7 +61,7 @@ type ImportedIncident = {
   description?: string;
 };
 
-const parseCsvLine = (line: string) => {
+const parseCsvLine = (line: string, delimiter = ",") => {
   const result: string[] = [];
   let current = "";
   let inQuotes = false;
@@ -75,7 +75,7 @@ const parseCsvLine = (line: string) => {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (char === "," && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       result.push(current.trim());
       current = "";
     } else {
@@ -84,6 +84,30 @@ const parseCsvLine = (line: string) => {
   }
   result.push(current.trim());
   return result;
+};
+
+const detectCsvDelimiter = (line: string) => {
+  let inQuotes = false;
+  let commas = 0;
+  let semicolons = 0;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (!inQuotes) {
+      if (char === ",") commas += 1;
+      if (char === ";") semicolons += 1;
+    }
+  }
+
+  if (semicolons > commas) return ";";
+  if (commas > 0) return ",";
+  return ";";
 };
 
 const normalizeHeader = (value: string) => value.trim().toLowerCase();
@@ -273,7 +297,7 @@ export default function IncidentsJournal() {
   const [importResults, setImportResults] = useState<{
     created: number;
     total: number;
-    errors: { rowNumber: number; error: string }[];
+    errors: { rowNumber: number; error?: string; message?: string }[];
   } | null>(null);
 
   useEffect(() => {
@@ -582,7 +606,8 @@ export default function IncidentsJournal() {
         if (extension === "csv") {
           const csvData = (result as string) || "";
           const lines = csvData.split(/\r?\n/).filter((line) => line.trim().length > 0);
-          rows = lines.map(parseCsvLine);
+          const delimiter = detectCsvDelimiter(lines[0] ?? "");
+          rows = lines.map((line) => parseCsvLine(line, delimiter));
         } else {
           const data = result instanceof ArrayBuffer ? result : new ArrayBuffer(0);
           const workbook = XLSX.read(data, { type: "array", cellDates: true });
@@ -638,10 +663,17 @@ export default function IncidentsJournal() {
         }
 
         // Show detailed results modal instead of just a toast
+        const normalizedErrors = Array.isArray(payload?.errors)
+          ? payload.errors.map((err: { rowNumber?: number; message?: string; error?: string }) => ({
+              rowNumber: err.rowNumber ?? 0,
+              error: err.error ?? err.message ?? "Неизвестная ошибка",
+            }))
+          : [];
+
         setImportResults({
-            created: payload.created,
-            total: payload.total,
-            errors: payload.errors || []
+          created: payload.created,
+          total: payload.total,
+          errors: normalizedErrors,
         });
 
         queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
@@ -1479,7 +1511,8 @@ export default function IncidentsJournal() {
                           <div className="bg-muted p-3 rounded-md max-h-48 overflow-y-auto text-sm space-y-1">
                              {importResults.errors.map((err, i) => (
                                 <div key={i} className="text-destructive-foreground">
-                                   <span className="font-mono font-bold">Строка {err.rowNumber}:</span> {err.error}
+                                   <span className="font-mono font-bold">Строка {err.rowNumber}:</span>{" "}
+                                   {err.message ?? err.error}
                                 </div>
                              ))}
                           </div>
