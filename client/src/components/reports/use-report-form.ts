@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,8 +29,6 @@ export function useReportForm<T>({
   const [reportData, setReportData] = useState<Record<string, any>>({});
   const [loaded, setLoaded] = useState(false);
   const initialLoadRef = useRef(false);
-  const lastSavedSignatureRef = useRef<string | null>(null);
-  const latestSignatureRef = useRef<string>("");
 
   const { data, isLoading } = useQuery<ReportResponse<T>>({
     queryKey: ["/api/reports", formId, period],
@@ -51,12 +49,8 @@ export function useReportForm<T>({
     if (!data?.data) {
       return;
     }
-    const savedData = data.data.savedData ?? null;
     const computed = extractData(data.data);
-    const nextData =
-      savedData && Object.keys(savedData).length > 0 ? savedData : computed;
-    setReportData(nextData);
-    lastSavedSignatureRef.current = stableSignature(nextData);
+    setReportData(computed);
     setLoaded(true);
     initialLoadRef.current = true;
   }, [data, extractData]);
@@ -95,63 +89,8 @@ export function useReportForm<T>({
             : "Данные формы сохранены",
       });
     }
-    lastSavedSignatureRef.current = stableSignature(reportData);
     return payload;
   };
 
-  const reportSignature = useMemo(() => stableSignature(reportData), [reportData]);
-  useEffect(() => {
-    latestSignatureRef.current = reportSignature;
-  }, [reportSignature]);
-  const debounceMs = useMemo(() => {
-    const length = reportSignature.length;
-    if (length > 20000) {
-      return 4000;
-    }
-    if (length > 10000) {
-      return 2500;
-    }
-    if (length > 5000) {
-      return 1500;
-    }
-    return 800;
-  }, [reportSignature]);
-
-  useEffect(() => {
-    if (!period || !loaded || !initialLoadRef.current) {
-      return;
-    }
-    if (reportSignature === lastSavedSignatureRef.current) {
-      return;
-    }
-    const scheduledSignature = reportSignature;
-    const timeout = window.setTimeout(() => {
-      if (scheduledSignature !== latestSignatureRef.current) {
-        return;
-      }
-      if (scheduledSignature === lastSavedSignatureRef.current) {
-        return;
-      }
-      saveReport("draft", { silent: true }).catch(() => undefined);
-    }, debounceMs);
-    return () => window.clearTimeout(timeout);
-  }, [debounceMs, period, loaded, reportSignature, saveReport]);
-
   return { reportData, setReportData, isLoading, saveReport };
-}
-
-function stableSignature(value: unknown) {
-  return (
-    JSON.stringify(value, (_key, val) => {
-      if (val && typeof val === "object" && !Array.isArray(val)) {
-        return Object.keys(val as Record<string, unknown>)
-          .sort()
-          .reduce<Record<string, unknown>>((acc, key) => {
-            acc[key] = (val as Record<string, unknown>)[key];
-            return acc;
-          }, {});
-      }
-      return val;
-    }) ?? ""
-  );
 }
