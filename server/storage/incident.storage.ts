@@ -1244,14 +1244,10 @@ export class IncidentStorage {
       endDate.setHours(23, 59, 59, 999);
       conditions.push(gte(incidents.dateTime, startDate));
       conditions.push(lte(incidents.dateTime, endDate));
-      console.log(`[getReportDataset] Filtered by period: ${params.period} (${startDate.toISOString()} - ${endDate.toISOString()})`);
     }
 
     if (params.region && params.region !== "Республика Казахстан (Свод)") {
       conditions.push(eq(incidents.region, params.region));
-      console.log(`[getReportDataset] Filtered by region: ${params.region}`);
-    } else {
-      console.log(`[getReportDataset] No region filter applied (Republic-wide)`);
     }
 
     const incidentRows = await db
@@ -1298,9 +1294,6 @@ export class IncidentStorage {
       })
       .from(incidents)
       .where(and(...conditions));
-
-    console.log(`[getReportDataset] Query conditions:`, conditions.map(c => c?.toString() || 'unknown'));
-    console.log(`[getReportDataset] Found ${incidentRows.length} incidents`);
 
     const incidentIds = incidentRows.map((row) => row.id);
     const victimRows = incidentIds.length
@@ -1377,8 +1370,6 @@ export class IncidentStorage {
         values["7"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.savedPeopleTotal || 0));
         values["7.1"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.savedPeopleChildren || 0));
         values["8"] = sumByLocality(fireIncidentsForForm1, (incident) => Number(incident.savedProperty || 0));
-
-        console.log(`[getReportFormData] Form 1-OSP aggregated values:`, values);
 
         const attachValues = (rows: typeof FORM_1_OSP_ROWS) =>
           rows.map((row) => ({
