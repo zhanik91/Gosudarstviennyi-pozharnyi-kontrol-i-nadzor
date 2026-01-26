@@ -5,7 +5,7 @@ import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
-import { Shield, Building, FileText, Activity, Package, Users, FileCheck } from "lucide-react";
+import { Shield, Building, Activity, Package, Users, FileCheck } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 export default function Home() {
@@ -105,23 +105,6 @@ export default function Home() {
               secondaryActions={[
                 { label: "Документация", href: "#" },
                 { label: "Графики проверок", href: "#" }
-              ]}
-            />
-
-            <ModuleCard
-              icon={FileText}
-              iconBg="bg-green-500/20"
-              iconColor="text-green-400"
-              title="Нормативные документы"
-              description="Помощник госинспектора: ключевые НПА, методики, приказы, правила и регламенты"
-              primaryAction={{
-                label: "Открыть НПА",
-                href: "/regulatory-documents"
-              }}
-              secondaryActions={[
-                { label: "Основные НПА", href: "#" },
-                { label: "Приказы", href: "#" },
-                { label: "и др.", href: "#" }
               ]}
             />
 
