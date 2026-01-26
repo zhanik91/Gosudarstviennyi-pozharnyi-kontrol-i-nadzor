@@ -40,6 +40,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/packages/:id/approve', isAuthenticated, packageController.approvePackage);
   app.put('/api/packages/:id/reject', isAuthenticated, packageController.rejectPackage);
   app.post('/api/packages/:id/return', isAuthenticated, packageController.rejectPackage);
+  app.get('/api/packages/:id/view', isAuthenticated, packageController.viewPackage);
+  app.get('/api/packages/:id/download', isAuthenticated, packageController.downloadPackage);
   app.post('/api/packages/consolidate', isAuthenticated, packageController.consolidatePackage);
 
   // === Документы ===
