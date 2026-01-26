@@ -33,27 +33,26 @@ export default function ReportsPanel() {
     setPeriodError("");
 
     try {
+      const formsToCheck = ["1-osp", "6-sspz"];
       const params = new URLSearchParams({
         period: periodKey,
         includeChildren: String(includeOrgTree),
       });
-      const response = await fetch(`/api/reports?${params.toString()}`);
-      const payload = await response.json().catch(() => null);
+      const responses = await Promise.all(
+        formsToCheck.map((formId) => fetch(`/api/reports?form=${formId}&${params.toString()}`))
+      );
+      const payloads = await Promise.all(responses.map((response) => response.json().catch(() => null)));
 
-      if (!response.ok || !payload?.ok) {
+      if (responses.some((response, index) => !response.ok || !payloads[index]?.ok)) {
         setValidationResults([
-          { type: 'error', message: payload?.msg ?? 'Не удалось получить данные отчёта.' },
+          { type: 'error', message: 'Не удалось получить данные отчёта.' },
         ]);
         return;
       }
 
-      const reportData = payload?.data;
-      const sections = [reportData?.osp, reportData?.sspz].filter(Boolean) as Array<Record<string, unknown>>;
-      const hasData = sections.some((section) =>
-        Object.values(section).some((value) => Number(value) > 0)
-      );
+      const hasData = payloads.some((payload) => hasReportValues(payload?.data));
 
-      if (!reportData || !hasData) {
+      if (!hasData) {
         setValidationResults([
           { type: 'warning', message: 'За выбранный период нет данных для формирования отчётов.' },
         ]);
@@ -228,3 +227,28 @@ export default function ReportsPanel() {
     </div>
   );
 }
+
+const hasReportValues = (reportData?: {
+  rows?: Array<{ values?: Record<string, unknown>; value?: number; children?: any[] }>;
+  steppeRows?: Array<{ values?: Record<string, unknown> }>;
+  ignitionRows?: Array<{ values?: Record<string, unknown> }>;
+}) => {
+  const rowHasValue = (row: { values?: Record<string, unknown>; value?: number; children?: any[] }) => {
+    if (typeof row.value === "number") {
+      return row.value > 0;
+    }
+    if (row.values) {
+      return Object.values(row.values).some((value) => Number(value) > 0);
+    }
+    if (row.children) {
+      return row.children.some(rowHasValue);
+    }
+    return false;
+  };
+
+  return (
+    (reportData?.rows ?? []).some(rowHasValue) ||
+    (reportData?.steppeRows ?? []).some(rowHasValue) ||
+    (reportData?.ignitionRows ?? []).some(rowHasValue)
+  );
+};

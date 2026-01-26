@@ -24,6 +24,10 @@ export class ReportController {
       const period = req.query.period as string;
       const form = req.query.form as string;
 
+      if (!form) {
+        return res.status(400).json({ ok: false, msg: "form required" });
+      }
+
       // Проверка доступа к организации
       const { assertOrgScope, assertTreeAccess } = await import('../services/authz');
 
@@ -48,34 +52,17 @@ export class ReportController {
         return res.status(400).json({ ok: false, msg: 'org unit required' });
       }
 
-      const reportData = form
-        ? await storage.getReportFormData({
-            orgId: resolvedOrgId,
-            period,
-            form,
-            includeChildren,
-            scopeUser: toScopeUser(req.user),
-          })
-        : await storage.getReportData({
-            orgId: resolvedOrgId,
-            period,
-            form,
-            includeChildren,
-            scopeUser: toScopeUser(req.user),
-          });
-
-      const savedForm = form && period
-        ? await storage.getReportForm({ orgUnitId: resolvedOrgId, period, form })
-        : undefined;
+      const reportData = await storage.getReportFormData({
+        orgId: resolvedOrgId,
+        period,
+        form,
+        includeChildren,
+        scopeUser: toScopeUser(req.user),
+      });
 
       res.json({
         ok: true,
-        data: {
-          ...reportData,
-          savedData: savedForm?.data ?? null,
-          status: savedForm?.status ?? null,
-          updatedAt: savedForm?.updatedAt ?? null,
-        },
+        data: reportData,
       });
     } catch (error) {
       console.error('Error generating report:', error);
@@ -185,7 +172,7 @@ export class ReportController {
     try {
       const orgUnits = await storage.getOrganizations();
       const orgId = req.user?.orgUnitId;
-      const { form, period, data, status } = req.body || {};
+      const { form, period, status } = req.body || {};
 
       if (!orgId) {
         return res.status(400).json({ ok: false, msg: 'org unit required' });
@@ -205,11 +192,15 @@ export class ReportController {
       if (!period || !/^\d{4}-\d{2}$/.test(period)) {
         return res.status(400).json({ ok: false, msg: 'invalid period' });
       }
-      if (!data || typeof data !== 'object') {
-        return res.status(400).json({ ok: false, msg: 'invalid data' });
-      }
 
-      const errors = validateReportData(form, data);
+      const reportData = await storage.getReportFormData({
+        orgId,
+        period,
+        form,
+        scopeUser: toScopeUser(req.user),
+      });
+      const computedData = getComputedValidationData(form, reportData);
+      const errors = validateReportData(form, computedData);
       if (status === 'submitted' && errors.length > 0) {
         return res.status(400).json({ ok: false, msg: 'validation failed', errors });
       }
@@ -218,7 +209,7 @@ export class ReportController {
         orgUnitId: orgId,
         period,
         form,
-        data,
+        data: {},
         status: status === 'submitted' ? 'submitted' : 'draft',
       });
 
@@ -289,6 +280,41 @@ const isEmptyValue = (value: unknown) =>
   value === undefined ||
   value === "" ||
   (typeof value === "number" && Number.isNaN(value));
+
+const getComputedValidationData = (form: string, payload: any): Record<string, any> => {
+  const result: Record<string, any> = {};
+  const assignRow = (rowId: string | undefined, value: any) => {
+    if (!rowId) {
+      return;
+    }
+    result[rowId] = value;
+  };
+  const walkRows = (rows: any[] | undefined, mapper: (row: any) => void) => {
+    if (!rows) {
+      return;
+    }
+    rows.forEach((row) => {
+      mapper(row);
+      if (row.children) {
+        walkRows(row.children, mapper);
+      }
+    });
+  };
+
+  if (form === "2-ssg") {
+    walkRows(payload?.rows, (row) => assignRow(row.code ?? row.id, row.value ?? 0));
+    return result;
+  }
+
+  if (form === "6-sspz") {
+    const rows = [...(payload?.steppeRows ?? []), ...(payload?.ignitionRows ?? [])];
+    rows.forEach((row) => assignRow(row.id, row.values ?? {}));
+    return result;
+  }
+
+  walkRows(payload?.rows, (row) => assignRow(row.code ?? row.id, row.values ?? {}));
+  return result;
+};
 
 const getReportCompletion = (form: string, data: Record<string, any>) => {
   const getFieldValue = (rowId: string, field?: string) => {

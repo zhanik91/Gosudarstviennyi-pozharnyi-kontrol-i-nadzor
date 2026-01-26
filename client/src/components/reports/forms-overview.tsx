@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,11 +76,7 @@ export default function FormsOverview() {
   const [selectedPeriod, setSelectedPeriod] = useState('2025-01');
   const [selectedForm, setSelectedForm] = useState<string | null>(null);
 
-  // Получение данных отчетов
-  const { data: reportsData, isLoading } = useQuery({
-    queryKey: ['/api/reports', selectedPeriod],
-    queryFn: () => fetch(`/api/reports?period=${selectedPeriod}`).then(res => res.json())
-  });
+  const isLoading = false;
 
   const getStatusColor = (status: string) => {
     switch (status) {
