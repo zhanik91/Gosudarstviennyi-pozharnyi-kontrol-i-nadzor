@@ -97,6 +97,90 @@ export class IncidentStorage {
     return this.missingIncidentColumns;
   }
 
+  private getIncidentSelectFields() {
+    const missing = new Set(this.missingIncidentColumns);
+    const columnOrDefault = (columnName: string, column: unknown, fallback: unknown) =>
+      missing.has(columnName) ? fallback : column;
+
+    return {
+      id: incidents.id,
+      dateTime: incidents.dateTime,
+      locality: incidents.locality,
+      incidentType: incidents.incidentType,
+      address: incidents.address,
+      description: columnOrDefault("description", incidents.description, sql<string | null>`null`),
+      cause: incidents.cause,
+      causeCode: columnOrDefault("cause_code", incidents.causeCode, sql<string | null>`null`),
+      causeDetailed: columnOrDefault("cause_detailed", incidents.causeDetailed, sql<string | null>`null`),
+      objectType: incidents.objectType,
+      objectCode: columnOrDefault("object_code", incidents.objectCode, sql<string | null>`null`),
+      objectDetailed: columnOrDefault("object_detailed", incidents.objectDetailed, sql<string | null>`null`),
+      region: incidents.region,
+      city: incidents.city,
+      damage: incidents.damage,
+      steppeArea: columnOrDefault("steppe_area", incidents.steppeArea, sql<string>`0`),
+      steppeDamage: columnOrDefault("steppe_damage", incidents.steppeDamage, sql<string>`0`),
+      steppePeopleTotal: columnOrDefault("steppe_people_total", incidents.steppePeopleTotal, sql<number>`0`),
+      steppePeopleDead: columnOrDefault("steppe_people_dead", incidents.steppePeopleDead, sql<number>`0`),
+      steppePeopleInjured: columnOrDefault("steppe_people_injured", incidents.steppePeopleInjured, sql<number>`0`),
+      steppeAnimalsTotal: columnOrDefault("steppe_animals_total", incidents.steppeAnimalsTotal, sql<number>`0`),
+      steppeAnimalsDead: columnOrDefault("steppe_animals_dead", incidents.steppeAnimalsDead, sql<number>`0`),
+      steppeAnimalsInjured: columnOrDefault("steppe_animals_injured", incidents.steppeAnimalsInjured, sql<number>`0`),
+      steppeExtinguishedTotal: columnOrDefault(
+        "steppe_extinguished_total",
+        incidents.steppeExtinguishedTotal,
+        sql<number>`0`
+      ),
+      steppeExtinguishedArea: columnOrDefault(
+        "steppe_extinguished_area",
+        incidents.steppeExtinguishedArea,
+        sql<string>`0`
+      ),
+      steppeExtinguishedDamage: columnOrDefault(
+        "steppe_extinguished_damage",
+        incidents.steppeExtinguishedDamage,
+        sql<string>`0`
+      ),
+      steppeGarrisonPeople: columnOrDefault(
+        "steppe_garrison_people",
+        incidents.steppeGarrisonPeople,
+        sql<number>`0`
+      ),
+      steppeGarrisonUnits: columnOrDefault(
+        "steppe_garrison_units",
+        incidents.steppeGarrisonUnits,
+        sql<number>`0`
+      ),
+      steppeMchsPeople: columnOrDefault("steppe_mchs_people", incidents.steppeMchsPeople, sql<number>`0`),
+      steppeMchsUnits: columnOrDefault("steppe_mchs_units", incidents.steppeMchsUnits, sql<number>`0`),
+      floor: columnOrDefault("floor", incidents.floor, sql<number | null>`null`),
+      totalFloors: columnOrDefault("total_floors", incidents.totalFloors, sql<number | null>`null`),
+      buildingDetails: columnOrDefault("building_details", incidents.buildingDetails, sql<unknown>`null`),
+      livestockLost: columnOrDefault("livestock_lost", incidents.livestockLost, sql<unknown>`null`),
+      destroyedItems: columnOrDefault("destroyed_items", incidents.destroyedItems, sql<unknown>`null`),
+      deathsTotal: incidents.deathsTotal,
+      deathsChildren: incidents.deathsChildren,
+      deathsDrunk: columnOrDefault("deaths_drunk", incidents.deathsDrunk, sql<number>`0`),
+      deathsCOTotal: columnOrDefault("deaths_co_total", incidents.deathsCOTotal, sql<number>`0`),
+      deathsCOChildren: columnOrDefault("deaths_co_children", incidents.deathsCOChildren, sql<number>`0`),
+      injuredTotal: incidents.injuredTotal,
+      injuredChildren: incidents.injuredChildren,
+      injuredCOTotal: columnOrDefault("injured_co_total", incidents.injuredCOTotal, sql<number>`0`),
+      injuredCOChildren: columnOrDefault("injured_co_children", incidents.injuredCOChildren, sql<number>`0`),
+      savedPeopleTotal: incidents.savedPeopleTotal,
+      savedPeopleChildren: columnOrDefault("saved_people_children", incidents.savedPeopleChildren, sql<number>`0`),
+      savedProperty: incidents.savedProperty,
+      orgUnitId: incidents.orgUnitId,
+      createdBy: incidents.createdBy,
+      packageId: incidents.packageId,
+      status: incidents.status,
+      archivedAt: incidents.archivedAt,
+      timeOfDay: columnOrDefault("time_of_day", incidents.timeOfDay, sql<string | null>`null`),
+      createdAt: incidents.createdAt,
+      updatedAt: incidents.updatedAt,
+    };
+  }
+
   private getPeriodKey(date: Date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
   }
@@ -242,7 +326,8 @@ export class IncidentStorage {
         ? Math.max(0, Math.floor(filters.offset))
         : 0;
 
-    const query = db.select().from(incidents).orderBy(desc(incidents.dateTime));
+    const selectFields = this.getIncidentSelectFields();
+    const query = db.select(selectFields).from(incidents).orderBy(desc(incidents.dateTime));
 
     if (conditions.length > 0) {
       query.where(and(...conditions));
@@ -781,7 +866,8 @@ export class IncidentStorage {
 
   async getIncident(id: string): Promise<Incident | undefined> {
     await this.ensureIncidentSchemaChecked();
-    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+    const selectFields = this.getIncidentSelectFields();
+    const [incident] = await db.select(selectFields).from(incidents).where(eq(incidents.id, id));
     return incident;
   }
 
@@ -892,8 +978,10 @@ export class IncidentStorage {
 
   async getIncidentsCount(): Promise<number> {
     await this.ensureIncidentSchemaChecked();
-    const allIncidents = await db.select().from(incidents);
-    return allIncidents.length;
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(incidents);
+    return Number(countResult?.count) || 0;
   }
 
   async searchIncidents(
@@ -976,7 +1064,8 @@ export class IncidentStorage {
         ? Math.max(0, Math.floor(filters.offset))
         : 0;
 
-    const queryBuilder = db.select().from(incidents).orderBy(desc(incidents.dateTime));
+    const selectFields = this.getIncidentSelectFields();
+    const queryBuilder = db.select(selectFields).from(incidents).orderBy(desc(incidents.dateTime));
 
     if (conditions.length > 0) {
       queryBuilder.where(and(...conditions));
