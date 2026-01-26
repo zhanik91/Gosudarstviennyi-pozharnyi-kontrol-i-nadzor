@@ -175,6 +175,11 @@ export const incidents = pgTable("incidents", {
   
   // Метки времени
   timeOfDay: varchar("time_of_day"), // 00:00-06:00, etc. (Can be derived but useful for explicit Form 5/7 stats)
+  
+  // Геолокация для карты
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -236,6 +241,50 @@ export const reportForms = pgTable("report_forms", {
 }, (table) => [
   index("report_forms_org_unit_id_idx").on(table.orgUnitId),
   uniqueIndex("report_forms_org_period_form_key").on(table.orgUnitId, table.period, table.form),
+]);
+
+// Объекты контроля для карты
+export const controlObjectStatusEnum = pgEnum('control_object_status', [
+  'active', 'inactive', 'under_inspection', 'violation', 'closed'
+]);
+
+export const controlObjects = pgTable("control_objects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Основная информация
+  name: varchar("name").notNull(),
+  category: varchar("category").notNull(), // Категория объекта (жилой, производственный и т.д.)
+  subcategory: varchar("subcategory"),
+  
+  // Адрес и геолокация
+  address: text("address").notNull(),
+  region: varchar("region"),
+  district: varchar("district"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  
+  // Статус и характеристики
+  status: controlObjectStatusEnum("status").notNull().default('active'),
+  riskLevel: varchar("risk_level", { enum: ["low", "medium", "high", "critical"] }).default('medium'),
+  lastInspectionDate: timestamp("last_inspection_date"),
+  nextInspectionDate: timestamp("next_inspection_date"),
+  
+  // Дополнительные данные
+  description: text("description"),
+  contactPerson: varchar("contact_person"),
+  contactPhone: varchar("contact_phone"),
+  details: jsonb("details"), // Дополнительные параметры
+  
+  // Система управления
+  orgUnitId: varchar("org_unit_id").notNull(),
+  createdBy: varchar("created_by").notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("control_objects_org_unit_id_idx").on(table.orgUnitId),
+  index("control_objects_region_idx").on(table.region),
+  index("control_objects_status_idx").on(table.status),
 ]);
 
 // Relations
@@ -336,8 +385,16 @@ export const insertReportFormSchema = createInsertSchema(reportForms).omit({
   updatedAt: true,
 });
 
+export const insertControlObjectSchema = createInsertSchema(controlObjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = typeof users.$inferInsert;
+export type ControlObject = typeof controlObjects.$inferSelect;
+export type InsertControlObject = typeof controlObjects.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type ReportForm = typeof reportForms.$inferSelect;
 export type InsertReportForm = typeof reportForms.$inferInsert;
