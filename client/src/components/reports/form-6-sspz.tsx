@@ -36,16 +36,16 @@ interface SteppeFireData {
 
 export default function Form6SSPZ() {
   const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
+  const [reportMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
-  const [region, setRegion] = useState("Республика Казахстан (Свод)");
+  const [reportYear] = useState(now.getFullYear().toString());
+  const [region] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
   const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
 
-  const { reportData, setReportData, isLoading, saveReport } = useReportForm<SteppeFireData>({
+  const { reportData, isLoading, saveReport } = useReportForm<SteppeFireData>({
     formId: "6-sspz",
     period,
     extractData: (payload) => {
@@ -142,17 +142,6 @@ export default function Form6SSPZ() {
         variant: "destructive"
       });
     }
-  };
-
-  const handleInputChange = (rowId: string, field: keyof SteppeFireData, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setReportData(prev => ({
-      ...prev,
-      [rowId]: {
-        ...prev[rowId],
-        [field]: numValue
-      }
-    }));
   };
 
   const getFireData = (rowId: string): SteppeFireData => {
@@ -289,9 +278,9 @@ export default function Form6SSPZ() {
               min="0"
               step={getColumnStep(column)}
               value={data[column.key as keyof SteppeFireData] || ''}
-              onChange={(e) => handleInputChange(row.id, column.key as keyof SteppeFireData, e.target.value)}
               className="text-center"
               placeholder={column.valueType === 'decimal' ? '0.0' : '0'}
+              readOnly
             />
           </td>
         ))}
@@ -364,8 +353,8 @@ export default function Form6SSPZ() {
             <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Отчетный период</Label>
-                <Select value={reportMonth} onValueChange={setReportMonth}>
-                  <SelectTrigger>
+                <Select value={reportMonth} disabled>
+                  <SelectTrigger disabled>
                     <SelectValue placeholder="Месяц" />
                   </SelectTrigger>
                   <SelectContent>
@@ -377,8 +366,8 @@ export default function Form6SSPZ() {
               </div>
               <div className="w-24">
                 <Label>&nbsp;</Label>
-                <Select value={reportYear} onValueChange={setReportYear}>
-                  <SelectTrigger>
+                <Select value={reportYear} disabled>
+                  <SelectTrigger disabled>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -391,8 +380,8 @@ export default function Form6SSPZ() {
             </div>
             <div>
               <Label>Регион</Label>
-              <Select value={region} onValueChange={setRegion}>
-                <SelectTrigger>
+              <Select value={region} disabled>
+                <SelectTrigger disabled>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -512,22 +501,22 @@ export default function Form6SSPZ() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Наименование организации</Label>
-                <Input placeholder="Наименование ДЧС / ОГПС" className="mt-1" />
+                <Input placeholder="Наименование ДЧС / ОГПС" className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">БИН организации</Label>
-                <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" />
+                <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" readOnly />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель</Label>
-                <Input placeholder="Фамилия И.О., должность" className="mt-1" />
+                <Input placeholder="Фамилия И.О., должность" className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Телефон исполнителя</Label>
-                <Input placeholder="+7 (___) ___-__-__" className="mt-1" />
+                <Input placeholder="+7 (___) ___-__-__" className="mt-1" readOnly />
               </div>
             </div>
 
@@ -539,11 +528,11 @@ export default function Form6SSPZ() {
                 <Label className="text-xs">Руководитель</Label>
               </div>
               <div className="text-center">
-                <Input placeholder="Фамилия И.О." className="text-center" />
+                <Input placeholder="Фамилия И.О." className="text-center" readOnly />
                 <Label className="text-xs text-muted-foreground">расшифровка подписи</Label>
               </div>
               <div className="text-center">
-                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="text-center" />
+                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="text-center" readOnly />
                 <Label className="text-xs text-muted-foreground">дата</Label>
               </div>
             </div>

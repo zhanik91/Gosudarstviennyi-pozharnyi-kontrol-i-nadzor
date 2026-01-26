@@ -22,17 +22,17 @@ interface COData {
 
 export default function FormCO() {
   const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
+  const [reportMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
-  const [region, setRegion] = useState("Республика Казахстан (Свод)");
+  const [reportYear] = useState(now.getFullYear().toString());
+  const [region] = useState("Республика Казахстан (Свод)");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
   const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
 
-  const { reportData, setReportData, isLoading, saveReport } = useReportForm<COData>({
+  const { reportData, isLoading, saveReport } = useReportForm<COData>({
     formId: "co",
     period,
     extractData: (payload) => {
@@ -159,18 +159,6 @@ export default function FormCO() {
     }
   };
 
-  const handleInputChange = (rowId: string, field: keyof COData, value: string) => {
-    const parsedValue = Number.parseInt(value, 10);
-    const normalizedValue = Number.isNaN(parsedValue) ? 0 : Math.max(0, parsedValue);
-    setReportData(prev => ({
-      ...prev,
-      [rowId]: {
-        ...prev[rowId],
-        [field]: normalizedValue
-      }
-    }));
-  };
-
   const getCOData = (rowId: string): COData => {
     return reportData[rowId] || {
       killed_total: 0,
@@ -294,9 +282,9 @@ export default function FormCO() {
             min="0"
             step="1"
             value={data.killed_total || ''}
-            onChange={(e) => handleInputChange(row.id, 'killed_total', e.target.value)}
             className="text-center"
             placeholder="0"
+            readOnly
           />
         </td>
         <td className="border border-border p-2 w-28">
@@ -305,9 +293,9 @@ export default function FormCO() {
             min="0"
             step="1"
             value={data.injured_total || ''}
-            onChange={(e) => handleInputChange(row.id, 'injured_total', e.target.value)}
             className="text-center"
             placeholder="0"
+            readOnly
           />
         </td>
       </tr>
@@ -404,8 +392,8 @@ export default function FormCO() {
             <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Отчетный период</Label>
-                <Select value={reportMonth} onValueChange={setReportMonth}>
-                  <SelectTrigger>
+                <Select value={reportMonth} disabled>
+                  <SelectTrigger disabled>
                     <SelectValue placeholder="Месяц" />
                   </SelectTrigger>
                   <SelectContent>
@@ -417,8 +405,8 @@ export default function FormCO() {
               </div>
               <div className="w-24">
                 <Label>&nbsp;</Label>
-                <Select value={reportYear} onValueChange={setReportYear}>
-                  <SelectTrigger>
+                <Select value={reportYear} disabled>
+                  <SelectTrigger disabled>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -431,8 +419,8 @@ export default function FormCO() {
             </div>
             <div>
               <Label>Регион</Label>
-              <Select value={region} onValueChange={setRegion}>
-                <SelectTrigger>
+              <Select value={region} disabled>
+                <SelectTrigger disabled>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -479,52 +467,52 @@ export default function FormCO() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Наименование организации</Label>
-                <Input placeholder="Наименование ДЧС / ОГПС" className="mt-1" />
+                <Input placeholder="Наименование ДЧС / ОГПС" className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Адрес</Label>
-                <Input placeholder="Полный адрес организации" className="mt-1" />
+                <Input placeholder="Полный адрес организации" className="mt-1" readOnly />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Телефон</Label>
-                <Input placeholder="+7 (___) ___-__-__" className="mt-1" />
+                <Input placeholder="+7 (___) ___-__-__" className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Email</Label>
-                <Input placeholder="email@example.kz" className="mt-1" />
+                <Input placeholder="email@example.kz" className="mt-1" readOnly />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель (Ф.И.О.)</Label>
-                <Input placeholder="Фамилия И.О." className="mt-1" />
+                <Input placeholder="Фамилия И.О." className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Телефон исполнителя</Label>
-                <Input placeholder="+7 (___) ___-__-__" className="mt-1" />
+                <Input placeholder="+7 (___) ___-__-__" className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Подпись исполнителя</Label>
-                <Input placeholder="Подпись" className="mt-1" />
+                <Input placeholder="Подпись" className="mt-1" readOnly />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
               <div>
                 <Label className="text-xs text-muted-foreground">Руководитель (Ф.И.О.)</Label>
-                <Input placeholder="Фамилия И.О." className="mt-1" />
+                <Input placeholder="Фамилия И.О." className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Подпись руководителя</Label>
-                <Input placeholder="Подпись" className="mt-1" />
+                <Input placeholder="Подпись" className="mt-1" readOnly />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Дата</Label>
-                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="mt-1" />
+                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="mt-1" readOnly />
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,17 +23,17 @@ interface ValidationError {
 
 export default function Form1OSP() {
   const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
+  const [reportMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
-  const [region, setRegion] = useState("Республика Казахстан (Свод)");
+  const [reportYear] = useState(now.getFullYear().toString());
+  const [region] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
   const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
 
-  const { reportData, setReportData, isLoading, saveReport } = useReportForm<RowData>({
+  const { reportData, isLoading, saveReport } = useReportForm<RowData>({
     formId: "1-osp",
     period,
     extractData: (payload) => {
@@ -53,17 +53,6 @@ export default function Form1OSP() {
       return map;
     },
   });
-
-  const handleInputChange = (rowId: string, field: keyof RowData, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setReportData(prev => ({
-      ...prev,
-      [rowId]: {
-        ...prev[rowId],
-        [field]: numValue
-      }
-    }));
-  };
 
   const getRowData = (rowId: string): RowData => {
     return reportData[rowId] || { total: 0, urban: 0, rural: 0 };
@@ -229,9 +218,9 @@ export default function Form1OSP() {
             min="0"
             step={isDecimal ? "0.1" : "1"}
             value={data.total || ''}
-            onChange={(e) => handleInputChange(row.id, 'total', e.target.value)}
             className={`text-center ${hasError ? 'border-red-500' : ''}`}
             placeholder="0"
+            readOnly
           />
         </td>
         <td className="border border-border p-2 w-28">
@@ -240,9 +229,9 @@ export default function Form1OSP() {
             min="0"
             step={isDecimal ? "0.1" : "1"}
             value={data.urban || ''}
-            onChange={(e) => handleInputChange(row.id, 'urban', e.target.value)}
             className="text-center"
             placeholder="0"
+            readOnly
           />
         </td>
         <td className="border border-border p-2 w-28">
@@ -251,9 +240,9 @@ export default function Form1OSP() {
             min="0"
             step={isDecimal ? "0.1" : "1"}
             value={data.rural || ''}
-            onChange={(e) => handleInputChange(row.id, 'rural', e.target.value)}
             className="text-center"
             placeholder="0"
+            readOnly
           />
         </td>
       </tr>
@@ -320,8 +309,8 @@ export default function Form1OSP() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
             <div>
               <Label>Форма отчета</Label>
-              <Select defaultValue="1-osp">
-                <SelectTrigger>
+              <Select defaultValue="1-osp" disabled>
+                <SelectTrigger disabled>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -332,8 +321,8 @@ export default function Form1OSP() {
             <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Отчетный период</Label>
-                <Select value={reportMonth} onValueChange={setReportMonth}>
-                  <SelectTrigger>
+                <Select value={reportMonth} disabled>
+                  <SelectTrigger disabled>
                     <SelectValue placeholder="Месяц" />
                   </SelectTrigger>
                   <SelectContent>
@@ -345,8 +334,8 @@ export default function Form1OSP() {
               </div>
               <div className="w-24">
                 <Label>&nbsp;</Label>
-                <Select value={reportYear} onValueChange={setReportYear}>
-                  <SelectTrigger>
+                <Select value={reportYear} disabled>
+                  <SelectTrigger disabled>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -359,8 +348,8 @@ export default function Form1OSP() {
             </div>
             <div>
               <Label>Регион</Label>
-              <Select value={region} onValueChange={setRegion}>
-                <SelectTrigger>
+              <Select value={region} disabled>
+                <SelectTrigger disabled>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -433,6 +422,7 @@ export default function Form1OSP() {
                 <Input 
                   placeholder="Наименование ДЧС / ОГПС"
                   className="mt-1"
+                  readOnly
                 />
               </div>
               <div>
@@ -441,6 +431,7 @@ export default function Form1OSP() {
                   placeholder="XXXXXXXXXXXX"
                   maxLength={12}
                   className="mt-1"
+                  readOnly
                 />
               </div>
             </div>
@@ -451,6 +442,7 @@ export default function Form1OSP() {
                 <Input 
                   placeholder="Фамилия И.О., должность"
                   className="mt-1"
+                  readOnly
                 />
               </div>
               <div>
@@ -458,6 +450,7 @@ export default function Form1OSP() {
                 <Input 
                   placeholder="+7 (___) ___-__-__"
                   className="mt-1"
+                  readOnly
                 />
               </div>
             </div>
@@ -473,6 +466,7 @@ export default function Form1OSP() {
                 <Input 
                   placeholder="Фамилия И.О."
                   className="text-center"
+                  readOnly
                 />
                 <Label className="text-xs text-muted-foreground">расшифровка подписи</Label>
               </div>
@@ -481,6 +475,7 @@ export default function Form1OSP() {
                   type="date"
                   defaultValue={new Date().toISOString().split('T')[0]}
                   className="text-center"
+                  readOnly
                 />
                 <Label className="text-xs text-muted-foreground">дата</Label>
               </div>

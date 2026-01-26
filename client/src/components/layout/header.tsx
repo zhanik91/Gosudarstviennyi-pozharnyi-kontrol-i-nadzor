@@ -48,9 +48,15 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       {
         title: "Государственный учёт пожаров",
-        description: "Журнал инцидентов, отчётные формы и пакеты данных",
+        description: "Журнал инцидентов, отчётные формы, диаграммы и карты",
         href: "/fire-module",
         icon: Shield,
+      },
+      {
+        title: "Карты пожаров",
+        description: "Интерактивные карты из модуля госучёта пожаров",
+        href: "/fire-module?tab=maps",
+        icon: MapPin,
       },
       {
         title: "Контроль и надзор",
@@ -59,16 +65,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Layers,
       },
       {
-        title: "CRM и документооборот",
-        description: "Хранилище документов, согласования и шаблоны",
-        href: "/document-management",
+        title: "Нормативные документы",
+        description: "Ключевые НПА, методики, приказы и регламенты",
+        href: "/regulatory-documents",
         icon: FileText,
-      },
-      {
-        title: "Интерактивные карты",
-        description: "Геоданные, риски и маршруты реагирования",
-        href: "/maps",
-        icon: MapPin,
       },
     ],
   },
