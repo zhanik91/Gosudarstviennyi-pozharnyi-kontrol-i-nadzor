@@ -179,6 +179,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update incident coordinates
+  app.patch('/api/incidents/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { latitude, longitude } = req.body;
+      const [incident] = await db.update(incidents)
+        .set({ 
+          latitude: latitude || null, 
+          longitude: longitude || null,
+          updatedAt: new Date() 
+        })
+        .where(eq(incidents.id, req.params.id))
+        .returning();
+      
+      if (!incident) return res.status(404).json({ message: 'Инцидент не найден' });
+      res.json(incident);
+    } catch (error) {
+      console.error('Error updating incident coordinates:', error);
+      res.status(500).json({ message: 'Ошибка обновления координат' });
+    }
+  });
+
   // API для объектов контроля
   app.get('/api/control-objects', isAuthenticated, async (req: any, res) => {
     try {
@@ -218,6 +239,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error loading control objects:', error);
       res.status(500).json({ message: 'Ошибка загрузки объектов контроля' });
+    }
+  });
+
+  app.patch('/api/control-objects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { latitude, longitude } = req.body;
+      const [obj] = await db.update(controlObjects)
+        .set({ 
+          latitude: latitude || null, 
+          longitude: longitude || null,
+          updatedAt: new Date() 
+        })
+        .where(eq(controlObjects.id, req.params.id))
+        .returning();
+      
+      if (!obj) return res.status(404).json({ message: 'Объект не найден' });
+      res.json(obj);
+    } catch (error) {
+      console.error('Error updating object coordinates:', error);
+      res.status(500).json({ message: 'Ошибка обновления координат' });
     }
   });
 

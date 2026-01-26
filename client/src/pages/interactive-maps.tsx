@@ -117,6 +117,45 @@ export default function InteractiveMaps() {
     return [userRegion];
   }, [isMchsUser, userRegion]);
 
+  const { data: allIncidents = [] } = useQuery<any[]>({
+    queryKey: ['/api/incidents'],
+    queryFn: async () => {
+      const response = await fetch('/api/incidents');
+      if (!response.ok) throw new Error('Ошибка загрузки списка инцидентов');
+      return response.json();
+    }
+  });
+
+  const updateCoordsMutation = useMutation({
+    mutationFn: async ({ type, id, lat, lng }: { type: 'incident' | 'object', id: string, lat: number, lng: number }) => {
+      const endpoint = type === 'incident' ? `/api/incidents/${id}` : `/api/control-objects/${id}`;
+      const response = await apiRequest('PATCH', endpoint, {
+        latitude: lat.toString(),
+        longitude: lng.toString()
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/maps/data'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/control-objects'] });
+      toast({
+        title: 'Координаты обновлены',
+        description: 'Новое местоположение успешно сохранено',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось обновить координаты',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleSelectExisting = (type: 'incident' | 'object', id: string, lat: number, lng: number) => {
+    updateCoordsMutation.mutate({ type, id, lat, lng });
+  };
+
   const handleRegionSelect = (region: string) => {
     if (!isMchsUser && userRegion) {
       setSelectedRegion(userRegion);
@@ -292,6 +331,9 @@ export default function InteractiveMaps() {
                   selectedRegion={selectedRegion}
                   editable={false}
                   onDeleteMarker={handleDeleteMarker}
+                  onSelectExisting={handleSelectExisting}
+                  allIncidents={allIncidents}
+                  allObjects={controlObjects}
                 />
               </div>
             </CardContent>

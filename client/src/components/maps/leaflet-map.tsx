@@ -29,10 +29,13 @@ interface LeafletMapProps {
   onMapClick?: (lat: number, lng: number) => void;
   onAddMarker?: (data: Partial<MarkerData>) => void;
   onDeleteMarker?: (id: string, type: 'incident' | 'object') => void;
+  onSelectExisting?: (type: 'incident' | 'object', id: string, lat: number, lng: number) => void;
   showIncidents?: boolean;
   showObjects?: boolean;
   selectedRegion?: string;
   editable?: boolean;
+  allIncidents?: any[];
+  allObjects?: any[];
 }
 
 const KAZAKHSTAN_CENTER: [number, number] = [48.0196, 66.9237];
@@ -79,10 +82,13 @@ export function LeafletMap({
   onMapClick,
   onAddMarker,
   onDeleteMarker,
+  onSelectExisting,
   showIncidents = true,
   showObjects = true,
   selectedRegion = 'all',
   editable = false,
+  allIncidents = [],
+  allObjects = [],
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -95,6 +101,8 @@ export function LeafletMap({
   const [clickedPosition, setClickedPosition] = useState<[number, number] | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newMarkerType, setNewMarkerType] = useState<'incident' | 'object'>('incident');
+  const [selectedExistingId, setSelectedExistingId] = useState<string>('');
+  const [isMarkMode, setIsMarkMode] = useState(false);
 
   const createIncidentIcon = useCallback(() => {
     const L = window.L;
@@ -140,7 +148,7 @@ export function LeafletMap({
     markersLayerRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
 
-    if (editable) {
+    if (editable || isMarkMode) {
       map.on('click', (e: any) => {
         const { lat, lng } = e.latlng;
         setClickedPosition([lat, lng]);
@@ -278,20 +286,28 @@ export function LeafletMap({
   };
 
   const handleAddMarker = () => {
-    if (clickedPosition && onAddMarker) {
-      onAddMarker({
-        type: newMarkerType,
-        latitude: clickedPosition[0],
-        longitude: clickedPosition[1],
-      });
+    if (clickedPosition) {
+      if (selectedExistingId && onSelectExisting) {
+        onSelectExisting(newMarkerType, selectedExistingId, clickedPosition[0], clickedPosition[1]);
+      } else if (onAddMarker) {
+        onAddMarker({
+          type: newMarkerType,
+          latitude: clickedPosition[0],
+          longitude: clickedPosition[1],
+        });
+      }
     }
     setShowAddDialog(false);
     setClickedPosition(null);
+    setSelectedExistingId('');
+    setIsMarkMode(false);
   };
+
+  const existingItems = newMarkerType === 'incident' ? allIncidents : allObjects;
 
   return (
     <div className="relative w-full h-full">
-      <div className="absolute top-4 left-4 z-[1000] flex gap-2 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-lg">
+      <div className="absolute top-4 left-4 z-[1000] flex flex-wrap gap-2 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-lg">
         <div className="flex gap-2">
           <Input
             placeholder="Поиск по адресу..."
@@ -305,6 +321,22 @@ export function LeafletMap({
           </Button>
         </div>
         
+        <Button
+          variant={isMarkMode ? "default" : "outline"}
+          onClick={() => {
+            setIsMarkMode(!isMarkMode);
+            if (!isMarkMode) {
+              toast({
+                title: 'Режим отметки',
+                description: 'Кликните на карту, чтобы отметить инцидент или объект',
+              });
+            }
+          }}
+        >
+          <MapPin className="w-4 h-4 mr-2" />
+          Отметить на карте
+        </Button>
+
         {editable && (
           <Button
             variant="outline"
@@ -338,12 +370,15 @@ export function LeafletMap({
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Добавить маркер</DialogTitle>
+            <DialogTitle>Отметить на карте</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4">
             <div>
-              <Label>Тип маркера</Label>
-              <Select value={newMarkerType} onValueChange={(v: 'incident' | 'object') => setNewMarkerType(v)}>
+              <Label>Что вы хотите отметить?</Label>
+              <Select value={newMarkerType} onValueChange={(v: 'incident' | 'object') => {
+                setNewMarkerType(v);
+                setSelectedExistingId('');
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -353,17 +388,43 @@ export function LeafletMap({
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label>Выберите из списка</Label>
+              <Select value={selectedExistingId} onValueChange={setSelectedExistingId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={newMarkerType === 'incident' ? "Выберите инцидент..." : "Выберите объект..."} />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {existingItems.length > 0 ? (
+                    existingItems.map((item: any) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {newMarkerType === 'incident' 
+                          ? `${new Date(item.dateTime).toLocaleDateString()} - ${item.address || 'Без адреса'}`
+                          : item.name || item.title || 'Без названия'}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>Список пуст</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
             {clickedPosition && (
-              <div className="text-sm text-gray-500">
-                Координаты: {clickedPosition[0].toFixed(6)}, {clickedPosition[1].toFixed(6)}
+              <div className="text-sm text-gray-500 bg-muted p-2 rounded">
+                Выбранные координаты: {clickedPosition[0].toFixed(6)}, {clickedPosition[1].toFixed(6)}
               </div>
             )}
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => {
+                setShowAddDialog(false);
+                setSelectedExistingId('');
+              }}>
                 Отмена
               </Button>
-              <Button onClick={handleAddMarker}>
-                Добавить
+              <Button onClick={handleAddMarker} disabled={!selectedExistingId}>
+                Сохранить отметку
               </Button>
             </div>
           </div>
