@@ -5,7 +5,7 @@ import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
-import { Shield, Building, FileText, Activity, Package, Users, FileCheck, Bell } from "lucide-react";
+import { Shield, Building, FileText, Activity, Package, Users, FileCheck } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 export default function Home() {
@@ -122,22 +122,6 @@ export default function Home() {
                 { label: "Основные НПА", href: "#" },
                 { label: "Приказы МЧС", href: "#" },
                 { label: "Техрегламенты/СНиП/СП", href: "#" }
-              ]}
-            />
-
-            <ModuleCard
-              icon={Bell}
-              iconBg="bg-purple-500/20"
-              iconColor="text-purple-400"
-              title="Уведомления и Workflow"
-              description="Email уведомления, система многоуровневых согласований, календарь событий, автоматические оповещения"
-              primaryAction={{
-                label: "Открыть систему",
-                href: "/notifications"
-              }}
-              secondaryActions={[
-                { label: "Уведомления", href: "/notifications" },
-                { label: "Согласования", href: "/notifications" }
               ]}
             />
 
