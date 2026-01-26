@@ -80,7 +80,7 @@ export default function Landing() {
 
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 Комитет противопожарной службы МЧС РК
+            © 2026 Комитет противопожарной службы МЧС РК
           </p>
         </div>
       </div>
