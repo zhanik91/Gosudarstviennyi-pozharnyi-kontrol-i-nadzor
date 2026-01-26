@@ -33,6 +33,9 @@ export default function IncidentsTable() {
         description: "Инцидент удален",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
     },
     onError: (error) => {
       toast({

@@ -353,6 +353,9 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
       if (isEditMode) {
          queryClient.invalidateQueries({ queryKey: [`/api/incidents/${incidentId}`] });
       } else {

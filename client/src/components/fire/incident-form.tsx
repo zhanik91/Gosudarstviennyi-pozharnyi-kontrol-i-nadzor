@@ -58,6 +58,9 @@ export default function IncidentForm() {
         description: "Инцидент успешно создан",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/forms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/simple"] });
       form.reset();
     },
     onError: (error) => {
