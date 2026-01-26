@@ -174,9 +174,10 @@ export default function ControlSupervisionPage() {
   const [activeTab, setActiveTab] = useState<TabType>("registry");
   const userRole = (user as any)?.role;
   const isMchsUser = userRole === "MCHS" || userRole === "admin";
+  const isDchsUser = userRole === "DCHS";
+  const isDistrictUser = userRole === "DISTRICT";
   const userRegion = (user as any)?.region || "";
   const userDistrict = (user as any)?.district || "";
-  const isDistrictUser = !isMchsUser && Boolean(userDistrict);
 
   // данные
   const [rows, setRows] = useState<ControlledObject[]>([]);
@@ -233,10 +234,21 @@ export default function ControlSupervisionPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!user || isMchsUser || !userRegion) return;
-    setRegionFilter(userRegion);
-    setDistrictFilter(userDistrict || "Все");
-  }, [isMchsUser, user, userDistrict, userRegion]);
+    if (!user || isMchsUser) return;
+    if (userRegion) {
+      setRegionFilter(userRegion);
+    }
+    if (isDistrictUser) {
+      if (userDistrict) setDistrictFilter(userDistrict);
+    } else if (isDchsUser) {
+      setDistrictFilter((prev) => {
+        if (!userRegion) return "Все";
+        if (prev === "Все") return prev;
+        const available = ADMIN2[userRegion] || [];
+        return available.includes(prev) ? prev : "Все";
+      });
+    }
+  }, [isDchsUser, isDistrictUser, isMchsUser, user, userDistrict, userRegion]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -254,8 +266,8 @@ export default function ControlSupervisionPage() {
   };
 
   const availableRegions = useMemo(() => {
-    if (isMchsUser || !userRegion) return REGIONS;
-    return [userRegion];
+    if (isMchsUser) return REGIONS;
+    return userRegion ? [userRegion] : [];
   }, [isMchsUser, userRegion]);
 
   const availableDistricts = useMemo(() => {
@@ -263,25 +275,31 @@ export default function ControlSupervisionPage() {
       return regionFilter !== "Все" ? (ADMIN2[regionFilter] || []) : [];
     }
     if (!userRegion) return [];
-    if (userDistrict) return [userDistrict];
+    if (isDistrictUser) return userDistrict ? [userDistrict] : [];
     return ADMIN2[userRegion] || [];
-  }, [isMchsUser, regionFilter, userDistrict, userRegion]);
+  }, [isDistrictUser, isMchsUser, regionFilter, userDistrict, userRegion]);
 
   const availableFormRegions = useMemo(() => {
-    if (isMchsUser || !userRegion) return REGIONS;
-    return [userRegion];
+    if (isMchsUser) return REGIONS;
+    return userRegion ? [userRegion] : [];
   }, [isMchsUser, userRegion]);
 
   const availableFormDistricts = useMemo(() => {
     if (isMchsUser) return ADMIN2[form.region] || [];
     if (!userRegion) return [];
-    if (userDistrict) return [userDistrict];
+    if (isDistrictUser) return userDistrict ? [userDistrict] : [];
     return ADMIN2[userRegion] || [];
-  }, [form.region, isMchsUser, userDistrict, userRegion]);
+  }, [form.region, isDistrictUser, isMchsUser, userDistrict, userRegion]);
 
   /** ===== Фильтрация ===== */
   const filtered = useMemo(() => {
     let list = [...rows];
+    if (!isMchsUser && userRegion) {
+      list = list.filter(r => r.region === userRegion);
+    }
+    if (isDistrictUser && userDistrict) {
+      list = list.filter(r => (r.district || "") === userDistrict);
+    }
     if (regionFilter !== "Все") list = list.filter(r => r.region === regionFilter);
     if (districtFilter !== "Все") list = list.filter(r => (r.district||"") === districtFilter);
     if (levelFilter !== "Все") list = list.filter(r => r.objectiveLevel === levelFilter);
@@ -294,7 +312,7 @@ export default function ControlSupervisionPage() {
       );
     }
     return list;
-  }, [rows, regionFilter, districtFilter, levelFilter, catFilter, statusFilter, q]);
+  }, [rows, regionFilter, districtFilter, levelFilter, catFilter, statusFilter, q, isDistrictUser, isMchsUser, userDistrict, userRegion]);
 
   /** ===== CRUD ===== */
   const validate = (v: ControlledObject) => {
@@ -450,7 +468,11 @@ export default function ControlSupervisionPage() {
               className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700"
               onClick={() => {
                 setRegionFilter(isMchsUser ? "Все" : (userRegion || "Все"));
-                setDistrictFilter(isMchsUser ? "Все" : (userDistrict || "Все"));
+                if (isMchsUser || isDchsUser) {
+                  setDistrictFilter("Все");
+                } else {
+                  setDistrictFilter(userDistrict || "Все");
+                }
                 setLevelFilter("Все"); setCatFilter("Все");
                 setStatusFilter("Все"); setQ("");
               }}
@@ -500,7 +522,7 @@ export default function ControlSupervisionPage() {
                     disabled={!isMchsUser && Boolean(userRegion)}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
-                    <option>Все</option>
+                    {isMchsUser && <option>Все</option>}
                     {availableRegions.map(r => <option key={r}>{r}</option>)}
                   </select>
                 </div>
@@ -513,7 +535,7 @@ export default function ControlSupervisionPage() {
                     disabled={isDistrictUser}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
-                    <option>Все</option>
+                    {(isMchsUser || isDchsUser) && <option>Все</option>}
                     {availableDistricts.map(d => <option key={d}>{d}</option>)}
                   </select>
                 </div>
