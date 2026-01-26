@@ -63,9 +63,9 @@ export default function LoginPage() {
 
   return (
     <AuroraBackground>
-      <div className="container mx-auto px-6 py-8 relative z-10">
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 relative z-10">
+        <div className="flex min-h-[calc(100vh-2rem)] sm:min-h-[calc(100vh-4rem)] items-center justify-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full max-w-6xl">
             {/* Left side - Login Form */}
             <div className="flex items-center justify-center">
               <motion.div
@@ -160,8 +160,8 @@ export default function LoginPage() {
               </motion.div>
             </div>
 
-            {/* Right side - Info Panel */}
-            <div className="flex items-center justify-center">
+            {/* Right side - Info Panel (hidden on mobile) */}
+            <div className="hidden lg:flex items-center justify-center">
               <motion.div
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}

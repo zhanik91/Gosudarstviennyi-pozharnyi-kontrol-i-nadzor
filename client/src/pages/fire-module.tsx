@@ -83,26 +83,28 @@ export default function FireModule() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-border">
-          <nav className="flex space-x-8 overflow-x-auto custom-scrollbar">
+        <div className="border-b border-border -mx-4 px-4 sm:mx-0 sm:px-0">
+          <nav className="flex space-x-2 sm:space-x-6 overflow-x-auto custom-scrollbar pb-px">
             {[
-              { id: 'journal', label: '📋 Журнал пожаров' },
-              { id: 'forms', label: '📄 Отчетные формы' },
-              { id: 'charts', label: '📊 Диаграммы' },
-              { id: 'maps', label: '🗺️ Интерактивные карты' },
-              { id: 'packages', label: '📦 Пакеты данных' }
+              { id: 'journal', label: 'Журнал', icon: '📋' },
+              { id: 'forms', label: 'Формы', icon: '📄' },
+              { id: 'charts', label: 'Диаграммы', icon: '📊' },
+              { id: 'maps', label: 'Карты', icon: '🗺️' },
+              { id: 'packages', label: 'Пакеты', icon: '📦' }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id as TabType)}
-                className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium transition-colors ${
+                className={`whitespace-nowrap py-3 px-2 sm:px-3 border-b-2 text-sm sm:text-base font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                 }`}
                 data-testid={`tab-${tab.id}`}
               >
-                {tab.label}
+                <span className="mr-1">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label}</span>
               </button>
             ))}
           </nav>

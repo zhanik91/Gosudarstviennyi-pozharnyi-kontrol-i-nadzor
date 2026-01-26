@@ -1246,10 +1246,10 @@ export default function IncidentsJournal() {
                  )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleLoad} data-testid="button-refresh">
-                  <Search className="h-4 w-4 mr-2" />
-                  Обновить
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                <Button variant="outline" size="sm" onClick={handleLoad} data-testid="button-refresh" className="px-2 sm:px-3">
+                  <Search className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Обновить</span>
                 </Button>
 
                 <Button
@@ -1257,9 +1257,10 @@ export default function IncidentsJournal() {
                   size="sm"
                   onClick={handleCreate}
                   data-testid="button-add-incident"
+                  className="px-2 sm:px-3"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Добавить
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Добавить</span>
                 </Button>
 
                 <DropdownMenu>
@@ -1268,9 +1269,10 @@ export default function IncidentsJournal() {
                       variant="outline"
                       size="sm"
                       data-testid="button-export"
+                      className="px-2 sm:px-3"
                     >
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Экспорт
+                      <FileDown className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Экспорт</span>
                       <ChevronDown className="h-3 w-3 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -1296,9 +1298,10 @@ export default function IncidentsJournal() {
                   size="sm"
                   onClick={() => document.getElementById("import-file")?.click()}
                   data-testid="button-import"
+                  className="px-2 sm:px-3"
                 >
-                  <FileDown className="h-4 w-4 mr-2 rotate-180" />
-                  Импорт
+                  <FileDown className="h-4 w-4 sm:mr-2 rotate-180" />
+                  <span className="hidden sm:inline">Импорт</span>
                 </Button>
               </div>
             </div>

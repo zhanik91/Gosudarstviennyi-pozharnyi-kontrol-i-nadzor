@@ -161,19 +161,20 @@ export default function AIAssistantPage() {
   const messages = currentConversation?.messages || [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-4 flex items-center justify-center">
-          <Bot className="mr-3 w-8 h-8 text-primary" />
-          ИИ-Ассистент по пожарной безопасности
+    <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="text-center mb-4 sm:mb-8">
+        <h1 className="text-xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-4 flex items-center justify-center">
+          <Bot className="mr-2 sm:mr-3 w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+          <span className="hidden sm:inline">ИИ-Ассистент по пожарной безопасности</span>
+          <span className="sm:hidden">ИИ-Ассистент</span>
         </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Консультации по НПА РК, расчётам и требованиям пожарной безопасности
+        <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+          Консультации по НПА РК и требованиям пожарной безопасности
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <Card className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="lg:col-span-1 order-2 lg:order-1">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -190,7 +191,7 @@ export default function AIAssistantPage() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[200px] lg:h-[400px]">
               {conversationsLoading ? (
                 <div className="p-4 text-center text-muted-foreground">Загрузка...</div>
               ) : conversations.length === 0 ? (
@@ -230,7 +231,7 @@ export default function AIAssistantPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3 flex flex-col h-[600px]">
+        <Card className="lg:col-span-3 flex flex-col h-[calc(100vh-280px)] sm:h-[600px] order-1 lg:order-2">
           <CardHeader className="pb-3 border-b">
             <div className="flex items-center gap-2">
               <Bot className="w-6 h-6 text-primary" />

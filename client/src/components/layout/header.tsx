@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "wouter";
 import {
   NavigationMenu,
@@ -16,6 +16,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MchsEmblem } from "@/components/mchs-emblem";
@@ -32,9 +39,11 @@ import {
   Headset,
   Layers,
   MapPin,
+  Menu,
   Shield,
   Sparkles,
   Users,
+  X,
 } from "lucide-react";
 
 type NavItem = {
@@ -173,6 +182,7 @@ function getInitials(name?: string) {
 
 export default function Header() {
   const { user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!user) return null;
   const isAdmin = (user as any)?.role === "MCHS" || (user as any)?.role === "admin";
@@ -227,18 +237,62 @@ export default function Header() {
             </NavigationMenuList>
           </NavigationMenu>
 
-          <div className="flex flex-1 justify-center lg:hidden">
-            <div className="flex w-full items-center gap-2 overflow-x-auto rounded-lg border border-slate-700/60 bg-slate-800/70 px-2 py-1 text-sm text-slate-100 shadow-sm">
-              {navGroupsForUser
-                .flatMap((group) => group.items)
-                .slice(0, 4)
-                .map((item) => (
-                  <Link key={item.title} href={item.href} className="flex min-w-fit items-center gap-1 rounded-md px-3 py-1.5 font-medium transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                    <item.icon className="h-4 w-4" />
-                    <span className="whitespace-nowrap">{item.title}</span>
-                  </Link>
-                ))}
-            </div>
+          <div className="flex lg:hidden">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-100 hover:bg-primary/20"
+                  aria-label="Открыть меню"
+                >
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[350px] bg-slate-900 border-slate-700 overflow-y-auto">
+                <SheetHeader className="pb-4 border-b border-slate-700">
+                  <SheetTitle className="flex items-center gap-3 text-slate-100">
+                    <MchsEmblem className="h-8 w-8" />
+                    <span>Меню</span>
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="py-4 space-y-6">
+                  {navGroupsForUser.map((group) => (
+                    <div key={group.label} className="space-y-2">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-2">
+                        {group.label}
+                      </h3>
+                      <div className="space-y-1">
+                        {group.items.map((item) => (
+                          <Link
+                            key={item.title}
+                            href={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-100 transition hover:bg-primary/20"
+                          >
+                            <item.icon className="h-5 w-5 text-primary" />
+                            <div>
+                              <p className="font-medium">{item.title}</p>
+                              <p className="text-xs text-slate-400 line-clamp-1">{item.description}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-4 border-t border-slate-700">
+                    <Link
+                      href="/api/logout"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 transition hover:bg-red-500/20"
+                    >
+                      <Shield className="h-5 w-5" />
+                      <span className="font-medium">Выйти из системы</span>
+                    </Link>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
 
           <div className="flex flex-none items-center gap-2">
