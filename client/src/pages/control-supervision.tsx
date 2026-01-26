@@ -394,11 +394,15 @@ export default function ControlSupervisionPage() {
         const byLabel = all.find(c => c.label === String(row["Наименование объективного критерия"] ?? row["Категория (кратко)"] ?? ""));
         const byFull  = all.find(c => c.full  === String(row["Полный текст категории"] ?? ""));
         const catId = byLabel?.id || byFull?.id || "";
+        const rawRegion = String(row["Регион"] ?? REGIONS[0]);
+        const rawDistrict = String(row["Район/город"] ?? "");
+        const allowedDistricts = ADMIN2[userRegion] || [];
+        const enforcedDistrict = userDistrict || (allowedDistricts.includes(rawDistrict) ? rawDistrict : "");
 
-        return {
+        const record: ControlledObject = {
           id: crypto.randomUUID(),
-          region: String(row["Регион"] ?? REGIONS[0]),
-          district: String(row["Район/город"] ?? ""),
+          region: rawRegion,
+          district: rawDistrict,
           subjectName: String(row["Наименование субъекта"] ?? ""),
           subjectBIN: String(row["ИИН/БИН"] ?? ""),
           objectName: String(row["Наименование объекта"] ?? ""),
@@ -415,6 +419,13 @@ export default function ControlSupervisionPage() {
           },
           subjective: { prevViolations:0, incidents12m:0, powerOverload:false, otherRiskNotes:"" },
         };
+
+        if (!isMchsUser && userRegion) {
+          record.region = userRegion;
+          record.district = enforcedDistrict;
+        }
+
+        return record;
       });
 
       const nonEmpty = mapped.filter(m => m.subjectName && m.objectName);
@@ -464,7 +475,11 @@ export default function ControlSupervisionPage() {
           <nav className="flex space-x-8 overflow-x-auto">
             {[
               { id: "registry", label: "📋 Реестр объектов" },
+ codex/add-tabs-for-4xr5gw
+              { id: "preventive", label: "🧾 Списки проверок" },
+
               { id: "preventive", label: "🧾 Списки профилактического контроля и надзора" },
+ main
             ].map((tab) => (
               <button
                 key={tab.id}
