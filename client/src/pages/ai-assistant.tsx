@@ -238,7 +238,7 @@ export default function AIAssistantPage() {
                 {currentConversation?.title || "Выберите или создайте чат"}
               </CardTitle>
               <Badge variant="outline" className="ml-auto">
-                GPT-5.1
+                GPT-4o-mini
               </Badge>
             </div>
           </CardHeader>
