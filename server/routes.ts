@@ -2,6 +2,9 @@ import type { Express } from "express";
 import { Router } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { controlObjects } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
 import { incidentController } from "./controllers/incident.controller";
 import { organizationController } from "./controllers/organization.controller";
@@ -135,9 +138,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orgUnitId: region,
         scopeUser: toScopeUser(req.user),
       });
-      res.json({ regions: analyticsData.regionStats || [] });
+      
+      // Get incidents with coordinates
+      const incidentsResult = await storage.getIncidents({
+        scopeUser: toScopeUser(req.user),
+      });
+      
+      // Handle both array and paginated response
+      const incidents = Array.isArray(incidentsResult) 
+        ? incidentsResult 
+        : (incidentsResult as any).items || [];
+      
+      const incidentsWithCoords = incidents
+        .filter((inc: any) => inc.latitude && inc.longitude)
+        .map((inc: any) => ({
+          id: inc.id,
+          type: 'incident',
+          latitude: parseFloat(inc.latitude),
+          longitude: parseFloat(inc.longitude),
+          title: inc.address || 'Происшествие',
+          details: {
+            incidentType: inc.incidentType,
+            dateTime: inc.dateTime,
+            damage: inc.damage,
+            address: inc.address,
+            region: inc.region,
+            district: inc.district,
+          }
+        }));
+      
+      res.json({ 
+        regions: analyticsData.regionStats || [],
+        incidents: incidentsWithCoords,
+        heatmapData: [],
+        trends: []
+      });
     } catch (error) {
+      console.error('Error loading map data:', error);
       res.status(500).json({ message: 'Ошибка загрузки данных карты' });
+    }
+  });
+
+  // API для объектов контроля
+  app.get('/api/control-objects', isAuthenticated, async (req: any, res) => {
+    try {
+      const { region, status } = req.query;
+      const result = await db.query.controlObjects.findMany({
+        where: (fields, { and, eq }) => {
+          const conditions = [];
+          if (region && region !== 'all') {
+            conditions.push(eq(fields.region, region as string));
+          }
+          if (status && status !== 'all') {
+            conditions.push(eq(fields.status, status as any));
+          }
+          return conditions.length > 0 ? and(...conditions) : undefined;
+        },
+        orderBy: (fields, { desc }) => [desc(fields.createdAt)]
+      });
+      
+      const objects = result.map((obj: any) => ({
+        id: obj.id,
+        type: 'object',
+        latitude: obj.latitude ? parseFloat(obj.latitude) : null,
+        longitude: obj.longitude ? parseFloat(obj.longitude) : null,
+        title: obj.name,
+        details: {
+          category: obj.category,
+          subcategory: obj.subcategory,
+          address: obj.address,
+          status: obj.status,
+          riskLevel: obj.riskLevel,
+          region: obj.region,
+          district: obj.district,
+        }
+      }));
+      
+      res.json(objects);
+    } catch (error) {
+      console.error('Error loading control objects:', error);
+      res.status(500).json({ message: 'Ошибка загрузки объектов контроля' });
+    }
+  });
+
+  app.post('/api/control-objects', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.username;
+      const orgUnitId = req.user?.orgUnitId;
+      
+      if (!orgUnitId) {
+        return res.status(400).json({ message: 'Не указано подразделение пользователя' });
+      }
+      
+      const data = req.body;
+      const result = await db.insert(controlObjects).values({
+        ...data,
+        orgUnitId,
+        createdBy: userId,
+      }).returning();
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error('Error creating control object:', error);
+      res.status(500).json({ message: 'Ошибка создания объекта контроля' });
+    }
+  });
+
+  app.put('/api/control-objects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+      
+      const result = await db.update(controlObjects)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(controlObjects.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: 'Объект не найден' });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error('Error updating control object:', error);
+      res.status(500).json({ message: 'Ошибка обновления объекта контроля' });
+    }
+  });
+
+  app.delete('/api/control-objects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      await db.delete(controlObjects).where(eq(controlObjects.id, id));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting control object:', error);
+      res.status(500).json({ message: 'Ошибка удаления объекта контроля' });
     }
   });
 
