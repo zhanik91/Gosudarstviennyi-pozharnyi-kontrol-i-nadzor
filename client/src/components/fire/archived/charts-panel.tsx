@@ -1,3 +1,4 @@
+// Archived: legacy charts panel kept for reference. Use SimpleAnalytics instead.
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";

@@ -71,7 +71,12 @@ export default function SimpleAnalytics() {
   queryParams.set("includeChildren", appliedFilters.includeOrgTree ? "true" : "false");
   const analyticsUrl = `/api/analytics/forms${queryParams.toString() ? `?${queryParams}` : ""}`;
 
-  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+  const {
+    data: analytics,
+    isLoading: isAnalyticsLoading,
+    isError: isAnalyticsError,
+    error: analyticsError,
+  } = useQuery({
     queryKey: [analyticsUrl],
   });
 
@@ -115,6 +120,8 @@ export default function SimpleAnalytics() {
   const displayPeriodTo = appliedFilters.periodTo || "настоящее время";
   const periodLabel = `${displayPeriodFrom} — ${displayPeriodTo}`;
   const tooltipLabelFormatter = (label: string | number) => `${label} (${periodLabel})`;
+  const analyticsErrorMessage =
+    analyticsError instanceof Error ? analyticsError.message : "Не удалось загрузить данные аналитики.";
 
   return (
     <div className="space-y-6">
@@ -123,6 +130,15 @@ export default function SimpleAnalytics() {
         <h2 className="text-2xl font-bold text-foreground">Сводная аналитика по формам</h2>
         <p className="text-muted-foreground">Ключевые показатели форм 1‑ОСП…7‑CO</p>
       </div>
+
+      {isAnalyticsError && (
+        <Card className="border border-destructive/40 bg-destructive/10">
+          <CardContent className="p-4 text-sm text-destructive">
+            Не удалось загрузить аналитику. Проверьте соединение или попробуйте обновить страницу.{" "}
+            <span className="text-destructive/80">{analyticsErrorMessage}</span>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-card border border-border">
         <CardContent className="p-6">
