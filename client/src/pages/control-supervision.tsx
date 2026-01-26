@@ -7,6 +7,7 @@ import { ADMIN2_BY_REGION, REGION_NAMES } from "@/data/kazakhstan-data";
 type Status = "Активный" | "Не функционирует";
 type ObjectiveLevel = "Высокая" | "Средняя" | "Низкая";
 type BizCat = "Микро" | "Малый" | "Средний" | "Крупный";
+type TabType = "registry" | "preventive";
 
 type CategoryItem = { id: string; label: string; full: string };
 
@@ -170,6 +171,7 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 /** ===== Компонент страницы ===== */
 export default function ControlSupervisionPage() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabType>("registry");
   const userRole = (user as any)?.role;
   const isMchsUser = userRole === "MCHS" || userRole === "admin";
   const userRegion = (user as any)?.region || "";
@@ -235,6 +237,21 @@ export default function ControlSupervisionPage() {
     setRegionFilter(userRegion);
     setDistrictFilter(userDistrict || "Все");
   }, [isMchsUser, user, userDistrict, userRegion]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab") as TabType | null;
+    if (tab === "registry" || tab === "preventive") {
+      setActiveTab(tab);
+    }
+  }, []);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.pushState({}, "", url.toString());
+  };
 
   const availableRegions = useMemo(() => {
     if (isMchsUser || !userRegion) return REGIONS;
@@ -443,209 +460,256 @@ export default function ControlSupervisionPage() {
           </div>
         </header>
 
-        {/* Счётчик */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
-          Всего объектов:&nbsp;<span className="font-semibold">{filtered.length}</span>
+        <div className="border-b border-slate-800">
+          <nav className="flex space-x-8 overflow-x-auto">
+            {[
+              { id: "registry", label: "📋 Реестр" },
+              { id: "preventive", label: "🧾 Профилактические списки" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id as TabType)}
+                className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "border-blue-500 text-blue-400"
+                    : "border-transparent text-slate-400 hover:text-slate-100 hover:border-slate-600"
+                }`}
+                type="button"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {/* Панель фильтров */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label className="text-xs text-slate-400">Регион</label>
-              <select
-                value={regionFilter}
-                onChange={(e) => { setRegionFilter(e.target.value); setDistrictFilter("Все"); }}
-                disabled={!isMchsUser && Boolean(userRegion)}
-                className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-              >
-                <option>Все</option>
-                {availableRegions.map(r => <option key={r}>{r}</option>)}
-              </select>
+        {activeTab === "registry" && (
+          <>
+            {/* Счётчик */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+              Всего объектов:&nbsp;<span className="font-semibold">{filtered.length}</span>
             </div>
 
-            <div>
-              <label className="text-xs text-slate-400">Район / ГОС</label>
-              <select
-                value={districtFilter}
-                onChange={(e) => setDistrictFilter(e.target.value)}
-                disabled={isDistrictUser}
-                className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-              >
-                <option>Все</option>
-                {availableDistricts.map(d => <option key={d}>{d}</option>)}
-              </select>
-            </div>
+            {/* Панель фильтров */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">Регион</label>
+                  <select
+                    value={regionFilter}
+                    onChange={(e) => { setRegionFilter(e.target.value); setDistrictFilter("Все"); }}
+                    disabled={!isMchsUser && Boolean(userRegion)}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option>Все</option>
+                    {availableRegions.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
 
-            <div>
-              <label className="text-xs text-slate-400">Объективный критерий (риск)</label>
-              <select
-                value={levelFilter}
-                onChange={(e) => { setLevelFilter(e.target.value as any); setCatFilter("Все"); }}
-                className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-              >
-                <option value="Все">Все</option>
-                <option value="Высокая">Высокая</option>
-                <option value="Средняя">Средняя</option>
-                <option value="Низкая">Низкая</option>
-              </select>
-            </div>
+                <div>
+                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <select
+                    value={districtFilter}
+                    onChange={(e) => setDistrictFilter(e.target.value)}
+                    disabled={isDistrictUser}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option>Все</option>
+                    {availableDistricts.map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
 
-            <div>
-              <label className="text-xs text-slate-400">Наименование объективного критерия</label>
-              <select
-                value={catFilter}
-                onChange={(e) => setCatFilter(e.target.value)}
-                className="block min-w-[320px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-              >
-                <option>Все</option>
-                {(levelFilter === "Все" ? [] : CATS[levelFilter]).map(c => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className="text-xs text-slate-400">Объективный критерий (риск)</label>
+                  <select
+                    value={levelFilter}
+                    onChange={(e) => { setLevelFilter(e.target.value as any); setCatFilter("Все"); }}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option value="Все">Все</option>
+                    <option value="Высокая">Высокая</option>
+                    <option value="Средняя">Средняя</option>
+                    <option value="Низкая">Низкая</option>
+                  </select>
+                </div>
 
-            <div>
-              <label className="text-xs text-slate-400">Статус</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-              >
-                <option value="Все">Все</option>
-                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
+                <div>
+                  <label className="text-xs text-slate-400">Наименование объективного критерия</label>
+                  <select
+                    value={catFilter}
+                    onChange={(e) => setCatFilter(e.target.value)}
+                    className="block min-w-[320px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option>Все</option>
+                    {(levelFilter === "Все" ? [] : CATS[levelFilter]).map(c => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-          <div>
-            <label className="text-xs text-slate-400">Поиск: субъект / объект / БИН / адрес</label>
-            <div className="relative">
-              <input
-                placeholder="Начните ввод…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
-              />
-              <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
-            </div>
-          </div>
+                <div>
+                  <label className="text-xs text-slate-400">Статус</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option value="Все">Все</option>
+                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
 
-          <div className="flex items-end gap-3">
-            <button className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
-                    onClick={() => fileRef.current?.click()}>
-              ⬆️ Импорт
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.currentTarget.value = ""; }}
-            />
-            <button className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium hover:bg-emerald-500"
-                    onClick={exportXLSX}>
-              ⬇️ Экспорт ({filtered.length})
-            </button>
-          </div>
-        </section>
+              <div>
+                <label className="text-xs text-slate-400">Поиск: субъект / объект / БИН / адрес</label>
+                <div className="relative">
+                  <input
+                    placeholder="Начните ввод…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
+                  />
+                  <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
+                </div>
+              </div>
 
-        {/* Таблица */}
-        <section className="overflow-x-auto rounded-2xl border border-slate-800">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-900/60">
-              <tr className="text-left text-slate-300">
-                <th className="px-3 py-3">№</th>
-                <th className="px-3 py-3">Регион</th>
-                <th className="px-3 py-3">Район/город</th>
-                <th className="px-3 py-3">Субъект</th>
-                <th className="px-3 py-3">БИН</th>
-                <th className="px-3 py-3">Объект</th>
-                <th className="px-3 py-3">Адрес</th>
-                <th className="px-3 py-3">Категория бизнеса</th>
-                <th className="px-3 py-3">Статус</th>
-                <th className="px-3 py-3">Объективный критерий</th>
-                <th className="px-3 py-3">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
-              ) : filtered.map((r, idx) => {
-                const cat = CATS[r.objectiveLevel].find(c => c.id === r.objectiveCategoryId);
-                return (
-                  <tr key={r.id} className="border-t border-slate-800 hover:bg-slate-900/40">
-                    <td className="px-3 py-2">{idx + 1}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{r.region}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{r.district || "—"}</td>
-                    <td className="px-3 py-2">{r.subjectName}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{r.subjectBIN}</td>
-                    <td className="px-3 py-2">{r.objectName}</td>
-                    <td className="px-3 py-2">{r.address}</td>
-                    <td className="px-3 py-2">{r.entrepreneurshipCategory}</td>
-                    <td className="px-3 py-2">
-                      <span className={
-                        r.status==="Активный" ? "rounded bg-green-500/20 px-2 py-1 text-green-400" :
-                        r.status==="Не функционирует" ? "rounded bg-yellow-500/20 px-2 py-1 text-yellow-400" :
-                                              "rounded bg-orange-500/20 px-2 py-1 text-orange-400"
-                      }>{r.status}</span>
-                    </td>
-                    <td className="px-3 py-2 max-w-[380px]">
-                      <div title={cat?.full ?? ""} className="truncate">
-                        <b>{r.objectiveLevel}</b> — {cat?.label ?? "—"}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <div className="flex gap-2">
-                        <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                                onClick={() => onEdit(r.id)}>Редактировать</button>
-                        <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                                onClick={() => { setForm(r); setEditingId(r.id); setOpenCharacteristics(true); }}>
-                          Характеристика
-                        </button>
-                        <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                                onClick={() => { setForm(r); setEditingId(r.id); setOpenSubjective(true); }}>
-                          Субъективные
-                        </button>
-                        <button className="rounded-lg bg-red-600 px-2 py-1 text-xs hover:bg-red-500"
-                                onClick={() => setConfirmId(r.id)}>Удалить</button>
-                      </div>
-                    </td>
+              <div className="flex items-end gap-3">
+                <button className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                        onClick={() => fileRef.current?.click()}>
+                  ⬆️ Импорт
+                </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.currentTarget.value = ""; }}
+                />
+                <button className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium hover:bg-emerald-500"
+                        onClick={exportXLSX}>
+                  ⬇️ Экспорт ({filtered.length})
+                </button>
+              </div>
+            </section>
+
+            {/* Таблица */}
+            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-900/60">
+                  <tr className="text-left text-slate-300">
+                    <th className="px-3 py-3">№</th>
+                    <th className="px-3 py-3">Регион</th>
+                    <th className="px-3 py-3">Район/город</th>
+                    <th className="px-3 py-3">Субъект</th>
+                    <th className="px-3 py-3">БИН</th>
+                    <th className="px-3 py-3">Объект</th>
+                    <th className="px-3 py-3">Адрес</th>
+                    <th className="px-3 py-3">Категория бизнеса</th>
+                    <th className="px-3 py-3">Статус</th>
+                    <th className="px-3 py-3">Объективный критерий</th>
+                    <th className="px-3 py-3">Действия</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                  ) : filtered.map((r, idx) => {
+                    const cat = CATS[r.objectiveLevel].find(c => c.id === r.objectiveCategoryId);
+                    return (
+                      <tr key={r.id} className="border-t border-slate-800 hover:bg-slate-900/40">
+                        <td className="px-3 py-2">{idx + 1}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{r.region}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{r.district || "—"}</td>
+                        <td className="px-3 py-2">{r.subjectName}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{r.subjectBIN}</td>
+                        <td className="px-3 py-2">{r.objectName}</td>
+                        <td className="px-3 py-2">{r.address}</td>
+                        <td className="px-3 py-2">{r.entrepreneurshipCategory}</td>
+                        <td className="px-3 py-2">
+                          <span className={
+                            r.status==="Активный" ? "rounded bg-green-500/20 px-2 py-1 text-green-400" :
+                            r.status==="Не функционирует" ? "rounded bg-yellow-500/20 px-2 py-1 text-yellow-400" :
+                                                  "rounded bg-orange-500/20 px-2 py-1 text-orange-400"
+                          }>{r.status}</span>
+                        </td>
+                        <td className="px-3 py-2 max-w-[380px]">
+                          <div title={cat?.full ?? ""} className="truncate">
+                            <b>{r.objectiveLevel}</b> — {cat?.label ?? "—"}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <div className="flex gap-2">
+                            <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                                    onClick={() => onEdit(r.id)}>Редактировать</button>
+                            <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                                    onClick={() => { setForm(r); setEditingId(r.id); setOpenCharacteristics(true); }}>
+                              Характеристика
+                            </button>
+                            <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                                    onClick={() => { setForm(r); setEditingId(r.id); setOpenSubjective(true); }}>
+                              Субъективные
+                            </button>
+                            <button className="rounded-lg bg-red-600 px-2 py-1 text-xs hover:bg-red-500"
+                                    onClick={() => setConfirmId(r.id)}>Удалить</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </section>
+          </>
+        )}
+
+        {activeTab === "preventive" && (
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow">
+            <div className="flex flex-wrap gap-3">
+              <button
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                type="button"
+              >
+                Создать — сформировать списки
+              </button>
+              <button
+                className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700"
+                type="button"
+              >
+                Проанализировать субъективные критерии
+              </button>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* ===== МОДАЛКИ ===== */}
 
-      {/* Основная форма */}
-      {openForm && (
-        <Modal title={editingId ? "Редактировать объект" : "Добавить объект"} onClose={() => setOpenForm(false)}>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Field label="Регион">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={form.region}
-                onChange={(e) => setForm(s => ({...s, region: e.target.value, district:""}))}
-                disabled={!isMchsUser && Boolean(userRegion)}
-              >
-                {availableFormRegions.map(r => <option key={r}>{r}</option>)}
-              </select>
-            </Field>
-            <Field label="Район / ГОС">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={form.district}
-                onChange={(e) => setForm(s => ({...s, district: e.target.value}))}
-                disabled={isDistrictUser}
-              >
-                <option value="">— выберите —</option>
-                {availableFormDistricts.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </Field>
+      {activeTab === "registry" && (
+        <>
+          {/* Основная форма */}
+          {openForm && (
+            <Modal title={editingId ? "Редактировать объект" : "Добавить объект"} onClose={() => setOpenForm(false)}>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <Field label="Регион">
+                  <select
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    value={form.region}
+                    onChange={(e) => setForm(s => ({...s, region: e.target.value, district:""}))}
+                    disabled={!isMchsUser && Boolean(userRegion)}
+                  >
+                    {availableFormRegions.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </Field>
+                <Field label="Район / ГОС">
+                  <select
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    value={form.district}
+                    onChange={(e) => setForm(s => ({...s, district: e.target.value}))}
+                    disabled={isDistrictUser}
+                  >
+                    <option value="">— выберите —</option>
+                    {availableFormDistricts.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </Field>
 
             <Field label="Категория предпринимательства">
               <select
@@ -738,131 +802,133 @@ export default function ControlSupervisionPage() {
             <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenForm(false)}>Отмена</button>
             <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500" onClick={onSave}>Сохранить</button>
           </div>
-        </Modal>
-      )}
+            </Modal>
+          )}
 
-      {/* Характеристика объекта */}
-      {openCharacteristics && (
-        <Modal title="Характеристика объекта" onClose={() => setOpenCharacteristics(false)}>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Check label="Наличие негосударственной противопожарной службы"
-                   checked={form.characteristics.hasPrivateFireService}
-                   onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasPrivateFireService:v}}))}/>
-            <Field label="Вид сооружения">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.buildingType}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, buildingType:e.target.value}}))}/>
-            </Field>
-            <Field label="Этажность (в метрах)">
-              <input inputMode="decimal" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.heightMeters}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, heightMeters: e.target.value===""? "": Number((e.target.value||"").toString().replace(",","."))}}))}/>
-            </Field>
-            <Field label="Стены">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.walls}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, walls:e.target.value}}))}/>
-            </Field>
-            <Field label="Перегородки">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.partitions}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, partitions:e.target.value}}))}/>
-            </Field>
-            <Field label="Отопление">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.heating}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, heating:e.target.value}}))}/>
-            </Field>
-            <Field label="Освещение">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.lighting}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, lighting:e.target.value}}))}/>
-            </Field>
-            <Check label="Наличие чердака"
-                   checked={form.characteristics.hasAttic}
-                   onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAttic:v}}))}/>
-            <Check label="Наличие подвала"
-                   checked={form.characteristics.hasBasement}
-                   onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasBasement:v}}))}/>
-            <Check label="Наличие паркинга"
-                   checked={form.characteristics.hasParking}
-                   onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasParking:v}}))}/>
-            <Field label="Первичные средства пожаротушения">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.primaryExtinguishing}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, primaryExtinguishing:e.target.value}}))}/>
-            </Field>
-            <Check label="АУПТ (авт. установки пожаротушения)"
-                   checked={form.characteristics.hasAUPT}
-                   onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAUPT:v}}))}/>
-            <Check label="АПС (авт. пожарная сигнализация)"
-                   checked={form.characteristics.hasAPS}
-                   onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAPS:v}}))}/>
-            <Field label="Обслуживающая организация АПС">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.apsServiceOrg}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, apsServiceOrg:e.target.value}}))}/>
-            </Field>
-            <Field label="Наружное противопожарное водоснабжение">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.outsideWater}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, outsideWater:e.target.value}}))}/>
-            </Field>
-            <Field label="Внутреннее противопожарное водоснабжение">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.characteristics.insideWater}
-                     onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, insideWater:e.target.value}}))}/>
-            </Field>
-          </div>
-          <div className="mt-5 flex justify-end">
-            <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                    onClick={()=>setOpenCharacteristics(false)}>Готово</button>
-          </div>
-        </Modal>
-      )}
+          {/* Характеристика объекта */}
+          {openCharacteristics && (
+            <Modal title="Характеристика объекта" onClose={() => setOpenCharacteristics(false)}>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <Check label="Наличие негосударственной противопожарной службы"
+                       checked={form.characteristics.hasPrivateFireService}
+                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasPrivateFireService:v}}))}/>
+                <Field label="Вид сооружения">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.buildingType}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, buildingType:e.target.value}}))}/>
+                </Field>
+                <Field label="Этажность (в метрах)">
+                  <input inputMode="decimal" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.heightMeters}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, heightMeters: e.target.value===""? "": Number((e.target.value||"").toString().replace(",","."))}}))}/>
+                </Field>
+                <Field label="Стены">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.walls}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, walls:e.target.value}}))}/>
+                </Field>
+                <Field label="Перегородки">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.partitions}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, partitions:e.target.value}}))}/>
+                </Field>
+                <Field label="Отопление">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.heating}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, heating:e.target.value}}))}/>
+                </Field>
+                <Field label="Освещение">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.lighting}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, lighting:e.target.value}}))}/>
+                </Field>
+                <Check label="Наличие чердака"
+                       checked={form.characteristics.hasAttic}
+                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAttic:v}}))}/>
+                <Check label="Наличие подвала"
+                       checked={form.characteristics.hasBasement}
+                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasBasement:v}}))}/>
+                <Check label="Наличие паркинга"
+                       checked={form.characteristics.hasParking}
+                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasParking:v}}))}/>
+                <Field label="Первичные средства пожаротушения">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.primaryExtinguishing}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, primaryExtinguishing:e.target.value}}))}/>
+                </Field>
+                <Check label="АУПТ (авт. установки пожаротушения)"
+                       checked={form.characteristics.hasAUPT}
+                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAUPT:v}}))}/>
+                <Check label="АПС (авт. пожарная сигнализация)"
+                       checked={form.characteristics.hasAPS}
+                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAPS:v}}))}/>
+                <Field label="Обслуживающая организация АПС">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.apsServiceOrg}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, apsServiceOrg:e.target.value}}))}/>
+                </Field>
+                <Field label="Наружное противопожарное водоснабжение">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.outsideWater}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, outsideWater:e.target.value}}))}/>
+                </Field>
+                <Field label="Внутреннее противопожарное водоснабжение">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.characteristics.insideWater}
+                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, insideWater:e.target.value}}))}/>
+                </Field>
+              </div>
+              <div className="mt-5 flex justify-end">
+                <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                        onClick={()=>setOpenCharacteristics(false)}>Готово</button>
+              </div>
+            </Modal>
+          )}
 
-      {/* Субъективные критерии */}
-      {openSubjective && (
-        <Modal title="Субъективные критерии" onClose={() => setOpenSubjective(false)}>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Field label="Нарушения по предыдущей проверке (кол-во)">
-              <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.subjective.prevViolations}
-                     onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, prevViolations: Number(e.target.value||0)}}))}/>
-            </Field>
-            <Field label="Пожары/ЧС за 12 месяцев (кол-во)">
-              <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.subjective.incidents12m}
-                     onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, incidents12m: Number(e.target.value||0)}}))}/>
-            </Field>
-            <Check label="Превышение мощности / перегрузки"
-                   checked={form.subjective.powerOverload}
-                   onChange={(v)=>setForm(s=>({...s, subjective:{...s.subjective, powerOverload:v}}))}/>
-            <Field label="Прочие неблагоприятные факторы">
-              <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                     value={form.subjective.otherRiskNotes}
-                     onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, otherRiskNotes:e.target.value}}))}/>
-            </Field>
-          </div>
-          <div className="mt-5 flex justify-end">
-            <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                    onClick={()=>setOpenSubjective(false)}>Готово</button>
-          </div>
-        </Modal>
-      )}
+          {/* Субъективные критерии */}
+          {openSubjective && (
+            <Modal title="Субъективные критерии" onClose={() => setOpenSubjective(false)}>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <Field label="Нарушения по предыдущей проверке (кол-во)">
+                  <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.subjective.prevViolations}
+                         onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, prevViolations: Number(e.target.value||0)}}))}/>
+                </Field>
+                <Field label="Пожары/ЧС за 12 месяцев (кол-во)">
+                  <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.subjective.incidents12m}
+                         onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, incidents12m: Number(e.target.value||0)}}))}/>
+                </Field>
+                <Check label="Превышение мощности / перегрузки"
+                       checked={form.subjective.powerOverload}
+                       onChange={(v)=>setForm(s=>({...s, subjective:{...s.subjective, powerOverload:v}}))}/>
+                <Field label="Прочие неблагоприятные факторы">
+                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                         value={form.subjective.otherRiskNotes}
+                         onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, otherRiskNotes:e.target.value}}))}/>
+                </Field>
+              </div>
+              <div className="mt-5 flex justify-end">
+                <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                        onClick={()=>setOpenSubjective(false)}>Готово</button>
+              </div>
+            </Modal>
+          )}
 
-      {/* Подтверждение удаления */}
-      {confirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={()=>setConfirmId(null)}>
-          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e)=>e.stopPropagation()}>
-            <h3 className="text-lg font-semibold">Удалить запись?</h3>
-            <p className="mt-2 text-sm text-slate-300">Действие необратимо.</p>
-            <div className="mt-5 flex justify-end gap-3">
-              <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={()=>setConfirmId(null)}>Отмена</button>
-              <button className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium hover:bg-red-500" onClick={onDelete}>Удалить</button>
+          {/* Подтверждение удаления */}
+          {confirmId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={()=>setConfirmId(null)}>
+              <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e)=>e.stopPropagation()}>
+                <h3 className="text-lg font-semibold">Удалить запись?</h3>
+                <p className="mt-2 text-sm text-slate-300">Действие необратимо.</p>
+                <div className="mt-5 flex justify-end gap-3">
+                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={()=>setConfirmId(null)}>Отмена</button>
+                  <button className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium hover:bg-red-500" onClick={onDelete}>Удалить</button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
