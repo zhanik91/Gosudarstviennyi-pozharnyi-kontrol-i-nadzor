@@ -16,6 +16,7 @@ import DocumentManagement from "@/pages/document-management";
 import NotificationsSystem from "@/pages/notifications-system";
 import InteractiveMaps from "@/pages/interactive-maps";
 import AuditConclusionsJournal from "@/pages/audit-conclusions-journal";
+import JournalsListsModule from "@/pages/journals-lists-module";
 import MobileField from "@/pages/mobile-field";
 import Home from "@/pages/home";
 import FireModule from "@/pages/fire-module";
@@ -82,6 +83,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/" component={protectedRoute(Home)} />
       <Route path="/fire-module" component={protectedRoute(FireModule)} />
+      <Route path="/journals-lists" component={protectedRoute(JournalsListsModule)} />
       <Route path="/audit-conclusions" component={protectedRoute(AuditConclusionsJournal)} />
       <Route path="/controlled-objects" component={protectedRoute(ControlSupervision)} />
       <Route path="/incidents/new" component={protectedRoute(FireModule)} />
