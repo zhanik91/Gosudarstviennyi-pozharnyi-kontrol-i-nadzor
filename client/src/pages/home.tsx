@@ -104,7 +104,7 @@ export default function Home() {
               }}
               secondaryActions={[
                 { label: "Реестр объектов", href: "/controlled-objects?tab=registry" },
-                { label: "Списки профилактического контроля и надзора", href: "/controlled-objects?tab=preventive" }
+                { label: "Списки проверок", href: "/controlled-objects?tab=preventive" }
               ]}
             />
 
