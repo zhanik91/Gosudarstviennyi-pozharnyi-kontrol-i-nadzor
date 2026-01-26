@@ -475,7 +475,11 @@ export default function ControlSupervisionPage() {
           <nav className="flex space-x-8 overflow-x-auto">
             {[
               { id: "registry", label: "📋 Реестр объектов" },
+ codex/add-tabs-for-4xr5gw
               { id: "preventive", label: "🧾 Списки проверок" },
+
+              { id: "preventive", label: "🧾 Списки профилактического контроля и надзора" },
+ main
             ].map((tab) => (
               <button
                 key={tab.id}
