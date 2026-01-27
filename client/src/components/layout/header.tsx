@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import {
   NavigationMenu,
@@ -40,8 +40,10 @@ import {
   Layers,
   MapPin,
   Menu,
+  Moon,
   Shield,
   Sparkles,
+  Sun,
   Users,
   X,
 } from "lucide-react";
@@ -170,6 +172,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 
+const THEME_STORAGE_KEY = "theme";
+
 function getInitials(name?: string) {
   if (!name) return "МЧ";
   const parts = name.split(" ").filter(Boolean);
@@ -183,12 +187,26 @@ function getInitials(name?: string) {
 export default function Header() {
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "dark";
+    return localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
+  });
 
   if (!user) return null;
   const isAdmin = (user as any)?.role === "MCHS" || (user as any)?.role === "admin";
   const navGroupsForUser = navGroups.filter(
     (group) => group.label !== "Администрирование" || isAdmin
   );
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("light", theme === "light");
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/85 text-slate-100 backdrop-blur supports-[backdrop-filter]:bg-slate-950/75 shadow-lg">
@@ -296,6 +314,15 @@ export default function Header() {
           </div>
 
           <div className="flex flex-none items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Переключить тему"
+              onClick={toggleTheme}
+              className="text-slate-100 transition duration-200 hover:bg-primary/20 hover:text-white"
+            >
+              {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
