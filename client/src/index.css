@@ -50,18 +50,18 @@
 }
 
 .light {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(220, 25%, 12%);
+  --background: hsl(210, 20%, 98%);
+  --foreground: hsl(220, 28%, 14%);
   --card: hsl(210, 15%, 98%);
-  --card-foreground: hsl(220, 25%, 12%);
+  --card-foreground: hsl(220, 28%, 14%);
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(220, 25%, 12%);
+  --popover-foreground: hsl(220, 28%, 14%);
   --primary: hsl(208, 95%, 61%);
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(210, 24%, 94%);
   --secondary-foreground: hsl(220, 25%, 20%);
   --muted: hsl(210, 18%, 90%);
-  --muted-foreground: hsl(220, 15%, 32%);
+  --muted-foreground: hsl(220, 12%, 40%);
   --accent: hsl(210, 25%, 92%);
   --accent-foreground: hsl(220, 30%, 16%);
   --destructive: hsl(356, 91%, 54%);
@@ -96,14 +96,8 @@
 }
 
 .portal-bg::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: var(--portal-overlay-opacity);
-  background-image: var(--portal-overlay);
-  background-size: 3px 3px, 7px 7px;
-  background-position: 0 0, 1px 1px;
+  content: none;
+  display: none;
 }
 
 @media (max-width: 768px) {
@@ -113,8 +107,7 @@
   }
 
   .portal-bg::before {
-    opacity: calc(var(--portal-overlay-opacity) * 1.1);
-    background-size: 4px 4px, 8px 8px;
+    display: none;
   }
 }
 
