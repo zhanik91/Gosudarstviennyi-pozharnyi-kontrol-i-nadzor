@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/layout/header";
 import ErrorBoundary from "@/components/system/error-boundary";
 import { useAuth } from "@/hooks/useAuth";
-import { ThemeProvider } from "@/hooks/useTheme";
 import NotFound from "@/pages/not-found";
 import AdminPanel from "@/pages/admin-panel";
 import DocumentsPage from "@/pages/documents-page";
@@ -117,14 +116,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <ErrorBoundary>
-            <Router />
-          </ErrorBoundary>
-        </TooltipProvider>
-      </ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <ErrorBoundary>
+          <Router />
+        </ErrorBoundary>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
