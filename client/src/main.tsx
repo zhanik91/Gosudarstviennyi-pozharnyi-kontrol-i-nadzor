@@ -1,12 +1,8 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { applyTheme, getStoredTheme } from "./utils/theme";
 import "./index.css";
 
-const storedTheme = localStorage.getItem("theme");
-if (storedTheme === "light") {
-  document.documentElement.classList.add("light");
-} else {
-  document.documentElement.classList.remove("light");
-}
+applyTheme(getStoredTheme());
 
 createRoot(document.getElementById("root")!).render(<App />);
