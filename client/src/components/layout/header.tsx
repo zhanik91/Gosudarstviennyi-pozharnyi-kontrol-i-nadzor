@@ -191,7 +191,7 @@ export default function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 text-foreground backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm">
+    <header className="sticky top-0 z-40 border-b border-border bg-background text-foreground shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-6">
           <Link href="/" className="flex flex-none items-center gap-3 rounded-md px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
@@ -217,7 +217,7 @@ export default function Header() {
                     <div className="grid gap-3 p-4 md:w-[600px] lg:w-[720px] md:grid-cols-2">
                       {group.items.map((item) => (
                         <NavigationMenuLink key={item.title} asChild>
-                          <Link href={item.href} className="flex h-full gap-3 rounded-lg border border-transparent bg-secondary/40 px-3 py-3 text-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                          <Link href={item.href} className="flex h-full gap-3 rounded-lg border border-transparent bg-secondary/80 px-3 py-3 text-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary">
                               <item.icon className="h-5 w-5" />
                             </div>
