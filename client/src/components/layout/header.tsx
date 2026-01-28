@@ -191,7 +191,7 @@ export default function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/85 text-slate-100 backdrop-blur supports-[backdrop-filter]:bg-slate-950/75 shadow-lg">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 text-foreground backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-6">
           <Link href="/" className="flex flex-none items-center gap-3 rounded-md px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
@@ -200,7 +200,7 @@ export default function Header() {
               <p className="text-xs uppercase tracking-[0.08em] text-primary">
                 ҚР ТЖМ ӨҚҚК 
               </p>
-              <p className="text-sm font-semibold text-white">
+              <p className="text-sm font-semibold text-foreground">
                 КПС МЧС РК
               </p>
             </div>
@@ -210,7 +210,7 @@ export default function Header() {
             <NavigationMenuList className="ml-4 gap-1">
               {navGroupsForUser.map((group) => (
                 <NavigationMenuItem key={group.label}>
-                  <NavigationMenuTrigger className="bg-transparent text-sm font-medium text-slate-100 transition-colors duration-200 hover:bg-primary/20 focus:bg-primary/25">
+                  <NavigationMenuTrigger className="bg-transparent text-sm font-medium text-foreground transition-colors duration-200 hover:bg-primary/10 focus:bg-primary/15">
                     {group.label}
                   </NavigationMenuTrigger>
                   <NavigationMenuContent className="rounded-xl border border-border bg-popover text-popover-foreground shadow-xl transition-[opacity,transform] duration-200">
@@ -243,15 +243,15 @@ export default function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-slate-100 hover:bg-primary/20"
+                  className="text-foreground hover:bg-primary/10"
                   aria-label="Открыть меню"
                 >
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:w-[350px] bg-slate-900 border-slate-700 overflow-y-auto">
-                <SheetHeader className="pb-4 border-b border-slate-700">
-                  <SheetTitle className="flex items-center gap-3 text-slate-100">
+              <SheetContent side="left" className="w-[300px] sm:w-[350px] bg-background border-border overflow-y-auto">
+                <SheetHeader className="pb-4 border-b border-border">
+                  <SheetTitle className="flex items-center gap-3 text-foreground">
                     <MchsEmblem className="h-8 w-8" />
                     <span>Меню</span>
                   </SheetTitle>
@@ -259,7 +259,7 @@ export default function Header() {
                 <div className="py-4 space-y-6">
                   {navGroupsForUser.map((group) => (
                     <div key={group.label} className="space-y-2">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-2">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2">
                         {group.label}
                       </h3>
                       <div className="space-y-1">
@@ -268,23 +268,23 @@ export default function Header() {
                             key={item.title}
                             href={item.href}
                             onClick={() => setMobileMenuOpen(false)}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-100 transition hover:bg-primary/20"
+                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition hover:bg-primary/10"
                           >
                             <item.icon className="h-5 w-5 text-primary" />
                             <div>
                               <p className="font-medium">{item.title}</p>
-                              <p className="text-xs text-slate-400 line-clamp-1">{item.description}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-1">{item.description}</p>
                             </div>
                           </Link>
                         ))}
                       </div>
                     </div>
                   ))}
-                  <div className="pt-4 border-t border-slate-700">
+                  <div className="pt-4 border-t border-border">
                     <Link
                       href="/api/logout"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 transition hover:bg-red-500/20"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive transition hover:bg-destructive/10"
                     >
                       <Shield className="h-5 w-5" />
                       <span className="font-medium">Выйти из системы</span>
@@ -301,10 +301,10 @@ export default function Header() {
               variant="ghost"
               size="icon"
               aria-label="Уведомления"
-              className="relative hidden sm:inline-flex text-slate-100 transition duration-200 hover:bg-primary/20 hover:text-white"
+              className="relative hidden sm:inline-flex text-foreground transition duration-200 hover:bg-primary/10"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
+              <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
                 3
               </span>
             </Button>
@@ -313,7 +313,7 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="group flex items-center gap-2 rounded-full px-2 pr-3 text-slate-100 transition duration-200 hover:bg-primary/20 hover:text-white"
+                  className="group flex items-center gap-2 rounded-full px-2 pr-3 text-foreground transition duration-200 hover:bg-primary/10"
                   aria-label="Меню профиля"
                 >
                   <Avatar className="h-9 w-9 border">
