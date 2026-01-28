@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { PortalCard } from "@/components/ui/portal-card";
 import { LucideIcon } from "lucide-react";
 
 interface StatsCardProps {
@@ -19,7 +20,7 @@ export default function StatsCard({
   dataTestId
 }: StatsCardProps) {
   return (
-    <Card>
+    <PortalCard>
       <CardContent className="p-6">
         <div className="flex items-center gap-3">
           <Icon className={`h-8 w-8 ${iconColor}`} />
@@ -33,6 +34,6 @@ export default function StatsCard({
           </div>
         </div>
       </CardContent>
-    </Card>
+    </PortalCard>
   );
 }

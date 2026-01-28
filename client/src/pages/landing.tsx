@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Shield, Building, FileText } from "lucide-react";
+import { PortalCard } from "@/components/ui/portal-card";
 
 export default function Landing() {
   return (
@@ -35,7 +36,7 @@ export default function Landing() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <Card className="bg-gradient-to-br from-card to-card/80 border border-border hover-lift">
+          <PortalCard>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -47,9 +48,9 @@ export default function Landing() {
                 Журнал выездов, единое окно ввода, отчёты 1-ОСП, 2-ССГ, 3-СПВП, 4-СОВП, 5-СПЖС, 6-ССПЗ и CO, пакеты и диаграммы
               </p>
             </CardContent>
-          </Card>
+          </PortalCard>
 
-          <Card className="bg-gradient-to-br from-card to-card/80 border border-border hover-lift">
+          <PortalCard>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center">
@@ -61,9 +62,9 @@ export default function Landing() {
                 Реестр объектов надзора (ОВСР/иные), атрибуты, статусы проверок, привязка к территориям
               </p>
             </CardContent>
-          </Card>
+          </PortalCard>
 
-          <Card className="bg-gradient-to-br from-card to-card/80 border border-border hover-lift">
+          <PortalCard>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
@@ -75,7 +76,7 @@ export default function Landing() {
                 Учёт проверок НГПС, предписаний, административных правонарушений, протоколов, актов, возвратов
               </p>
             </CardContent>
-          </Card>
+          </PortalCard>
         </div>
 
         <div className="text-center">

@@ -1,5 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PortalCard } from "@/components/ui/portal-card";
 import { Link } from "wouter";
 import { LucideIcon } from "lucide-react";
 
@@ -30,7 +31,7 @@ export default function ModuleCard({
   secondaryActions = []
 }: ModuleCardProps) {
   return (
-    <Card className="bg-gradient-to-br from-card to-card/80 border border-border hover-lift">
+    <PortalCard>
       <CardHeader>
         <div className="flex items-center gap-3 mb-2">
           <div className={`w-12 h-12 rounded-lg ${iconBg} flex items-center justify-center`}>
@@ -78,6 +79,6 @@ export default function ModuleCard({
           )}
         </div>
       </CardContent>
-    </Card>
+    </PortalCard>
   );
 }
