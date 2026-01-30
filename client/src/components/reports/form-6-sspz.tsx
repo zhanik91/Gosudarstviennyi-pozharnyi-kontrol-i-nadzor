@@ -8,6 +8,7 @@ import { FORM_6_STEPPE_FIRES_ROWS, FORM_6_IGNITIONS_ROWS, Form6SSPZRow } from "@
 import { Download, Send, Printer, Flame, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
+import { useReportPeriod } from "@/components/reports/use-report-period";
 
 interface ValidationError {
   rowId: string;
@@ -35,15 +36,11 @@ interface SteppeFireData {
 }
 
 export default function Form6SSPZ() {
-  const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
-    String(now.getMonth() + 1).padStart(2, "0")
-  );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
+  const { periodKey, reportMonth, reportYear, setReportMonth, setReportYear } = useReportPeriod();
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
-  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+  const period = periodKey || undefined;
 
   const { reportData, isLoading, saveReport } = useReportForm<SteppeFireData>({
     formId: "6-sspz",
@@ -237,7 +234,7 @@ export default function Form6SSPZ() {
       return;
     }
 
-    if (!reportMonth || !reportYear) {
+    if (!period) {
       toast({
         title: "Ошибка",
         description: "Укажите отчетный период",

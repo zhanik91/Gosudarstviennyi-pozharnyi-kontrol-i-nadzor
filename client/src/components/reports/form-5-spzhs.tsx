@@ -8,6 +8,7 @@ import { FORM_5_COLUMNS, FORM_5_ROWS, Form5Row } from "@shared/fire-forms-data";
 import { Download, Send, Printer, Home, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
+import { useReportPeriod } from "@/components/reports/use-report-period";
 
 interface ValidationError {
   rowId: string;
@@ -35,16 +36,12 @@ export default function Form5SPZHS() {
     return expanded;
   };
 
-  const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
-    String(now.getMonth() + 1).padStart(2, "0")
-  );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
+  const { periodKey, reportMonth, reportYear, setReportMonth, setReportYear } = useReportPeriod();
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(() => getDefaultExpandedRows());
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
-  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+  const period = periodKey || undefined;
 
   const { reportData, isLoading, saveReport } = useReportForm<RowData>({
     formId: "5-spzs",
@@ -207,7 +204,7 @@ export default function Form5SPZHS() {
       return;
     }
 
-    if (!reportMonth || !reportYear) {
+    if (!period) {
       toast({
         title: "Ошибка",
         description: "Укажите отчетный период",

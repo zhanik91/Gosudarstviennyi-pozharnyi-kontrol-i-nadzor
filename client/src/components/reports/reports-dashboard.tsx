@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,7 @@ import Form4SOVP from "./form-4-sovp";
 import Form5SPZHS from "./form-5-spzhs";
 import Form6SSPZ from "./form-6-sspz";
 import FormCO from "./form-co";
+import { useReportPeriod } from "./use-report-period";
 
 interface ReportStatus {
   id: string;
@@ -57,14 +57,11 @@ interface ReportsSummaryResponse {
 }
 
 export default function ReportsDashboard() {
-  const [currentMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const { periodKey, store, updatePreset } = useReportPeriod();
   const { data: summaryData } = useQuery<ReportsSummaryResponse>({
-    queryKey: ["/api/reports/summary", currentMonth],
+    queryKey: ["/api/reports/summary", periodKey],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/summary?period=${currentMonth}`);
+      const response = await fetch(`/api/reports/summary?period=${periodKey}`);
       return response.json();
     },
   });
@@ -183,6 +180,32 @@ export default function ReportsDashboard() {
     }
   };
 
+  const reportPeriodLabel = (() => {
+    const from = store.report.from;
+    const to = store.report.to;
+    if (!from && !to) return periodKey;
+    if (from && to && from !== to) {
+      return `${from} — ${to}`;
+    }
+    return from || to || periodKey;
+  })();
+
+  const journalPeriodLabel = (() => {
+    const from = store.journal.from;
+    const to = store.journal.to;
+    if (!from && !to) return "не выбран";
+    if (from && to && from !== to) {
+      return `${from} — ${to}`;
+    }
+    return from || to || "не выбран";
+  })();
+
+  const handleUseJournalPeriod = () => {
+    updatePreset("report", store.journal);
+  };
+
+  const isJournalEmpty = !store.journal.from && !store.journal.to;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -192,9 +215,23 @@ export default function ReportsDashboard() {
             Ежемесячные формы согласно Приказу № 377 от 28.08.2025
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          <span className="text-sm">Отчетный период: {currentMonth}</span>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm">Отчетный период: {reportPeriodLabel}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Период журнала: {journalPeriodLabel}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleUseJournalPeriod}
+              disabled={isJournalEmpty}
+            >
+              Использовать период журнала
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { NON_FIRE_CASES } from "@shared/fire-forms-data";
 import { Download, FileText, Send, Printer, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
+import { useReportPeriod } from "@/components/reports/use-report-period";
 
 interface ValidationError {
   rowCode: string;
@@ -16,15 +17,11 @@ interface ValidationError {
 }
 
 export default function Form2SSG() {
-  const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
-    String(now.getMonth() + 1).padStart(2, "0")
-  );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
+  const { periodKey, reportMonth, reportYear, setReportMonth, setReportYear } = useReportPeriod();
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
-  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+  const period = periodKey || undefined;
 
   const { reportData, isLoading, saveReport } = useReportForm<number>({
     formId: "2-ssg",
@@ -117,7 +114,7 @@ export default function Form2SSG() {
       return;
     }
 
-    if (!reportMonth || !reportYear) {
+    if (!period) {
       toast({
         title: "Ошибка",
         description: "Укажите отчетный период",
