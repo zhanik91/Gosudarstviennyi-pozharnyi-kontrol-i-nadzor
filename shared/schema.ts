@@ -47,6 +47,30 @@ export const reportFormStatusEnum = pgEnum('report_form_status', [
   'draft', 'submitted'
 ]);
 
+export const inspectionTypeEnum = pgEnum('inspection_type', [
+  'scheduled', 'unscheduled', 'preventive', 'monitoring'
+]);
+
+export const inspectionStatusEnum = pgEnum('inspection_status', [
+  'planned', 'in_progress', 'completed', 'canceled'
+]);
+
+export const prescriptionStatusEnum = pgEnum('prescription_status', [
+  'issued', 'in_progress', 'fulfilled', 'overdue', 'canceled'
+]);
+
+export const measureTypeEnum = pgEnum('measure_type', [
+  'warning', 'order', 'fine', 'suspension', 'other'
+]);
+
+export const measureStatusEnum = pgEnum('measure_status', [
+  'draft', 'issued', 'in_progress', 'completed', 'canceled'
+]);
+
+export const adminCaseStatusEnum = pgEnum('admin_case_status', [
+  'opened', 'in_review', 'resolved', 'closed', 'canceled'
+]);
+
 // Users table for local authentication (МЧС РК)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -287,6 +311,106 @@ export const controlObjects = pgTable("control_objects", {
   index("control_objects_status_idx").on(table.status),
 ]);
 
+export const inspections = pgTable("inspections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  number: varchar("number").notNull(),
+  inspectionDate: timestamp("inspection_date").notNull(),
+  type: inspectionTypeEnum("type").notNull(),
+  status: inspectionStatusEnum("status").notNull().default('planned'),
+  region: varchar("region"),
+  district: varchar("district"),
+  bin: varchar("bin"),
+  iin: varchar("iin"),
+  subjectName: varchar("subject_name"),
+  address: text("address"),
+  orgUnitId: varchar("org_unit_id"),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("inspections_region_idx").on(table.region),
+  index("inspections_district_idx").on(table.district),
+  index("inspections_date_idx").on(table.inspectionDate),
+  index("inspections_status_idx").on(table.status),
+  index("inspections_bin_idx").on(table.bin),
+  index("inspections_iin_idx").on(table.iin),
+  index("inspections_number_idx").on(table.number),
+]);
+
+export const prescriptions = pgTable("prescriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  inspectionId: varchar("inspection_id").notNull().references(() => inspections.id),
+  number: varchar("number").notNull(),
+  issueDate: timestamp("issue_date").notNull(),
+  dueDate: timestamp("due_date"),
+  status: prescriptionStatusEnum("status").notNull().default('issued'),
+  region: varchar("region"),
+  district: varchar("district"),
+  bin: varchar("bin"),
+  iin: varchar("iin"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("prescriptions_inspection_id_idx").on(table.inspectionId),
+  index("prescriptions_region_idx").on(table.region),
+  index("prescriptions_district_idx").on(table.district),
+  index("prescriptions_issue_date_idx").on(table.issueDate),
+  index("prescriptions_status_idx").on(table.status),
+  index("prescriptions_bin_idx").on(table.bin),
+  index("prescriptions_iin_idx").on(table.iin),
+  index("prescriptions_number_idx").on(table.number),
+]);
+
+export const measures = pgTable("measures", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  relatedInspectionId: varchar("related_inspection_id").references(() => inspections.id),
+  number: varchar("number").notNull(),
+  measureDate: timestamp("measure_date").notNull(),
+  type: measureTypeEnum("type").notNull(),
+  status: measureStatusEnum("status").notNull().default('draft'),
+  region: varchar("region"),
+  district: varchar("district"),
+  bin: varchar("bin"),
+  iin: varchar("iin"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("measures_related_inspection_id_idx").on(table.relatedInspectionId),
+  index("measures_region_idx").on(table.region),
+  index("measures_district_idx").on(table.district),
+  index("measures_date_idx").on(table.measureDate),
+  index("measures_status_idx").on(table.status),
+  index("measures_bin_idx").on(table.bin),
+  index("measures_iin_idx").on(table.iin),
+  index("measures_number_idx").on(table.number),
+]);
+
+export const adminCases = pgTable("admin_cases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  inspectionId: varchar("inspection_id").references(() => inspections.id),
+  number: varchar("number").notNull(),
+  caseDate: timestamp("case_date").notNull(),
+  status: adminCaseStatusEnum("status").notNull().default('opened'),
+  region: varchar("region"),
+  district: varchar("district"),
+  bin: varchar("bin"),
+  iin: varchar("iin"),
+  article: text("article"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("admin_cases_inspection_id_idx").on(table.inspectionId),
+  index("admin_cases_region_idx").on(table.region),
+  index("admin_cases_district_idx").on(table.district),
+  index("admin_cases_date_idx").on(table.caseDate),
+  index("admin_cases_status_idx").on(table.status),
+  index("admin_cases_bin_idx").on(table.bin),
+  index("admin_cases_iin_idx").on(table.iin),
+  index("admin_cases_number_idx").on(table.number),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   orgUnit: one(orgUnits, {
@@ -294,6 +418,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [orgUnits.id],
   }),
   incidents: many(incidents),
+  inspections: many(inspections),
 }));
 
 export const orgUnitsRelations = relations(orgUnits, ({ one, many }) => ({
@@ -305,6 +430,7 @@ export const orgUnitsRelations = relations(orgUnits, ({ one, many }) => ({
   users: many(users),
   incidents: many(incidents),
   packages: many(packages),
+  inspections: many(inspections),
 }));
 
 export const incidentsRelations = relations(incidents, ({ one, many }) => ({
@@ -321,6 +447,41 @@ export const incidentsRelations = relations(incidents, ({ one, many }) => ({
     references: [packages.id],
   }),
   victims: many(incidentVictims),
+}));
+
+export const inspectionsRelations = relations(inspections, ({ one, many }) => ({
+  orgUnit: one(orgUnits, {
+    fields: [inspections.orgUnitId],
+    references: [orgUnits.id],
+  }),
+  createdByUser: one(users, {
+    fields: [inspections.createdBy],
+    references: [users.id],
+  }),
+  prescriptions: many(prescriptions),
+  measures: many(measures),
+  adminCases: many(adminCases),
+}));
+
+export const prescriptionsRelations = relations(prescriptions, ({ one }) => ({
+  inspection: one(inspections, {
+    fields: [prescriptions.inspectionId],
+    references: [inspections.id],
+  }),
+}));
+
+export const measuresRelations = relations(measures, ({ one }) => ({
+  relatedInspection: one(inspections, {
+    fields: [measures.relatedInspectionId],
+    references: [inspections.id],
+  }),
+}));
+
+export const adminCasesRelations = relations(adminCases, ({ one }) => ({
+  inspection: one(inspections, {
+    fields: [adminCases.inspectionId],
+    references: [inspections.id],
+  }),
 }));
 
 export const incidentVictimsRelations = relations(incidentVictims, ({ one }) => ({
@@ -391,6 +552,30 @@ export const insertControlObjectSchema = createInsertSchema(controlObjects).omit
   updatedAt: true,
 });
 
+export const insertInspectionSchema = createInsertSchema(inspections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPrescriptionSchema = createInsertSchema(prescriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMeasureSchema = createInsertSchema(measures).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAdminCaseSchema = createInsertSchema(adminCases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = typeof users.$inferInsert;
 export type ControlObject = typeof controlObjects.$inferSelect;
@@ -398,6 +583,14 @@ export type InsertControlObject = typeof controlObjects.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type ReportForm = typeof reportForms.$inferSelect;
 export type InsertReportForm = typeof reportForms.$inferInsert;
+export type Inspection = typeof inspections.$inferSelect;
+export type InsertInspection = typeof inspections.$inferInsert;
+export type Prescription = typeof prescriptions.$inferSelect;
+export type InsertPrescription = typeof prescriptions.$inferInsert;
+export type Measure = typeof measures.$inferSelect;
+export type InsertMeasure = typeof measures.$inferInsert;
+export type AdminCase = typeof adminCases.$inferSelect;
+export type InsertAdminCase = typeof adminCases.$inferInsert;
 
 export const loginSchema = z.object({
   username: z.string().min(1, "Логин обязателен"),
