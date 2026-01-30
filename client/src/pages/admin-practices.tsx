@@ -88,7 +88,7 @@ const entries = [
   },
 ];
 
-const regions = ["Все", ...Array.from(new Set(entries.map((item) => item.region)))];
+const articles = ["Все", ...Array.from(new Set(entries.map((item) => item.article)))];
 const statuses = ["Все", "В работе", "Оплачено", "Просрочено"];
 
 const formatCurrency = (value: number) =>
@@ -99,38 +99,20 @@ const formatCurrency = (value: number) =>
   }).format(value);
 
 export default function AdminPracticesPage() {
-  const [region, setRegion] = useState("Все");
+  const [article, setArticle] = useState("Все");
   const [status, setStatus] = useState("Все");
-  const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
   const filtered = useMemo(() => {
     return entries.filter((item) => {
-      if (region !== "Все" && item.region !== region) return false;
+      if (article !== "Все" && item.article !== article) return false;
       if (status !== "Все" && item.status !== status) return false;
       if (dateFrom && item.date < dateFrom) return false;
       if (dateTo && item.date > dateTo) return false;
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        const haystack = [
-          item.protocolNumber,
-          item.subject,
-          item.object,
-          item.bin,
-          item.article,
-          item.violation,
-          item.inspector,
-          item.region,
-          item.district,
-        ]
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
       return true;
     });
-  }, [region, status, search, dateFrom, dateTo]);
+  }, [article, status, dateFrom, dateTo]);
 
   return (
     <div className="space-y-8 px-4 py-6 sm:px-6 lg:px-8">
@@ -141,7 +123,7 @@ export default function AdminPracticesPage() {
               Журнал административной практики
             </h1>
             <p className="text-sm text-muted-foreground">
-              Фильтруйте протоколы, статусы исполнения и сроки оплаты.
+              Отбирайте протоколы по периоду, статье КоАП и статусу исполнения.
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
@@ -151,15 +133,15 @@ export default function AdminPracticesPage() {
       </header>
 
       <section className="rounded-2xl border border-border bg-card/40 p-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-5">
+        <div className="grid gap-4 lg:grid-cols-4">
           <div>
-            <label className="text-xs text-muted-foreground">Регион</label>
+            <label className="text-xs text-muted-foreground">Статья КоАП</label>
             <select
-              value={region}
-              onChange={(event) => setRegion(event.target.value)}
+              value={article}
+              onChange={(event) => setArticle(event.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             >
-              {regions.map((item) => (
+              {articles.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
@@ -198,16 +180,6 @@ export default function AdminPracticesPage() {
               type="date"
               value={dateTo}
               onChange={(event) => setDateTo(event.target.value)}
-              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs text-muted-foreground">Поиск</label>
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Субъект, БИН, объект, статья"
               className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             />
           </div>
