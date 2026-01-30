@@ -186,6 +186,7 @@ export default function SimpleAnalytics() {
     analyticsError instanceof Error ? analyticsError.message : "Не удалось загрузить данные аналитики.";
   const axisFontSize = isMobile ? 10 : 12;
   const compactAxisFontSize = isMobile ? 9 : 11;
+  const compactChartHeight = isMobile ? 380 : 320;
   const angledXAxisProps = {
     angle: -45,
     textAnchor: "end" as const,
@@ -425,15 +426,25 @@ export default function SimpleAnalytics() {
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Загрузка данных...
                 </div>
               ) : form2Causes.length === 0 ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer
+                  width="100%"
+                  height={compactChartHeight}
+                  minHeight={compactChartHeight}
+                >
                   <BarChart data={form2Causes}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -453,15 +464,25 @@ export default function SimpleAnalytics() {
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Загрузка данных...
                 </div>
               ) : form2Regions.length === 0 ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer
+                  width="100%"
+                  height={compactChartHeight}
+                  minHeight={compactChartHeight}
+                >
                   <BarChart data={form2Regions}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -490,15 +511,25 @@ export default function SimpleAnalytics() {
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Загрузка данных...
                 </div>
               ) : form3Causes.length === 0 ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer
+                  width="100%"
+                  height={compactChartHeight}
+                  minHeight={compactChartHeight}
+                >
                   <PieChart>
                     <Pie
                       data={form3Causes}
@@ -527,15 +558,25 @@ export default function SimpleAnalytics() {
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Загрузка данных...
                 </div>
               ) : form3TopCauses.length === 0 ? (
-                <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  style={{ height: compactChartHeight }}
+                >
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer
+                  width="100%"
+                  height={compactChartHeight}
+                  minHeight={compactChartHeight}
+                >
                   <BarChart data={form3TopCauses}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
