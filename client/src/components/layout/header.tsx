@@ -127,6 +127,12 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Users,
       },
       {
+        title: "Журнал административной практики",
+        description: "Протоколы, штрафы и контроль исполнения",
+        href: "/admin-practices",
+        icon: ClipboardList,
+      },
+      {
         title: "CRM данные",
         description: "Организации, контакты и интеграции",
         href: "/crm",
