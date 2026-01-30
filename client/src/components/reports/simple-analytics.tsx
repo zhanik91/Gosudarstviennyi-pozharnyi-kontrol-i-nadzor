@@ -139,6 +139,51 @@ export default function SimpleAnalytics() {
     { name: "Травмированные", value: Number(form7Totals.injured) || 0 },
   ];
 
+  const formSections = [
+    {
+      id: "form-1-osp",
+      label: "Форма 1‑ОСП",
+      description: "Пожары: динамика по месяцам, город/село и потери",
+      anchor: "1‑ОСП",
+    },
+    {
+      id: "form-2-ssg",
+      label: "Форма 2‑ССГ",
+      description: "Происшествия без пожара: причины и регионы",
+      anchor: "2‑ССГ",
+    },
+    {
+      id: "form-3-spvp",
+      label: "Форма 3‑СПВП",
+      description: "Причины пожаров и топ‑10",
+      anchor: "3‑СПВП",
+    },
+    {
+      id: "form-4-sovp",
+      label: "Форма 4‑СОВП",
+      description: "Распределение объектов и сравнение с прошлым периодом",
+      anchor: "4‑СОВП",
+    },
+    {
+      id: "form-5-spjs",
+      label: "Форма 5‑СПЖС",
+      description: "Жилой сектор: город/село и ущерб",
+      anchor: "5‑СПЖС",
+    },
+    {
+      id: "form-6-sspz",
+      label: "Форма 6‑ССПЗ",
+      description: "Степные пожары: сезонность и регионы",
+      anchor: "6‑ССПЗ",
+    },
+    {
+      id: "form-7-co",
+      label: "Форма 7‑CO",
+      description: "Отравления CO без пожара: потери и регионы",
+      anchor: "7‑CO",
+    },
+  ];
+
   const comparisonChart = [
     { name: "Текущий период", value: Number(form4Comparison.current) || 0 },
     { name: "Прошлый период", value: Number(form4Comparison.previous) || 0 },
@@ -209,6 +254,31 @@ export default function SimpleAnalytics() {
         <h2 className="text-2xl font-bold text-foreground">Сводная аналитика по формам</h2>
         <p className="text-muted-foreground">Ключевые показатели форм 1‑ОСП…7‑CO</p>
       </div>
+
+      <Card className="bg-card border border-border">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-2">
+            {formSections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                className="flex flex-col items-start gap-1 rounded-lg border border-border px-3 py-2 text-left text-sm transition hover:bg-muted/40"
+                onClick={() =>
+                  document
+                    .getElementById(section.id)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+              >
+                <span className="text-[11px] uppercase text-muted-foreground">#{section.anchor}</span>
+                <span className="font-medium text-foreground">{section.label}</span>
+                {!isMobile && (
+                  <span className="text-xs text-muted-foreground">{section.description}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {isAnalyticsError && (
         <Card className="border border-destructive/40 bg-destructive/10">
@@ -295,12 +365,14 @@ export default function SimpleAnalytics() {
       </Card>
 
       {/* Форма 1-ОСП */}
-      <section className="space-y-4">
+      <section className="space-y-4" id="form-1-osp">
         <div>
           <h3 className="text-xl font-semibold">Форма 1‑ОСП</h3>
-          <p className="text-sm text-muted-foreground">
-            Пожары: динамика по месяцам, город/село и потери
-          </p>
+          {!isMobile && (
+            <p className="text-sm text-muted-foreground">
+              Пожары: динамика по месяцам, город/село и потери
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -411,12 +483,14 @@ export default function SimpleAnalytics() {
       </section>
 
       {/* Форма 2-ССГ */}
-      <section className="space-y-4">
+      <section className="space-y-4" id="form-2-ssg">
         <div>
           <h3 className="text-xl font-semibold">Форма 2‑ССГ</h3>
-          <p className="text-sm text-muted-foreground">
-            Происшествия без пожара: причины и регионы
-          </p>
+          {!isMobile && (
+            <p className="text-sm text-muted-foreground">
+              Происшествия без пожара: причины и регионы
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -498,10 +572,12 @@ export default function SimpleAnalytics() {
       </section>
 
       {/* Форма 3-СПВП */}
-      <section className="space-y-4">
+      <section className="space-y-4" id="form-3-spvp">
         <div>
           <h3 className="text-xl font-semibold">Форма 3‑СПВП</h3>
-          <p className="text-sm text-muted-foreground">Причины пожаров и топ‑10</p>
+          {!isMobile && (
+            <p className="text-sm text-muted-foreground">Причины пожаров и топ‑10</p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -592,12 +668,14 @@ export default function SimpleAnalytics() {
       </section>
 
       {/* Форма 4-СОВП */}
-      <section className="space-y-4">
+      <section className="space-y-4" id="form-4-sovp">
         <div>
           <h3 className="text-xl font-semibold">Форма 4‑СОВП</h3>
-          <p className="text-sm text-muted-foreground">
-            Распределение объектов и сравнение с прошлым периодом
-          </p>
+          {!isMobile && (
+            <p className="text-sm text-muted-foreground">
+              Распределение объектов и сравнение с прошлым периодом
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -659,12 +737,14 @@ export default function SimpleAnalytics() {
       </section>
 
       {/* Форма 5-СПЖС */}
-      <section className="space-y-4">
+      <section className="space-y-4" id="form-5-spjs">
         <div>
           <h3 className="text-xl font-semibold">Форма 5‑СПЖС</h3>
-          <p className="text-sm text-muted-foreground">
-            Жилой сектор: город/село и ущерб
-          </p>
+          {!isMobile && (
+            <p className="text-sm text-muted-foreground">
+              Жилой сектор: город/село и ущерб
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -726,12 +806,14 @@ export default function SimpleAnalytics() {
       </section>
 
       {/* Форма 6-ССПЗ */}
-      <section className="space-y-4">
+      <section className="space-y-4" id="form-6-sspz">
         <div>
           <h3 className="text-xl font-semibold">Форма 6‑ССПЗ</h3>
-          <p className="text-sm text-muted-foreground">
-            Степные пожары: сезонность и регионы
-          </p>
+          {!isMobile && (
+            <p className="text-sm text-muted-foreground">
+              Степные пожары: сезонность и регионы
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -793,12 +875,14 @@ export default function SimpleAnalytics() {
       </section>
 
       {/* Форма 7-CO */}
-      <section className="space-y-4">
+      <section className="space-y-4" id="form-7-co">
         <div>
           <h3 className="text-xl font-semibold">Форма 7‑CO</h3>
-          <p className="text-sm text-muted-foreground">
-            Отравления CO без пожара: потери и регионы
-          </p>
+          {!isMobile && (
+            <p className="text-sm text-muted-foreground">
+              Отравления CO без пожара: потери и регионы
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
