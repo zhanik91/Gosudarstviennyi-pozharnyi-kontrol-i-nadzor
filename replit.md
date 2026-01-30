@@ -47,7 +47,11 @@ Preferred communication style: Simple, everyday language.
 - **Hierarchical Reporting**: Data aggregation across organizational tree
 - **Audit Trail**: Tracking of system interactions
 - **Calculators**: Fire safety calculators for extinguishers, NGPS/PSS requirements, and explosion hazard categories.
-- **AI Assistant**: Chatbot using GPT-4.1 for consultations on regulatory acts and fire safety.
+- **AI Assistant**: Chatbot using GPT-4o-mini for consultations on regulatory acts and fire safety.
+  - **Dynamic NPA Loading**: System prompt dynamically loads all normative documents from database at each request
+  - **Source Citations**: All responses must include НПА name, number, and link to adilet.zan.kz
+  - **Temperature**: 0.3 for accurate, fact-based responses
+  - **Implementation**: `server/replit_integrations/chat/routes.ts`
 
 # External Dependencies
 
