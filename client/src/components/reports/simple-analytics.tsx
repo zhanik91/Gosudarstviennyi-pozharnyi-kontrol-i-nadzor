@@ -335,7 +335,11 @@ export default function SimpleAnalytics() {
             </div>
 
             <div className="flex items-end gap-2">
-              <Button onClick={handleBuildCharts} data-testid="button-build-charts">
+              <Button
+                onClick={handleBuildCharts}
+                data-testid="button-build-charts"
+                className="w-full sm:w-auto"
+              >
                 Построить
               </Button>
             </div>
@@ -346,6 +350,7 @@ export default function SimpleAnalytics() {
               variant="outline"
               onClick={() => applyAnalyticsPeriod(store.report)}
               data-testid="button-use-report-period"
+              className="w-full sm:w-auto"
             >
               Использовать период отчёта
             </Button>
