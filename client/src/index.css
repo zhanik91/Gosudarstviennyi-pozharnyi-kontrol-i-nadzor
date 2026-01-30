@@ -43,10 +43,14 @@
   --font-mono: Menlo, monospace;
   --radius: 14px;
 
-  /* Decorative tokens - solid background without gradient shimmer */
-  --portal-gradient: hsl(220, 42%, 8%);
-  --portal-overlay: none;
-  --portal-overlay-opacity: 0;
+  /* Decorative tokens */
+  --portal-gradient:
+    radial-gradient(1200px 600px at 15% -10%, hsla(208, 95%, 61%, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 85% -5%, hsla(35, 88%, 62%, 0.08), transparent 55%),
+    linear-gradient(180deg, hsl(220, 40%, 10%) 0%, hsl(220, 42%, 8%) 60%, hsl(220, 45%, 7%) 100%);
+  --portal-overlay: radial-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  --portal-overlay-opacity: 0.08;
 }
 
 .light {
@@ -83,10 +87,13 @@
   --sidebar-border: hsl(205, 25%, 91%);
   --sidebar-ring: hsl(202, 89%, 53%);
 
-  /* Light theme - solid background without shimmer */
-  --portal-gradient: hsl(0, 0%, 98%);
-  --portal-overlay: none;
-  --portal-overlay-opacity: 0;
+  --portal-gradient:
+    radial-gradient(1100px 550px at 20% -15%, hsla(208, 95%, 61%, 0.14), transparent 60%),
+    radial-gradient(900px 520px at 80% -10%, hsla(35, 88%, 62%, 0.12), transparent 55%),
+    linear-gradient(180deg, hsl(210, 30%, 94%) 0%, hsl(210, 35%, 98%) 50%, hsl(0, 0%, 100%) 100%);
+  --portal-overlay: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+    radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  --portal-overlay-opacity: 0.08;
 }
 
 /* Decorative effects and helpers */
@@ -96,8 +103,13 @@
 }
 
 .portal-bg::before {
-  content: none;
-  display: none;
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: var(--portal-overlay);
+  background-size: 24px 24px, 28px 28px;
+  opacity: var(--portal-overlay-opacity);
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
