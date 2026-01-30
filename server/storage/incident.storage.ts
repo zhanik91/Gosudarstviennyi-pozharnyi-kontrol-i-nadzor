@@ -10,6 +10,7 @@ import {
   FORM_7_CO_ROWS,
   NON_FIRE_CASES,
 } from "@shared/fire-forms-data";
+import { REGION_NAMES } from "@shared/regions";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
 import { applyScopeCondition, type ScopeUser } from "../services/authz";
@@ -183,6 +184,52 @@ export class IncidentStorage {
 
   private getPeriodKey(date: Date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  private createRegionDefaults<T extends string>(label: string, fields: T[]) {
+    return fields.reduce(
+      (acc, field) => {
+        acc[field] = 0;
+        return acc;
+      },
+      { label } as { label: string } & Record<T, number>
+    );
+  }
+
+  private mergeRegionRows<T extends string>(
+    rows: Array<{ label: string } & Record<T, number>>,
+    fields: T[],
+    sortBy: "count" | "label"
+  ) {
+    const merged = new Map<string, { label: string } & Record<T, number>>();
+
+    for (const label of REGION_NAMES) {
+      merged.set(label, this.createRegionDefaults(label, fields));
+    }
+
+    for (const row of rows) {
+      const label = row.label;
+      const entry = merged.get(label) ?? this.createRegionDefaults(label, fields);
+      const updated = { ...entry };
+      for (const field of fields) {
+        updated[field] = Number(row[field]) || 0;
+      }
+      merged.set(label, updated);
+    }
+
+    const values = Array.from(merged.values());
+    const compareLabel = (a: { label: string }, b: { label: string }) =>
+      a.label.localeCompare(b.label, "ru");
+
+    if (sortBy === "count") {
+      values.sort(
+        (a, b) => (b.count ?? 0) - (a.count ?? 0) || compareLabel(a, b)
+      );
+    } else {
+      values.sort(compareLabel);
+    }
+
+    return values;
   }
 
   private getPeriodRange(period?: string) {
@@ -793,6 +840,75 @@ export class IncidentStorage {
     const form4Objects = this.aggregateLabelSeries(form4ObjectRows, (row) =>
       labelOrFallback(row.objectType, row.objectCode)
     );
+    const form1Regions = this.mergeRegionRows(
+      form1RegionRows.map((row) => ({
+        label: row.region ?? "Не указан",
+        count: Number(row.count) || 0,
+        deaths: Number(row.deaths) || 0,
+        injured: Number(row.injured) || 0,
+        damage: Number(row.damage) || 0,
+      })),
+      ["count", "deaths", "injured", "damage"],
+      "count"
+    );
+    const form2Regions = this.mergeRegionRows(
+      form2RegionRows.map((row) => ({
+        label: row.region ?? "Не указан",
+        count: Number(row.count) || 0,
+      })),
+      ["count"],
+      "label"
+    );
+    const form6Regions = this.mergeRegionRows(
+      form6RegionRows.map((row) => ({
+        label: row.region ?? "Не указан",
+        count: Number(row.count) || 0,
+        steppeArea: Number(row.steppeArea) || 0,
+        steppeDamage: Number(row.steppeDamage) || 0,
+        peopleTotal: Number(row.peopleTotal) || 0,
+        peopleDead: Number(row.peopleDead) || 0,
+        peopleInjured: Number(row.peopleInjured) || 0,
+        animalsTotal: Number(row.animalsTotal) || 0,
+        animalsDead: Number(row.animalsDead) || 0,
+        animalsInjured: Number(row.animalsInjured) || 0,
+        extinguishedTotal: Number(row.extinguishedTotal) || 0,
+        extinguishedArea: Number(row.extinguishedArea) || 0,
+        extinguishedDamage: Number(row.extinguishedDamage) || 0,
+        garrisonPeople: Number(row.garrisonPeople) || 0,
+        garrisonUnits: Number(row.garrisonUnits) || 0,
+        mchsPeople: Number(row.mchsPeople) || 0,
+        mchsUnits: Number(row.mchsUnits) || 0,
+      })),
+      [
+        "count",
+        "steppeArea",
+        "steppeDamage",
+        "peopleTotal",
+        "peopleDead",
+        "peopleInjured",
+        "animalsTotal",
+        "animalsDead",
+        "animalsInjured",
+        "extinguishedTotal",
+        "extinguishedArea",
+        "extinguishedDamage",
+        "garrisonPeople",
+        "garrisonUnits",
+        "mchsPeople",
+        "mchsUnits",
+      ],
+      "label"
+    );
+    const form7Regions = this.mergeRegionRows(
+      form7RegionRows.map((row) => ({
+        label: row.region ?? "Не указан",
+        count: Number(row.count) || 0,
+        deaths: Number(row.deaths) || 0,
+        injured: Number(row.injured) || 0,
+      })),
+      ["count", "deaths", "injured"],
+      "label"
+    );
 
     const periodLabel =
       currentPeriod.periodFromKey === currentPeriod.periodToKey
@@ -817,21 +933,12 @@ export class IncidentStorage {
           injured: Number(row.injured) || 0,
           damage: Number(row.damage) || 0,
         })),
-        regions: form1RegionRows.map((row) => ({
-          label: row.region ?? "Не указан",
-          count: Number(row.count) || 0,
-          deaths: Number(row.deaths) || 0,
-          injured: Number(row.injured) || 0,
-          damage: Number(row.damage) || 0,
-        })),
+        regions: form1Regions,
         totals: form1Totals,
       },
       form2: {
         causes: form2Causes,
-        regions: form2RegionRows.map((row) => ({
-          label: row.region ?? "Не указан",
-          count: Number(row.count) || 0,
-        })),
+        regions: form2Regions,
       },
       form3: {
         causes: form3Causes,
@@ -882,34 +989,11 @@ export class IncidentStorage {
           mchsPeople: Number(row.mchsPeople) || 0,
           mchsUnits: Number(row.mchsUnits) || 0,
         })),
-        regions: form6RegionRows.map((row) => ({
-          label: row.region ?? "Не указан",
-          count: Number(row.count) || 0,
-          steppeArea: Number(row.steppeArea) || 0,
-          steppeDamage: Number(row.steppeDamage) || 0,
-          peopleTotal: Number(row.peopleTotal) || 0,
-          peopleDead: Number(row.peopleDead) || 0,
-          peopleInjured: Number(row.peopleInjured) || 0,
-          animalsTotal: Number(row.animalsTotal) || 0,
-          animalsDead: Number(row.animalsDead) || 0,
-          animalsInjured: Number(row.animalsInjured) || 0,
-          extinguishedTotal: Number(row.extinguishedTotal) || 0,
-          extinguishedArea: Number(row.extinguishedArea) || 0,
-          extinguishedDamage: Number(row.extinguishedDamage) || 0,
-          garrisonPeople: Number(row.garrisonPeople) || 0,
-          garrisonUnits: Number(row.garrisonUnits) || 0,
-          mchsPeople: Number(row.mchsPeople) || 0,
-          mchsUnits: Number(row.mchsUnits) || 0,
-        })),
+        regions: form6Regions,
       },
       form7: {
         totals: form7Totals,
-        regions: form7RegionRows.map((row) => ({
-          label: row.region ?? "Не указан",
-          count: Number(row.count) || 0,
-          deaths: Number(row.deaths) || 0,
-          injured: Number(row.injured) || 0,
-        })),
+        regions: form7Regions,
         details: {
           social: this.aggregateLabelSeries(form7Victims, v => v.socialStatus || "unknown"),
           conditions: this.aggregateLabelSeries(form7Victims, v => v.condition || "unknown"),
@@ -1194,6 +1278,16 @@ export class IncidentStorage {
     }
 
     const regionStats = await regionStatsQuery.groupBy(incidents.region);
+    const mergedRegionStats = this.mergeRegionRows(
+      regionStats.map((row) => ({
+        label: row.region ?? "Не указан",
+        count: Number(row.count) || 0,
+        deaths: Number(row.deaths) || 0,
+        damage: Number(row.damage) || 0,
+      })),
+      ["count", "deaths", "damage"],
+      "label"
+    ).map(({ label, ...rest }) => ({ region: label, ...rest }));
 
     // Временная динамика
     const monthlyStatsQuery = db.select({
@@ -1213,12 +1307,12 @@ export class IncidentStorage {
 
     return {
       incidentTypes,
-      regionStats,
+      regionStats: mergedRegionStats,
       monthlyStats,
       summary: {
         totalIncidents: incidentTypes.reduce((sum, item) => sum + Number(item.count), 0),
-        totalDamage: regionStats.reduce((sum, item) => sum + Number(item.damage || 0), 0),
-        totalDeaths: regionStats.reduce((sum, item) => sum + Number(item.deaths || 0), 0)
+        totalDamage: mergedRegionStats.reduce((sum, item) => sum + Number(item.damage || 0), 0),
+        totalDeaths: mergedRegionStats.reduce((sum, item) => sum + Number(item.deaths || 0), 0)
       }
     };
   }
