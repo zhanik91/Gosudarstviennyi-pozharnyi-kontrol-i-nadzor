@@ -3,8 +3,8 @@ import { Router } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { controlObjects } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { adminCases, controlObjects, inspections, measures, prescriptions } from "@shared/schema";
+import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
 import { incidentController } from "./controllers/incident.controller";
 import { organizationController } from "./controllers/organization.controller";
@@ -16,8 +16,7 @@ import { adminController } from "./controllers/admin.controller";
 import { statsController } from "./controllers/stats.controller";
 import { auditController } from "./controllers/audit.controller";
 import { analyticsController } from "./controllers/analytics.controller";
-import { toScopeUser, applyScopeCondition, isAdmin } from "./services/authz";
-import { and as drizzleAnd } from "drizzle-orm";
+import { toScopeUser, applyScopeCondition } from "./services/authz";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -198,6 +197,363 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating incident coordinates:', error);
       res.status(500).json({ message: 'Ошибка обновления координат' });
+    }
+  });
+
+  // === ПРОВЕРКИ / ПРЕДПИСАНИЯ / МЕРЫ / АДМИН ДЕЛА ===
+  const canWriteRegistry = (req: any, res: any, next: any) => {
+    const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
+    if (userRole === 'MCHS') {
+      return res.status(403).json({ message: 'У вас нет прав на редактирование. Доступ только для чтения.' });
+    }
+    next();
+  };
+
+  const buildScopeWriteCheck = (table: any) => async (req: any, res: any, next: any) => {
+    const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
+    const userRegion = req.user?.region;
+    const userDistrict = req.user?.district;
+
+    if (userRole === 'ADMIN') {
+      return next();
+    }
+
+    let existingRegion = req.body?.region;
+    let existingDistrict = req.body?.district;
+
+    if (req.params?.id) {
+      try {
+        const existing = await db
+          .select({ region: table.region, district: table.district })
+          .from(table)
+          .where(eq(table.id, req.params.id))
+          .limit(1);
+        if (existing[0]) {
+          existingRegion = existing[0].region;
+          existingDistrict = existing[0].district;
+        }
+      } catch (error) {
+        console.error('Error checking registry scope:', error);
+      }
+    }
+
+    const targetRegion = req.body?.region ?? existingRegion;
+    const targetDistrict = req.body?.district ?? existingDistrict;
+
+    if (userRole === 'DCHS' && userRegion) {
+      if (targetRegion && targetRegion !== userRegion) {
+        return res.status(403).json({
+          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion
+        });
+      }
+      return next();
+    }
+
+    if ((userRole === 'OCHS' || userRole === 'DISTRICT') && userRegion && userDistrict) {
+      if (targetRegion && targetRegion !== userRegion) {
+        return res.status(403).json({
+          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion
+        });
+      }
+      if (targetDistrict && targetDistrict !== userDistrict) {
+        return res.status(403).json({
+          message: 'Вы можете редактировать данные только вашего района: ' + userDistrict
+        });
+      }
+      return next();
+    }
+
+    next();
+  };
+
+  const buildRegistryFilters = (
+    table: any,
+    dateColumn: any,
+    searchColumns: any[],
+    req: any,
+  ) => {
+    const { region, district, status, dateFrom, dateTo, search } = req.query;
+    const scopeUser = toScopeUser(req.user);
+    const conditions = [];
+
+    const scopeCondition = applyScopeCondition(scopeUser, table.region, table.district);
+    if (scopeCondition) {
+      conditions.push(scopeCondition);
+    }
+
+    if (region && region !== 'all') {
+      conditions.push(eq(table.region, region as string));
+    }
+    if (district && district !== 'all') {
+      conditions.push(eq(table.district, district as string));
+    }
+    if (status && status !== 'all') {
+      conditions.push(eq(table.status, status as any));
+    }
+    if (dateFrom) {
+      conditions.push(gte(dateColumn, new Date(dateFrom as string)));
+    }
+    if (dateTo) {
+      conditions.push(lte(dateColumn, new Date(dateTo as string)));
+    }
+    if (search) {
+      const likeValue = `%${search}%`;
+      conditions.push(or(...searchColumns.map((column) => ilike(column, likeValue))));
+    }
+
+    return conditions;
+  };
+
+  app.get('/api/inspections', isAuthenticated, async (req: any, res) => {
+    try {
+      const conditions = buildRegistryFilters(
+        inspections,
+        inspections.inspectionDate,
+        [inspections.number, inspections.bin, inspections.iin, inspections.subjectName, inspections.address],
+        req,
+      );
+
+      let query = db.select().from(inspections);
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query.orderBy(desc(inspections.inspectionDate));
+      res.json(result);
+    } catch (error) {
+      console.error('Error loading inspections:', error);
+      res.status(500).json({ message: 'Ошибка загрузки проверок' });
+    }
+  });
+
+  app.post('/api/inspections', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.username;
+      const orgUnitId = req.user?.orgUnitId || null;
+      const [inspection] = await db.insert(inspections).values({
+        ...req.body,
+        orgUnitId,
+        createdBy: userId,
+      }).returning();
+      res.json(inspection);
+    } catch (error) {
+      console.error('Error creating inspection:', error);
+      res.status(500).json({ message: 'Ошибка создания проверки' });
+    }
+  });
+
+  app.put('/api/inspections/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
+    try {
+      const [inspection] = await db.update(inspections)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(inspections.id, req.params.id))
+        .returning();
+      if (!inspection) {
+        return res.status(404).json({ message: 'Проверка не найдена' });
+      }
+      res.json(inspection);
+    } catch (error) {
+      console.error('Error updating inspection:', error);
+      res.status(500).json({ message: 'Ошибка обновления проверки' });
+    }
+  });
+
+  app.get('/api/prescriptions', isAuthenticated, async (req: any, res) => {
+    try {
+      const conditions = buildRegistryFilters(
+        prescriptions,
+        prescriptions.issueDate,
+        [prescriptions.number, prescriptions.bin, prescriptions.iin, prescriptions.description],
+        req,
+      );
+
+      let query = db.select().from(prescriptions);
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query.orderBy(desc(prescriptions.issueDate));
+      res.json(result);
+    } catch (error) {
+      console.error('Error loading prescriptions:', error);
+      res.status(500).json({ message: 'Ошибка загрузки предписаний' });
+    }
+  });
+
+  app.post('/api/prescriptions', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(prescriptions), async (req: any, res) => {
+    try {
+      const [prescription] = await db.insert(prescriptions).values({
+        ...req.body,
+      }).returning();
+      res.json(prescription);
+    } catch (error) {
+      console.error('Error creating prescription:', error);
+      res.status(500).json({ message: 'Ошибка создания предписания' });
+    }
+  });
+
+  app.put('/api/prescriptions/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(prescriptions), async (req: any, res) => {
+    try {
+      const [prescription] = await db.update(prescriptions)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(prescriptions.id, req.params.id))
+        .returning();
+      if (!prescription) {
+        return res.status(404).json({ message: 'Предписание не найдено' });
+      }
+      res.json(prescription);
+    } catch (error) {
+      console.error('Error updating prescription:', error);
+      res.status(500).json({ message: 'Ошибка обновления предписания' });
+    }
+  });
+
+  app.get('/api/measures', isAuthenticated, async (req: any, res) => {
+    try {
+      const conditions = buildRegistryFilters(
+        measures,
+        measures.measureDate,
+        [measures.number, measures.bin, measures.iin, measures.description],
+        req,
+      );
+
+      let query = db.select().from(measures);
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query.orderBy(desc(measures.measureDate));
+      res.json(result);
+    } catch (error) {
+      console.error('Error loading measures:', error);
+      res.status(500).json({ message: 'Ошибка загрузки мер реагирования' });
+    }
+  });
+
+  app.post('/api/measures', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(measures), async (req: any, res) => {
+    try {
+      const [measure] = await db.insert(measures).values({
+        ...req.body,
+      }).returning();
+      res.json(measure);
+    } catch (error) {
+      console.error('Error creating measure:', error);
+      res.status(500).json({ message: 'Ошибка создания меры реагирования' });
+    }
+  });
+
+  app.put('/api/measures/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(measures), async (req: any, res) => {
+    try {
+      const [measure] = await db.update(measures)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(measures.id, req.params.id))
+        .returning();
+      if (!measure) {
+        return res.status(404).json({ message: 'Мера реагирования не найдена' });
+      }
+      res.json(measure);
+    } catch (error) {
+      console.error('Error updating measure:', error);
+      res.status(500).json({ message: 'Ошибка обновления меры реагирования' });
+    }
+  });
+
+  app.get('/api/admin-cases', isAuthenticated, async (req: any, res) => {
+    try {
+      const conditions = buildRegistryFilters(
+        adminCases,
+        adminCases.caseDate,
+        [adminCases.number, adminCases.bin, adminCases.iin, adminCases.article],
+        req,
+      );
+
+      let query = db.select().from(adminCases);
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query.orderBy(desc(adminCases.caseDate));
+      res.json(result);
+    } catch (error) {
+      console.error('Error loading admin cases:', error);
+      res.status(500).json({ message: 'Ошибка загрузки административных дел' });
+    }
+  });
+
+  app.post('/api/admin-cases', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(adminCases), async (req: any, res) => {
+    try {
+      const [adminCase] = await db.insert(adminCases).values({
+        ...req.body,
+      }).returning();
+      res.json(adminCase);
+    } catch (error) {
+      console.error('Error creating admin case:', error);
+      res.status(500).json({ message: 'Ошибка создания административного дела' });
+    }
+  });
+
+  app.put('/api/admin-cases/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(adminCases), async (req: any, res) => {
+    try {
+      const [adminCase] = await db.update(adminCases)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(adminCases.id, req.params.id))
+        .returning();
+      if (!adminCase) {
+        return res.status(404).json({ message: 'Административное дело не найдено' });
+      }
+      res.json(adminCase);
+    } catch (error) {
+      console.error('Error updating admin case:', error);
+      res.status(500).json({ message: 'Ошибка обновления административного дела' });
+    }
+  });
+
+  app.get('/api/reports/inspections', isAuthenticated, async (req: any, res) => {
+    try {
+      const { region, district, status, dateFrom, dateTo, period } = req.query;
+      const scopeUser = toScopeUser(req.user);
+
+      const allowedPeriods = ['day', 'week', 'month', 'quarter', 'year'];
+      const periodValue = allowedPeriods.includes(period as string) ? (period as string) : 'month';
+      const periodExpression = sql`date_trunc(${sql.raw(`'${periodValue}'`)}, ${inspections.inspectionDate})`;
+
+      const conditions = [];
+      const scopeCondition = applyScopeCondition(scopeUser, inspections.region, inspections.district);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+      if (region && region !== 'all') {
+        conditions.push(eq(inspections.region, region as string));
+      }
+      if (district && district !== 'all') {
+        conditions.push(eq(inspections.district, district as string));
+      }
+      if (status && status !== 'all') {
+        conditions.push(eq(inspections.status, status as any));
+      }
+      if (dateFrom) {
+        conditions.push(gte(inspections.inspectionDate, new Date(dateFrom as string)));
+      }
+      if (dateTo) {
+        conditions.push(lte(inspections.inspectionDate, new Date(dateTo as string)));
+      }
+
+      let query = db.select({
+        period: periodExpression,
+        totalCount: sql<number>`count(*)`,
+        plannedCount: sql<number>`sum(case when ${inspections.status} = 'planned' then 1 else 0 end)`,
+        completedCount: sql<number>`sum(case when ${inspections.status} = 'completed' then 1 else 0 end)`,
+      }).from(inspections);
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const rows = await query.groupBy(periodExpression).orderBy(periodExpression);
+      res.json(rows);
+    } catch (error) {
+      console.error('Error loading inspections report:', error);
+      res.status(500).json({ message: 'Ошибка загрузки отчета по проверкам' });
     }
   });
 
