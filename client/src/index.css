@@ -48,9 +48,9 @@
     radial-gradient(1200px 600px at 15% -10%, hsla(208, 95%, 61%, 0.10), transparent 60%),
     radial-gradient(900px 500px at 85% -5%, hsla(35, 88%, 62%, 0.08), transparent 55%),
     linear-gradient(180deg, hsl(220, 40%, 10%) 0%, hsl(220, 42%, 8%) 60%, hsl(220, 45%, 7%) 100%);
-  --portal-overlay: radial-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px),
-    radial-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px);
-  --portal-overlay-opacity: 0.08;
+  --portal-overlay: radial-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  --portal-overlay-opacity: 0.1;
 }
 
 .light {
@@ -88,12 +88,12 @@
   --sidebar-ring: hsl(202, 89%, 53%);
 
   --portal-gradient:
-    radial-gradient(1100px 550px at 20% -15%, hsla(208, 95%, 61%, 0.14), transparent 60%),
-    radial-gradient(900px 520px at 80% -10%, hsla(35, 88%, 62%, 0.12), transparent 55%),
-    linear-gradient(180deg, hsl(210, 30%, 94%) 0%, hsl(210, 35%, 98%) 50%, hsl(0, 0%, 100%) 100%);
-  --portal-overlay: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
-    radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
-  --portal-overlay-opacity: 0.08;
+    radial-gradient(1100px 550px at 20% -15%, hsla(208, 95%, 61%, 0.12), transparent 60%),
+    radial-gradient(900px 520px at 80% -10%, hsla(35, 88%, 62%, 0.1), transparent 55%),
+    linear-gradient(180deg, hsl(210, 24%, 92%) 0%, hsl(210, 28%, 96%) 55%, hsl(0, 0%, 100%) 100%);
+  --portal-overlay: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  --portal-overlay-opacity: 0.06;
 }
 
 /* Decorative effects and helpers */
