@@ -59,6 +59,10 @@ export const prescriptionStatusEnum = pgEnum('prescription_status', [
   'issued', 'in_progress', 'fulfilled', 'overdue', 'canceled'
 ]);
 
+export const prescriptionTypeEnum = pgEnum('prescription_type', [
+  'primary', 'repeat', 'follow_up', 'other'
+]);
+
 export const measureTypeEnum = pgEnum('measure_type', [
   'warning', 'order', 'fine', 'suspension', 'other'
 ]);
@@ -69,6 +73,10 @@ export const measureStatusEnum = pgEnum('measure_status', [
 
 export const adminCaseStatusEnum = pgEnum('admin_case_status', [
   'opened', 'in_review', 'resolved', 'closed', 'canceled'
+]);
+
+export const adminCaseTypeEnum = pgEnum('admin_case_type', [
+  'protocol', 'resolution', 'appeal', 'other'
 ]);
 
 // Users table for local authentication (МЧС РК)
@@ -343,6 +351,7 @@ export const prescriptions = pgTable("prescriptions", {
   number: varchar("number").notNull(),
   issueDate: timestamp("issue_date").notNull(),
   dueDate: timestamp("due_date"),
+  type: prescriptionTypeEnum("type").notNull().default('primary'),
   status: prescriptionStatusEnum("status").notNull().default('issued'),
   region: varchar("region"),
   district: varchar("district"),
@@ -392,6 +401,7 @@ export const adminCases = pgTable("admin_cases", {
   inspectionId: varchar("inspection_id").references(() => inspections.id),
   number: varchar("number").notNull(),
   caseDate: timestamp("case_date").notNull(),
+  type: adminCaseTypeEnum("type").notNull().default('protocol'),
   status: adminCaseStatusEnum("status").notNull().default('opened'),
   region: varchar("region"),
   district: varchar("district"),
