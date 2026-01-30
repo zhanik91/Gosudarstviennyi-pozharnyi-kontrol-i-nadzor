@@ -2,16 +2,10 @@ import type { Express, Request, Response } from "express";
 import OpenAI from "openai";
 import { chatStorage } from "./storage";
 
-function getOpenAIClient(): OpenAI | null {
-  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
-  return new OpenAI({
-    apiKey,
-    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  });
-}
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
 
 const FIRE_SAFETY_SYSTEM_PROMPT = `Вы - ИИ-ассистент по пожарной безопасности Республики Казахстан для системы МЧС РК.
 
@@ -105,12 +99,6 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Connection", "keep-alive");
 
       // Stream response - GPT-4o-mini (дешёвая и быстрая модель)
-      const openai = getOpenAIClient();
-      if (!openai) {
-        res.write(`data: ${JSON.stringify({ error: "OpenAI API key not configured. Please set OPENAI_API_KEY in your environment." })}\n\n`);
-        res.end();
-        return;
-      }
       const stream = await openai.chat.completions.create({
         model: "gpt-4o-mini", // Экономичная модель, ~20x дешевле GPT-4
         messages: [
