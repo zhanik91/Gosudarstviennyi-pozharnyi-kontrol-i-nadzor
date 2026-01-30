@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { adminCases, controlObjects, inspections, measures, prescriptions } from "@shared/schema";
-import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
 import { incidentController } from "./controllers/incident.controller";
 import { organizationController } from "./controllers/organization.controller";
@@ -282,14 +282,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       conditions.push(scopeCondition);
     }
 
+    const normalizeStatus = (value: any) => {
+      if (!value || value === 'all') {
+        return [];
+      }
+      if (Array.isArray(value)) {
+        return value.filter((item) => item && item !== 'all');
+      }
+      if (typeof value === 'string') {
+        return value
+          .split(',')
+          .map((item) => item.trim())
+          .filter((item) => item && item !== 'all');
+      }
+      return [];
+    };
+
     if (region && region !== 'all') {
       conditions.push(eq(table.region, region as string));
     }
     if (district && district !== 'all') {
       conditions.push(eq(table.district, district as string));
     }
-    if (status && status !== 'all') {
-      conditions.push(eq(table.status, status as any));
+    const statusValues = normalizeStatus(status);
+    if (statusValues.length === 1) {
+      conditions.push(eq(table.status, statusValues[0] as any));
+    } else if (statusValues.length > 1) {
+      conditions.push(inArray(table.status, statusValues as any[]));
     }
     if (dateFrom) {
       conditions.push(gte(dateColumn, new Date(dateFrom as string)));
@@ -523,14 +542,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (scopeCondition) {
         conditions.push(scopeCondition);
       }
+
+      const normalizeStatus = (value: any) => {
+        if (!value || value === 'all') {
+          return [];
+        }
+        if (Array.isArray(value)) {
+          return value.filter((item) => item && item !== 'all');
+        }
+        if (typeof value === 'string') {
+          return value
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item && item !== 'all');
+        }
+        return [];
+      };
+
       if (region && region !== 'all') {
         conditions.push(eq(inspections.region, region as string));
       }
       if (district && district !== 'all') {
         conditions.push(eq(inspections.district, district as string));
       }
-      if (status && status !== 'all') {
-        conditions.push(eq(inspections.status, status as any));
+      const statusValues = normalizeStatus(status);
+      if (statusValues.length === 1) {
+        conditions.push(eq(inspections.status, statusValues[0] as any));
+      } else if (statusValues.length > 1) {
+        conditions.push(inArray(inspections.status, statusValues as any[]));
       }
       if (dateFrom) {
         conditions.push(gte(inspections.inspectionDate, new Date(dateFrom as string)));
