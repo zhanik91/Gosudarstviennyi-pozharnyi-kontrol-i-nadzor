@@ -98,7 +98,12 @@ Preferred communication style: Simple, everyday language.
   - `control_objects` table for supervised facilities with coordinates, status, and risk levels
 - **API Endpoints**:
   - `GET /api/maps/data` - Returns incidents with coordinates for map display
-  - `GET/POST/PUT/DELETE /api/control-objects` - CRUD operations for control objects
+  - `GET /api/control-objects` - Returns full control objects data; use `?format=map` for map-optimized format
+  - `POST/PUT/DELETE /api/control-objects` - CRUD operations for control objects
+- **Control Supervision Registry**: Full database-backed CRUD at `/control-supervision` page
+  - Data stored in PostgreSQL via `control_objects` table
+  - Supports Excel import/export
+  - Real-time sync via TanStack Query mutations
 - **Coordinate Input Methods**:
   1. Manual latitude/longitude entry in incident form
   2. Click on map to select coordinates
