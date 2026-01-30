@@ -75,6 +75,9 @@ type PrescriptionItem = {
   bin: string | null;
   iin: string | null;
   description: string | null;
+  inspectionNumber?: string | null;
+  subjectName?: string | null;
+  address?: string | null;
 };
 
 type MeasureItem = {
@@ -89,6 +92,9 @@ type MeasureItem = {
   bin: string | null;
   iin: string | null;
   description: string | null;
+  inspectionNumber?: string | null;
+  subjectName?: string | null;
+  address?: string | null;
 };
 
 type ReportRow = {
@@ -279,14 +285,18 @@ const buildRegistryQuery = (filters: {
   dateTo?: string;
   search?: string;
   period?: string;
+  inspectionNumber?: string;
+  type?: string;
 }) => {
   const params = new URLSearchParams();
   if (filters.region && filters.region !== "Все") params.set("region", filters.region);
   if (filters.district && filters.district !== "Все") params.set("district", filters.district);
   if (filters.status && filters.status !== "Все") params.set("status", filters.status);
+  if (filters.type && filters.type !== "Все") params.set("type", filters.type);
   if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
   if (filters.dateTo) params.set("dateTo", filters.dateTo);
   if (filters.search) params.set("search", filters.search.trim());
+  if (filters.inspectionNumber) params.set("inspectionNumber", filters.inspectionNumber.trim());
   if (filters.period) params.set("period", filters.period);
   return params.toString();
 };
@@ -383,13 +393,16 @@ export default function ControlSupervisionPage() {
   const [prescriptionDateFrom, setPrescriptionDateFrom] = useState("");
   const [prescriptionDateTo, setPrescriptionDateTo] = useState("");
   const [prescriptionSearch, setPrescriptionSearch] = useState("");
+  const [prescriptionInspectionNumber, setPrescriptionInspectionNumber] = useState("");
 
   const [measureRegion, setMeasureRegion] = useState("Все");
   const [measureDistrict, setMeasureDistrict] = useState("Все");
   const [measureStatus, setMeasureStatus] = useState("Все");
+  const [measureType, setMeasureType] = useState("Все");
   const [measureDateFrom, setMeasureDateFrom] = useState("");
   const [measureDateTo, setMeasureDateTo] = useState("");
   const [measureSearch, setMeasureSearch] = useState("");
+  const [measureInspectionNumber, setMeasureInspectionNumber] = useState("");
 
   const [reportRegion, setReportRegion] = useState("Все");
   const [reportDistrict, setReportDistrict] = useState("Все");
@@ -545,16 +558,36 @@ export default function ControlSupervisionPage() {
     dateFrom: prescriptionDateFrom,
     dateTo: prescriptionDateTo,
     search: prescriptionSearch,
-  }), [prescriptionRegion, prescriptionDistrict, prescriptionStatus, prescriptionDateFrom, prescriptionDateTo, prescriptionSearch]);
+    inspectionNumber: prescriptionInspectionNumber,
+  }), [
+    prescriptionRegion,
+    prescriptionDistrict,
+    prescriptionStatus,
+    prescriptionDateFrom,
+    prescriptionDateTo,
+    prescriptionSearch,
+    prescriptionInspectionNumber,
+  ]);
 
   const measureQuery = useMemo(() => buildRegistryQuery({
     region: measureRegion,
     district: measureDistrict,
     status: measureStatus,
+    type: measureType,
     dateFrom: measureDateFrom,
     dateTo: measureDateTo,
     search: measureSearch,
-  }), [measureRegion, measureDistrict, measureStatus, measureDateFrom, measureDateTo, measureSearch]);
+    inspectionNumber: measureInspectionNumber,
+  }), [
+    measureRegion,
+    measureDistrict,
+    measureStatus,
+    measureType,
+    measureDateFrom,
+    measureDateTo,
+    measureSearch,
+    measureInspectionNumber,
+  ]);
 
   const reportQuery = useMemo(() => buildRegistryQuery({
     region: reportRegion,
@@ -566,9 +599,9 @@ export default function ControlSupervisionPage() {
   }), [reportDistrict, reportRegion, reportStatus, reportDateFrom, reportDateTo, reportPeriod]);
 
   const { data: prescriptions = [], isLoading: isLoadingPrescriptions } = useQuery<PrescriptionItem[]>({
-    queryKey: ['/api/prescriptions', prescriptionQuery],
+    queryKey: ['/api/control-supervision/prescriptions', prescriptionQuery],
     queryFn: async () => {
-      const res = await fetch(`/api/prescriptions${prescriptionQuery ? `?${prescriptionQuery}` : ""}`, {
+      const res = await fetch(`/api/control-supervision/prescriptions${prescriptionQuery ? `?${prescriptionQuery}` : ""}`, {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Ошибка загрузки предписаний');
@@ -577,9 +610,9 @@ export default function ControlSupervisionPage() {
   });
 
   const { data: measuresData = [], isLoading: isLoadingMeasures } = useQuery<MeasureItem[]>({
-    queryKey: ['/api/measures', measureQuery],
+    queryKey: ['/api/control-supervision/measures', measureQuery],
     queryFn: async () => {
-      const res = await fetch(`/api/measures${measureQuery ? `?${measureQuery}` : ""}`, {
+      const res = await fetch(`/api/control-supervision/measures${measureQuery ? `?${measureQuery}` : ""}`, {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Ошибка загрузки мер реагирования');
@@ -588,9 +621,9 @@ export default function ControlSupervisionPage() {
   });
 
   const { data: reportRows = [], isLoading: isLoadingReports } = useQuery<ReportRow[]>({
-    queryKey: ['/api/reports/inspections', reportQuery],
+    queryKey: ['/api/control-supervision/reports', reportQuery],
     queryFn: async () => {
-      const res = await fetch(`/api/reports/inspections${reportQuery ? `?${reportQuery}` : ""}`, {
+      const res = await fetch(`/api/control-supervision/reports${reportQuery ? `?${reportQuery}` : ""}`, {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Ошибка загрузки отчёта');
@@ -673,15 +706,18 @@ export default function ControlSupervisionPage() {
     setPrescriptionDateFrom("");
     setPrescriptionDateTo("");
     setPrescriptionSearch("");
+    setPrescriptionInspectionNumber("");
   };
 
   const resetMeasureFilters = () => {
     setMeasureRegion(isMchsUser ? "Все" : userRegion || "Все");
     setMeasureDistrict(isDistrictUser ? (userDistrict || "Все") : "Все");
     setMeasureStatus("Все");
+    setMeasureType("Все");
     setMeasureDateFrom("");
     setMeasureDateTo("");
     setMeasureSearch("");
+    setMeasureInspectionNumber("");
   };
 
   const resetReportFilters = () => {
@@ -1175,6 +1211,16 @@ export default function ControlSupervisionPage() {
               </div>
 
               <div>
+                <label className="text-xs text-slate-400">Номер проверки</label>
+                <input
+                  placeholder="Например: 123/2024"
+                  value={prescriptionInspectionNumber}
+                  onChange={(e) => setPrescriptionInspectionNumber(e.target.value)}
+                  className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
                 <label className="text-xs text-slate-400">Поиск: номер / БИН / ИИН / описание</label>
                 <div className="relative">
                   <input
@@ -1207,6 +1253,8 @@ export default function ControlSupervisionPage() {
                     <th className="px-3 py-3">Номер</th>
                     <th className="px-3 py-3">Статус</th>
                     <th className="px-3 py-3">Срок исполнения</th>
+                    <th className="px-3 py-3">Номер проверки</th>
+                    <th className="px-3 py-3">Субъект</th>
                     <th className="px-3 py-3">Регион</th>
                     <th className="px-3 py-3">Район</th>
                     <th className="px-3 py-3">БИН/ИИН</th>
@@ -1215,9 +1263,9 @@ export default function ControlSupervisionPage() {
                 </thead>
                 <tbody>
                   {isLoadingPrescriptions ? (
-                    <tr><td colSpan={9} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
                   ) : prescriptions.length === 0 ? (
-                    <tr><td colSpan={9} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
                   ) : prescriptions.map((item, idx) => {
                     const statusLabel = PRESCRIPTION_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
                     return (
@@ -1229,6 +1277,8 @@ export default function ControlSupervisionPage() {
                           <span className={`rounded px-2 py-1 ${PRESCRIPTION_STATUS_STYLES[item.status]}`}>{statusLabel}</span>
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.dueDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.inspectionNumber || "—"}</td>
+                        <td className="px-3 py-2">{item.subjectName || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.region || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.district || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.bin || item.iin || "—"}</td>
@@ -1294,6 +1344,20 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
+                  <label className="text-xs text-slate-400">Тип меры</label>
+                  <select
+                    value={measureType}
+                    onChange={(e) => setMeasureType(e.target.value)}
+                    className="block min-w-[200px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option value="Все">Все</option>
+                    {MEASURE_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
                   <label className="text-xs text-slate-400">Дата меры</label>
                   <div className="flex items-center gap-2">
                     <input
@@ -1311,6 +1375,16 @@ export default function ControlSupervisionPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-400">Номер проверки</label>
+                <input
+                  placeholder="Например: 123/2024"
+                  value={measureInspectionNumber}
+                  onChange={(e) => setMeasureInspectionNumber(e.target.value)}
+                  className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                />
               </div>
 
               <div>
@@ -1346,6 +1420,8 @@ export default function ControlSupervisionPage() {
                     <th className="px-3 py-3">Номер</th>
                     <th className="px-3 py-3">Тип</th>
                     <th className="px-3 py-3">Статус</th>
+                    <th className="px-3 py-3">Номер проверки</th>
+                    <th className="px-3 py-3">Субъект</th>
                     <th className="px-3 py-3">Регион</th>
                     <th className="px-3 py-3">Район</th>
                     <th className="px-3 py-3">БИН/ИИН</th>
@@ -1354,9 +1430,9 @@ export default function ControlSupervisionPage() {
                 </thead>
                 <tbody>
                   {isLoadingMeasures ? (
-                    <tr><td colSpan={9} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
                   ) : measuresData.length === 0 ? (
-                    <tr><td colSpan={9} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
                   ) : measuresData.map((item, idx) => {
                     const statusLabel = MEASURE_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
                     const typeLabel = MEASURE_TYPES.find((t) => t.value === item.type)?.label ?? item.type;
@@ -1369,6 +1445,8 @@ export default function ControlSupervisionPage() {
                         <td className="px-3 py-2">
                           <span className={`rounded px-2 py-1 ${MEASURE_STATUS_STYLES[item.status]}`}>{statusLabel}</span>
                         </td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.inspectionNumber || "—"}</td>
+                        <td className="px-3 py-2">{item.subjectName || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.region || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.district || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.bin || item.iin || "—"}</td>
