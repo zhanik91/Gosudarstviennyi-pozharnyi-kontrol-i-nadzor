@@ -415,6 +415,7 @@ export class IncidentStorage {
     periodFrom?: string;
     periodTo?: string;
     includeSubOrgs?: boolean;
+    region?: string;
     scopeUser?: ScopeUser;
   }): Promise<{
     regions: Array<{
@@ -439,6 +440,9 @@ export class IncidentStorage {
       periodTo: params.periodTo,
       period: params.period,
     });
+    if (params.region) {
+      conditions.push(eq(incidents.region, params.region));
+    }
     conditions.push(gte(incidents.dateTime, startDate));
     conditions.push(lte(incidents.dateTime, endDate));
 
@@ -494,10 +498,13 @@ export class IncidentStorage {
     periodFrom?: string;
     periodTo?: string;
     includeSubOrgs?: boolean;
+    region?: string;
     scopeUser?: ScopeUser;
   }) {
     await this.ensureIncidentSchemaChecked();
     const orgConditions = await this.getOrganizationConditions(params);
+    const scopeConditions =
+      params.region ? [...orgConditions, eq(incidents.region, params.region)] : orgConditions;
     const currentPeriod = this.getDateRange({
       periodFrom: params.periodFrom,
       periodTo: params.periodTo,
@@ -518,7 +525,7 @@ export class IncidentStorage {
     const ospIncidentTypes = ["fire", "steppe_fire"] as const;
 
     const baseConditions = [
-      ...orgConditions,
+      ...scopeConditions,
       gte(incidents.dateTime, currentPeriod.startDate),
       lte(incidents.dateTime, currentPeriod.endDate),
     ];
@@ -537,7 +544,7 @@ export class IncidentStorage {
       .from(incidents)
       .where(
         and(
-          ...orgConditions,
+          ...scopeConditions,
           inArray(incidents.incidentType, ospIncidentTypes),
           gte(incidents.dateTime, currentPeriod.startDate),
           lte(incidents.dateTime, currentPeriod.endDate)
@@ -626,7 +633,7 @@ export class IncidentStorage {
       .from(incidents)
       .where(
         and(
-          ...orgConditions,
+          ...scopeConditions,
           eq(incidents.incidentType, "fire"),
           gte(incidents.dateTime, previousPeriod.startDate),
           lte(incidents.dateTime, previousPeriod.endDate)
@@ -1243,12 +1250,15 @@ export class IncidentStorage {
   // Advanced Analytics (Charts/Maps)
   async getAdvancedAnalytics(params: any): Promise<any> {
     await this.ensureIncidentSchemaChecked();
-    const { period, orgUnitId, includeSubOrgs, scopeUser } = params;
+    const { period, orgUnitId, includeSubOrgs, scopeUser, region } = params;
     const scopeConditions = await this.getOrganizationConditions({
       orgUnitId,
       includeSubOrgs,
       scopeUser,
     });
+    if (region) {
+      scopeConditions.push(eq(incidents.region, region));
+    }
 
     // Статистика по типам происшествий
     const incidentTypesQuery = db.select({
