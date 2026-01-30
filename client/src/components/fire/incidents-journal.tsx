@@ -20,7 +20,7 @@ import { ErrorDisplay } from "@/components/ui/error-boundary";
 import { DateRangeField } from "@/components/ui/date-range-field";
 import { usePeriodStore } from "@/hooks/use-period-store";
 import { useAuth } from "@/hooks/useAuth";
-import { REGION_NAMES } from "@/data/kazakhstan-data";
+import { REGION_NAMES, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 import type { Incident } from "@shared/schema";
 import * as XLSX from "xlsx";
 import IncidentFormOSP from "./incident-form-osp";
@@ -60,6 +60,11 @@ type ImportedIncident = {
   incidentType?: string;
   address?: string;
   cause?: string;
+  causeCode?: string;
+  causeDetailed?: string;
+  objectType?: string;
+  objectCode?: string;
+  objectDetailed?: string;
   damage?: number;
   deathsTotal?: number;
   injuredTotal?: number;
@@ -133,6 +138,28 @@ const headerMap: Record<string, keyof ImportedIncident> = {
   "тип происшествия": "incidentType",
   адрес: "address",
   причина: "cause",
+  "причина (код)": "causeCode",
+  "код причины": "causeCode",
+  "причина код": "causeCode",
+  causecode: "causeCode",
+  "cause code": "causeCode",
+  "причина (детально)": "causeDetailed",
+  "детальная причина": "causeDetailed",
+  "причина детально": "causeDetailed",
+  "код причины детально": "causeDetailed",
+  causedetailed: "causeDetailed",
+  "cause detailed": "causeDetailed",
+  объект: "objectType",
+  "объект (код)": "objectCode",
+  "код объекта": "objectCode",
+  "объект код": "objectCode",
+  objectcode: "objectCode",
+  "object code": "objectCode",
+  "объект (детально)": "objectDetailed",
+  "детальный объект": "objectDetailed",
+  "объект детально": "objectDetailed",
+  objectdetailed: "objectDetailed",
+  "object detailed": "objectDetailed",
   ущерб: "damage",
   погибшие: "deathsTotal",
   травмированные: "injuredTotal",
@@ -163,6 +190,83 @@ const normalizeLocality = (value: string) => {
   if (normalized.includes("город")) return "cities";
   if (normalized.includes("сель")) return "rural";
   return value.trim();
+};
+
+const normalizeCodeValue = (value: unknown) => {
+  if (value === null || value === undefined) return undefined;
+  const trimmed = String(value).trim();
+  return trimmed ? trimmed : undefined;
+};
+
+const normalizeTextValue = (value: unknown) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s.]/gu, " ");
+
+const CAUSE_CODE_SET = new Set(FIRE_CAUSES.map((cause) => cause.code));
+const CAUSE_DETAIL_CODE_SET = new Set(
+  FIRE_CAUSES.flatMap((cause) => cause.subcategories?.map((subcategory) => subcategory.code) ?? [])
+);
+const OBJECT_CODE_SET = new Set(KZ_OBJECT_TYPES.map((type) => type.code));
+
+const extractDetailedCode = (value: unknown) => {
+  const normalized = normalizeTextValue(value);
+  const match = normalized.match(/\b\d{1,2}\.\d{1,2}\b/);
+  return match?.[0];
+};
+
+const matchCauseCodeFromText = (value: string | undefined) => {
+  if (!value) return undefined;
+  const normalized = normalizeTextValue(value);
+  const keywordMap: { code: string; keywords: string[] }[] = [
+    { code: "1", keywords: ["поджог"] },
+    { code: "2", keywords: ["технолог", "оборудован"] },
+    { code: "3", keywords: ["электро", "коротк", "провод"] },
+    { code: "4", keywords: ["бытов", "нагрев", "телевиз", "холодил", "стирал"] },
+    { code: "5", keywords: ["печ", "камин", "котел", "дымох", "отоп"] },
+    { code: "6", keywords: ["газ"] },
+    { code: "7", keywords: ["огнев", "сварк"] },
+    { code: "8", keywords: ["неосторож", "курен", "костер", "шалость"] },
+    { code: "9", keywords: ["самовоз"] },
+    { code: "10", keywords: ["молни", "гроз"] },
+    { code: "11", keywords: ["проч"] },
+    { code: "12", keywords: ["не установлен", "неизвест"] },
+  ];
+  const matched = keywordMap.find((item) =>
+    item.keywords.some((keyword) => normalized.includes(keyword))
+  );
+  return matched?.code;
+};
+
+const matchObjectCodeFromText = (value: string | undefined) => {
+  if (!value) return undefined;
+  const normalized = normalizeTextValue(value);
+  const keywordMap: { code: string; keywords: string[] }[] = [
+    { code: "01", keywords: ["жил", "квартир", "дом"] },
+    { code: "02", keywords: ["общежит"] },
+    { code: "03", keywords: ["гостиниц"] },
+    { code: "04", keywords: ["больниц", "поликлин"] },
+    { code: "05", keywords: ["школ", "сад"] },
+    { code: "06", keywords: ["культур", "просвет"] },
+    { code: "07", keywords: ["научн"] },
+    { code: "08", keywords: ["торгов"] },
+    { code: "09", keywords: ["питани", "кафе", "ресторан"] },
+    { code: "10", keywords: ["администрат"] },
+    { code: "11", keywords: ["производ", "цех"] },
+    { code: "12", keywords: ["склад"] },
+    { code: "13", keywords: ["сельск", "ферм"] },
+    { code: "14", keywords: ["транспорт", "авто", "машин"] },
+    { code: "15", keywords: ["железн", "вагон"] },
+    { code: "16", keywords: ["воздуш", "самолет"] },
+    { code: "17", keywords: ["водн", "судно", "кораб"] },
+    { code: "18", keywords: ["открыт", "площад", "территор"] },
+    { code: "19", keywords: ["проч"] },
+  ];
+  const matched = keywordMap.find((item) =>
+    item.keywords.some((keyword) => normalized.includes(keyword))
+  );
+  return matched?.code;
 };
 
 type IncidentPageResponse = {
@@ -286,6 +390,48 @@ const buildImportedIncident = (row: Record<string, unknown>, rowNumber: number) 
         baseDate.setHours(Number(hours), Number(minutes), Number(seconds), 0);
         incident.dateTime = baseDate.toISOString();
       }
+    }
+  }
+  incident.causeCode = normalizeCodeValue(incident.causeCode);
+  incident.objectCode = normalizeCodeValue(incident.objectCode);
+  incident.causeDetailed = normalizeCodeValue(incident.causeDetailed) ?? extractDetailedCode(incident.cause);
+  incident.objectDetailed = normalizeCodeValue(incident.objectDetailed) ?? extractDetailedCode(incident.objectType);
+
+  if (!incident.causeCode && incident.cause) {
+    incident.causeCode = matchCauseCodeFromText(incident.cause);
+  }
+  if (!incident.objectCode && incident.objectType) {
+    incident.objectCode = matchObjectCodeFromText(incident.objectType);
+  }
+
+  if (incident.causeCode && !CAUSE_CODE_SET.has(incident.causeCode)) {
+    throw new Error(
+      `Строка ${rowNumber}: код причины "${incident.causeCode}" не найден в справочнике.`
+    );
+  }
+  if (incident.causeDetailed && !CAUSE_DETAIL_CODE_SET.has(incident.causeDetailed)) {
+    throw new Error(
+      `Строка ${rowNumber}: детальный код причины "${incident.causeDetailed}" не найден в справочнике.`
+    );
+  }
+  if (incident.objectCode && !OBJECT_CODE_SET.has(incident.objectCode)) {
+    throw new Error(
+      `Строка ${rowNumber}: код объекта "${incident.objectCode}" не найден в справочнике.`
+    );
+  }
+
+  if (incident.incidentType === "fire") {
+    const missingCodes: string[] = [];
+    if (!incident.causeCode) missingCodes.push("Причина (код)");
+    if (!incident.causeDetailed) missingCodes.push("Причина (детально)");
+    if (!incident.objectCode) missingCodes.push("Объект (код)");
+    if (!incident.objectDetailed) missingCodes.push("Объект (детально)");
+    if (missingCodes.length > 0) {
+      throw new Error(
+        `Строка ${rowNumber}: отсутствуют значения в колонках ${missingCodes.join(
+          ", "
+        )}. Для отчетных форм обязательны колонки: Причина (код), Причина (детально), Объект (код), Объект (детально).`
+      );
     }
   }
   return incident;
@@ -697,12 +843,21 @@ export default function IncidentsJournal() {
         const headers = headerRow.map((header) => normalizeHeader(String(header)));
         const headerKeys = headers.map((header) => headerMap[header]).filter(Boolean);
 
-        if (
-          !headerKeys.includes("dateTime") ||
-          !headerKeys.includes("incidentType") ||
-          !headerKeys.includes("address")
-        ) {
-          throw new Error("Неверный формат файла: отсутствуют обязательные колонки");
+        const missingHeaders: string[] = [];
+        if (!headerKeys.includes("dateTime")) missingHeaders.push("Дата/Время");
+        if (!headerKeys.includes("incidentType")) missingHeaders.push("Тип");
+        if (!headerKeys.includes("address")) missingHeaders.push("Адрес");
+        if (!headerKeys.includes("causeCode")) missingHeaders.push("Причина (код)");
+        if (!headerKeys.includes("causeDetailed")) missingHeaders.push("Причина (детально)");
+        if (!headerKeys.includes("objectCode")) missingHeaders.push("Объект (код)");
+        if (!headerKeys.includes("objectDetailed")) missingHeaders.push("Объект (детально)");
+
+        if (missingHeaders.length > 0) {
+          throw new Error(
+            `Неверный формат файла: отсутствуют обязательные колонки (${missingHeaders.join(
+              ", "
+            )}). Для отчетных форм обязательны колонки: Дата/Время, Тип, Адрес, Причина (код), Причина (детально), Объект (код), Объект (детально).`
+          );
         }
 
         const importedIncidents = dataRows
@@ -1607,6 +1762,14 @@ export default function IncidentsJournal() {
                           </div>
                        </div>
                     )}
+
+                    <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+                      <div className="font-medium text-foreground mb-1">Формат файла импорта</div>
+                      Обязательные колонки для отчетных форм: Дата/Время, Тип, Адрес, Причина (код),
+                      Причина (детально), Объект (код), Объект (детально). Можно дополнительно указывать
+                      текстовые поля «Причина» и «Объект» — они используются для сверки и авто-подбора
+                      кодов.
+                    </div>
 
                     <div className="flex justify-end pt-2">
                        <Button onClick={() => setImportResults(null)}>Закрыть</Button>
