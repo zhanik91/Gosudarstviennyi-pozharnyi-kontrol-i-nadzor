@@ -86,6 +86,14 @@ export default function SimpleAnalytics() {
   const form1Locality = (analytics as any)?.form1?.locality ?? [];
   const form1Regions = (analytics as any)?.form1?.regions ?? [];
   const form1Totals = (analytics as any)?.form1?.totals ?? { deaths: 0, injured: 0, damage: 0 };
+  const form1RegionsSorted = useMemo(
+    () =>
+      [...form1Regions].sort(
+        (left: { count?: number }, right: { count?: number }) =>
+          Number(right?.count ?? 0) - Number(left?.count ?? 0),
+      ),
+    [form1Regions],
+  );
 
   const form2Causes = (analytics as any)?.form2?.causes ?? [];
   const form2Regions = (analytics as any)?.form2?.regions ?? [];
@@ -332,11 +340,18 @@ export default function SimpleAnalytics() {
                 Нет данных за выбранный период
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={form1Regions} layout="vertical" margin={{ left: 150 }}>
+              <ResponsiveContainer width="100%" height={500}>
+                <BarChart data={form1RegionsSorted} margin={{ bottom: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
-                  <YAxis type="category" dataKey="label" fontSize={11} width={140} />
+                  <XAxis
+                    dataKey="label"
+                    fontSize={11}
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                    interval={0}
+                  />
+                  <YAxis fontSize={11} tickFormatter={formatNumber} />
                   <Tooltip formatter={tooltipValueFormatter} />
                   <Legend />
                   <Bar dataKey="count" fill="#0088FE" name="Пожары" />
