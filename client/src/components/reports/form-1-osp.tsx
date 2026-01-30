@@ -8,6 +8,7 @@ import { FORM_1_OSP_ROWS, Form1OSPRow } from "@shared/fire-forms-data";
 import { Download, FileText, Send, Printer, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
+import { useReportPeriod } from "@/components/reports/use-report-period";
 
 interface RowData {
   total: number;
@@ -22,16 +23,12 @@ interface ValidationError {
 }
 
 export default function Form1OSP() {
-  const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
-    String(now.getMonth() + 1).padStart(2, "0")
-  );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
+  const { periodKey, reportMonth, reportYear, setReportMonth, setReportYear } = useReportPeriod();
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
-  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+  const period = periodKey || undefined;
 
   const { reportData, isLoading, saveReport } = useReportForm<RowData>({
     formId: "1-osp",
@@ -176,7 +173,7 @@ export default function Form1OSP() {
       return;
     }
 
-    if (!reportMonth || !reportYear) {
+    if (!period) {
       toast({
         title: "Ошибка",
         description: "Укажите отчетный период",

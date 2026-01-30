@@ -8,6 +8,7 @@ import { FIRE_CAUSES, FireCause } from "@shared/fire-forms-data";
 import { Download, FileText, Send, Printer, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
+import { useReportPeriod } from "@/components/reports/use-report-period";
 
 interface ValidationError {
   causeCode: string;
@@ -23,16 +24,12 @@ interface CauseData {
 }
 
 export default function Form3SPVP() {
-  const now = new Date();
-  const [reportMonth, setReportMonth] = useState(
-    String(now.getMonth() + 1).padStart(2, "0")
-  );
-  const [reportYear, setReportYear] = useState(now.getFullYear().toString());
+  const { periodKey, reportMonth, reportYear, setReportMonth, setReportYear } = useReportPeriod();
   const [region, setRegion] = useState("Республика Казахстан (Свод)");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
-  const period = reportMonth && reportYear ? `${reportYear}-${reportMonth}` : undefined;
+  const period = periodKey || undefined;
 
   const { reportData, isLoading, saveReport } = useReportForm<CauseData>({
     formId: "3-spvp",
@@ -188,7 +185,7 @@ export default function Form3SPVP() {
       return;
     }
 
-    if (!reportMonth || !reportYear) {
+    if (!period) {
       toast({
         title: "Ошибка",
         description: "Укажите отчетный период",
