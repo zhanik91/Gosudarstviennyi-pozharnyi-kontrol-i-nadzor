@@ -459,6 +459,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/control-supervision/prescriptions', isAuthenticated, async (req: any, res) => {
+    try {
+      const { region, district, status, dateFrom, dateTo, search, inspectionNumber } = req.query;
+      const scopeUser = toScopeUser(req.user);
+      const conditions = [];
+
+      const scopeCondition = applyScopeCondition(scopeUser, prescriptions.region, prescriptions.district);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+      if (region && region !== 'all') {
+        conditions.push(eq(prescriptions.region, region as string));
+      }
+      if (district && district !== 'all') {
+        conditions.push(eq(prescriptions.district, district as string));
+      }
+      if (status && status !== 'all') {
+        conditions.push(eq(prescriptions.status, status as any));
+      }
+      if (dateFrom) {
+        conditions.push(gte(prescriptions.issueDate, new Date(dateFrom as string)));
+      }
+      if (dateTo) {
+        conditions.push(lte(prescriptions.issueDate, new Date(dateTo as string)));
+      }
+      if (inspectionNumber) {
+        conditions.push(ilike(inspections.number, `%${inspectionNumber}%`));
+      }
+      if (search) {
+        const likeValue = `%${search}%`;
+        conditions.push(or(
+          ilike(prescriptions.number, likeValue),
+          ilike(prescriptions.bin, likeValue),
+          ilike(prescriptions.iin, likeValue),
+          ilike(prescriptions.description, likeValue),
+          ilike(inspections.number, likeValue),
+          ilike(inspections.subjectName, likeValue),
+          ilike(inspections.address, likeValue),
+        ));
+      }
+
+      let query = db.select({
+        id: prescriptions.id,
+        inspectionId: prescriptions.inspectionId,
+        number: prescriptions.number,
+        issueDate: prescriptions.issueDate,
+        dueDate: prescriptions.dueDate,
+        status: prescriptions.status,
+        region: prescriptions.region,
+        district: prescriptions.district,
+        bin: prescriptions.bin,
+        iin: prescriptions.iin,
+        description: prescriptions.description,
+        inspectionNumber: inspections.number,
+        subjectName: inspections.subjectName,
+        address: inspections.address,
+      }).from(prescriptions)
+        .leftJoin(inspections, eq(prescriptions.inspectionId, inspections.id));
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query.orderBy(desc(prescriptions.issueDate));
+      res.json(result);
+    } catch (error) {
+      console.error('Error loading prescriptions overview:', error);
+      res.status(500).json({ message: 'Ошибка загрузки предписаний' });
+    }
+  });
+
+  app.get('/api/control-supervision/measures', isAuthenticated, async (req: any, res) => {
+    try {
+      const { region, district, status, dateFrom, dateTo, search, inspectionNumber, type } = req.query;
+      const scopeUser = toScopeUser(req.user);
+      const conditions = [];
+
+      const scopeCondition = applyScopeCondition(scopeUser, measures.region, measures.district);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+      if (region && region !== 'all') {
+        conditions.push(eq(measures.region, region as string));
+      }
+      if (district && district !== 'all') {
+        conditions.push(eq(measures.district, district as string));
+      }
+      if (status && status !== 'all') {
+        conditions.push(eq(measures.status, status as any));
+      }
+      if (type && type !== 'all') {
+        conditions.push(eq(measures.type, type as any));
+      }
+      if (dateFrom) {
+        conditions.push(gte(measures.measureDate, new Date(dateFrom as string)));
+      }
+      if (dateTo) {
+        conditions.push(lte(measures.measureDate, new Date(dateTo as string)));
+      }
+      if (inspectionNumber) {
+        conditions.push(ilike(inspections.number, `%${inspectionNumber}%`));
+      }
+      if (search) {
+        const likeValue = `%${search}%`;
+        conditions.push(or(
+          ilike(measures.number, likeValue),
+          ilike(measures.bin, likeValue),
+          ilike(measures.iin, likeValue),
+          ilike(measures.description, likeValue),
+          ilike(inspections.number, likeValue),
+          ilike(inspections.subjectName, likeValue),
+          ilike(inspections.address, likeValue),
+        ));
+      }
+
+      let query = db.select({
+        id: measures.id,
+        relatedInspectionId: measures.relatedInspectionId,
+        number: measures.number,
+        measureDate: measures.measureDate,
+        type: measures.type,
+        status: measures.status,
+        region: measures.region,
+        district: measures.district,
+        bin: measures.bin,
+        iin: measures.iin,
+        description: measures.description,
+        inspectionNumber: inspections.number,
+        subjectName: inspections.subjectName,
+        address: inspections.address,
+      }).from(measures)
+        .leftJoin(inspections, eq(measures.relatedInspectionId, inspections.id));
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query.orderBy(desc(measures.measureDate));
+      res.json(result);
+    } catch (error) {
+      console.error('Error loading measures overview:', error);
+      res.status(500).json({ message: 'Ошибка загрузки мер реагирования' });
+    }
+  });
+
   app.get('/api/admin-cases', isAuthenticated, async (req: any, res) => {
     try {
       const conditions = buildRegistryFilters(
@@ -554,6 +699,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(rows);
     } catch (error) {
       console.error('Error loading inspections report:', error);
+      res.status(500).json({ message: 'Ошибка загрузки отчета по проверкам' });
+    }
+  });
+
+  app.get('/api/control-supervision/reports', isAuthenticated, async (req: any, res) => {
+    try {
+      const { region, district, status, dateFrom, dateTo, period } = req.query;
+      const scopeUser = toScopeUser(req.user);
+
+      const allowedPeriods = ['day', 'week', 'month', 'quarter', 'year'];
+      const periodValue = allowedPeriods.includes(period as string) ? (period as string) : 'month';
+      const periodExpression = sql`date_trunc(${sql.raw(`'${periodValue}'`)}, ${inspections.inspectionDate})`;
+
+      const conditions = [];
+      const scopeCondition = applyScopeCondition(scopeUser, inspections.region, inspections.district);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+      if (region && region !== 'all') {
+        conditions.push(eq(inspections.region, region as string));
+      }
+      if (district && district !== 'all') {
+        conditions.push(eq(inspections.district, district as string));
+      }
+      if (status && status !== 'all') {
+        conditions.push(eq(inspections.status, status as any));
+      }
+      if (dateFrom) {
+        conditions.push(gte(inspections.inspectionDate, new Date(dateFrom as string)));
+      }
+      if (dateTo) {
+        conditions.push(lte(inspections.inspectionDate, new Date(dateTo as string)));
+      }
+
+      let query = db.select({
+        period: periodExpression,
+        totalCount: sql<number>`count(*)`,
+        plannedCount: sql<number>`sum(case when ${inspections.status} = 'planned' then 1 else 0 end)`,
+        completedCount: sql<number>`sum(case when ${inspections.status} = 'completed' then 1 else 0 end)`,
+      }).from(inspections);
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const rows = await query.groupBy(periodExpression).orderBy(periodExpression);
+      res.json(rows);
+    } catch (error) {
+      console.error('Error loading inspections summary:', error);
       res.status(500).json({ message: 'Ошибка загрузки отчета по проверкам' });
     }
   });
