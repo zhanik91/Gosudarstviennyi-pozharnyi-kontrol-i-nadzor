@@ -52,6 +52,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const DEFAULT_DOCUMENTS = [
+  // === ЗАКОНЫ РК ===
   {
     title: "Закон Республики Казахстан «О гражданской защите»",
     shortTitle: "О гражданской защите",
@@ -62,75 +63,296 @@ const DEFAULT_DOCUMENTS = [
     externalUrl: "https://adilet.zan.kz/rus/docs/Z1400000188",
     sortOrder: 1
   },
+  // === ТЕХНИЧЕСКИЕ РЕГЛАМЕНТЫ ===
   {
-    title: "Технический регламент «Общие требования к пожарной безопасности»",
-    shortTitle: "ТР 405",
+    title: "Об утверждении технического регламента «Общие требования к пожарной безопасности»",
+    shortTitle: "ТР № 405",
     documentNumber: "№ 405",
-    documentDate: "16.01.2012",
+    documentDate: "17.08.2021",
     category: "technical_regulations",
     description: "Технический регламент, устанавливающий общие требования к пожарной безопасности",
-    externalUrl: "https://adilet.zan.kz/rus/docs/P1200000405",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2100024045",
     sortOrder: 2
   },
+  // === ПРАВИЛА ПОЖАРНОЙ БЕЗОПАСНОСТИ ===
   {
-    title: "Правила пожарной безопасности в Республике Казахстан (ППБ РК)",
-    shortTitle: "ППБ РК",
-    documentNumber: "Приказ МЧС РК № 36",
-    documentDate: "09.01.2023",
+    title: "Об утверждении Правил пожарной безопасности",
+    shortTitle: "ППБ № 55",
+    documentNumber: "№ 55",
+    documentDate: "21.02.2022",
     category: "fire_safety_rules",
-    description: "Правила пожарной безопасности, обязательные для исполнения на территории РК",
-    externalUrl: "https://adilet.zan.kz/rus/docs/V2300031791",
+    description: "Основные правила пожарной безопасности в Республике Казахстан",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2200026867",
     sortOrder: 3
   },
   {
-    title: "Правила организации деятельности противопожарной службы",
-    shortTitle: "Правила ППС",
-    documentNumber: "Приказ МЧС РК № 256",
-    documentDate: "22.06.2022",
+    title: "Об утверждении Правил организации тушения пожаров",
+    shortTitle: "№ 446",
+    documentNumber: "№ 446",
+    documentDate: "26.06.2017",
     category: "fire_safety_rules",
-    description: "Правила организации деятельности противопожарной службы МЧС РК",
-    externalUrl: "https://adilet.zan.kz/rus/docs/V2200028532",
+    description: "Правила организации тушения пожаров",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1700015430",
     sortOrder: 4
   },
   {
-    title: "Правила ведения государственного учета пожаров и их последствий",
-    shortTitle: "Учёт пожаров",
-    documentNumber: "Приказ МЧС РК",
-    documentDate: "22.06.2022",
-    category: "orders",
-    description: "Порядок ведения государственного учета пожаров и их последствий",
-    externalUrl: "https://adilet.zan.kz/rus/docs/V2200028529",
+    title: "Об утверждении Правил тушения степных пожаров, а также пожаров в населенных пунктах, в которых отсутствуют подразделения государственной противопожарной службы",
+    shortTitle: "№ 107",
+    documentNumber: "№ 107",
+    documentDate: "11.02.2015",
+    category: "fire_safety_rules",
+    description: "Правила тушения степных пожаров и пожаров в населённых пунктах без подразделений ГПС",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V15C0010433",
     sortOrder: 5
   },
   {
-    title: "Правила пожарной безопасности для энергетических предприятий",
-    shortTitle: "ППБ Энергетика",
-    documentNumber: "",
-    documentDate: "",
+    title: "Об утверждении Устава службы противопожарной службы",
+    shortTitle: "Устав ПС",
+    documentNumber: "№ 445",
+    documentDate: "26.06.2017",
     category: "fire_safety_rules",
-    description: "Специальные требования пожарной безопасности для энергетических предприятий",
-    externalUrl: "https://adilet.zan.kz/rus/docs/V1100007364",
+    description: "Устав службы противопожарной службы",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1700015422",
     sortOrder: 6
   },
+  // === НГПС (Негосударственная противопожарная служба) ===
   {
-    title: "СН РК 2.02-01-2019 Противопожарная защита. Общие требования",
-    shortTitle: "СН РК 2.02-01-2019",
-    documentNumber: "СН РК 2.02-01-2019",
-    documentDate: "2019",
-    category: "building_codes",
-    description: "Строительные нормы по противопожарной защите зданий и сооружений",
-    externalUrl: "https://adilet.zan.kz/rus/docs/P1900000780",
+    title: "Об утверждении перечня организаций и объектов, на которых в обязательном порядке создается негосударственная противопожарная служба",
+    shortTitle: "НГПС № 281",
+    documentNumber: "№ 281",
+    documentDate: "29.05.2023",
+    category: "orders",
+    description: "Перечень организаций и объектов для создания НГПС",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2300032631",
     sortOrder: 7
   },
   {
-    title: "СН РК 2.02-11-2017 Нормы пожарной безопасности",
-    shortTitle: "СН РК 2.02-11-2017",
-    documentNumber: "СН РК 2.02-11-2017",
-    documentDate: "2017",
-    category: "building_codes",
-    description: "Нормы проектирования противопожарной защиты",
-    externalUrl: "https://adilet.zan.kz/rus/docs/P1700000339",
+    title: "Об утверждении Правил осуществления деятельности негосударственных противопожарных служб",
+    shortTitle: "№ 782",
+    documentNumber: "№ 782",
+    documentDate: "07.11.2014",
+    category: "orders",
+    description: "Правила осуществления деятельности НГПС",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V14C0009931",
     sortOrder: 8
+  },
+  {
+    title: "Об утверждении разрешительных требований, предъявляемых к негосударственным противопожарным службам",
+    shortTitle: "№ 783",
+    documentNumber: "№ 783",
+    documentDate: "07.11.2014",
+    category: "orders",
+    description: "Разрешительные требования к НГПС",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V14C0009942",
+    sortOrder: 9
+  },
+  {
+    title: "Об утверждении Правил аттестации негосударственных противопожарных служб на право проведения работ по предупреждению и тушению пожаров",
+    shortTitle: "№ 514",
+    documentNumber: "№ 514",
+    documentDate: "13.07.2018",
+    category: "orders",
+    description: "Правила аттестации НГПС",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1800017281",
+    sortOrder: 10
+  },
+  {
+    title: "Об утверждении Программы курсов обучения по специальной подготовке специалистов негосударственных противопожарных служб",
+    shortTitle: "№ 48",
+    documentNumber: "№ 48",
+    documentDate: "24.01.2015",
+    category: "orders",
+    description: "Программа курсов обучения специалистов НГПС",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V15C0010382",
+    sortOrder: 11
+  },
+  // === АУДИТ И ЭКСПЕРТНЫЕ ОРГАНИЗАЦИИ ===
+  {
+    title: "Об утверждении Правил проведения аудита в области пожарной безопасности",
+    shortTitle: "Аудит № 240",
+    documentNumber: "№ 240",
+    documentDate: "03.04.2017",
+    category: "orders",
+    description: "Правила проведения аудита в области пожарной безопасности",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1700015099",
+    sortOrder: 12
+  },
+  {
+    title: "Об утверждении разрешительных требований, предъявляемых к экспертным организациям",
+    shortTitle: "№ 110",
+    documentNumber: "№ 110",
+    documentDate: "13.02.2015",
+    category: "orders",
+    description: "Разрешительные требования к экспертным организациям",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1500010496",
+    sortOrder: 13
+  },
+  {
+    title: "Об утверждении Правил аккредитации экспертных организаций",
+    shortTitle: "№ 112",
+    documentNumber: "№ 112",
+    documentDate: "13.02.2015",
+    category: "orders",
+    description: "Правила аккредитации экспертных организаций",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1500010488",
+    sortOrder: 14
+  },
+  {
+    title: "Об утверждении Правил осуществления деятельности исследовательских испытательных пожарных лабораторий",
+    shortTitle: "№ 510",
+    documentNumber: "№ 510",
+    documentDate: "27.07.2017",
+    category: "orders",
+    description: "Правила деятельности исследовательских испытательных пожарных лабораторий",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1700015540",
+    sortOrder: 15
+  },
+  // === МОНТАЖ СИСТЕМ ПОЖАРНОЙ АВТОМАТИКИ ===
+  {
+    title: "Об утверждении Правил выдачи разрешения на осуществление деятельности по монтажу, наладке и техническому обслуживанию систем пожарной автоматики",
+    shortTitle: "№ 372",
+    documentNumber: "№ 372",
+    documentDate: "28.08.2025",
+    category: "orders",
+    description: "Правила выдачи разрешения на монтаж систем пожарной автоматики",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2500036734",
+    sortOrder: 16
+  },
+  {
+    title: "Об утверждении разрешительных требований, предъявляемых к ИП и юридическим лицам на осуществление деятельности по монтажу, наладке и техническому обслуживанию систем пожарной автоматики",
+    shortTitle: "№ 322",
+    documentNumber: "№ 322",
+    documentDate: "14.08.2025",
+    category: "orders",
+    description: "Разрешительные требования к организациям по монтажу систем пожарной автоматики",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2500036640",
+    sortOrder: 17
+  },
+  // === ЗАКЛЮЧЕНИЯ О СООТВЕТСТВИИ ===
+  {
+    title: "Об утверждении Правил выдачи заключения о соответствии объекта требованиям пожарной безопасности",
+    shortTitle: "№ 359",
+    documentNumber: "№ 359",
+    documentDate: "26.08.2025",
+    category: "orders",
+    description: "Правила выдачи заключения о соответствии объекта требованиям ПБ",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2500036695",
+    sortOrder: 18
+  },
+  {
+    title: "Об утверждении формы заключения о соответствии объекта требованиям пожарной безопасности перед приемкой его в эксплуатацию",
+    shortTitle: "№ 309",
+    documentNumber: "№ 309",
+    documentDate: "06.08.2025",
+    category: "orders",
+    description: "Форма заключения о соответствии объекта требованиям ПБ",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2500036593",
+    sortOrder: 19
+  },
+  // === ОБУЧЕНИЕ МЕРАМ ПОЖАРНОЙ БЕЗОПАСНОСТИ ===
+  {
+    title: "Об утверждении Правил обучения работников организаций и населения мерам пожарной безопасности и требования к содержанию учебных программ",
+    shortTitle: "№ 276",
+    documentNumber: "№ 276",
+    documentDate: "09.06.2014",
+    category: "orders",
+    description: "Правила обучения работников и населения мерам пожарной безопасности",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1400009510",
+    sortOrder: 20
+  },
+  {
+    title: "Об утверждении квалификационных требований к специализированным учебным центрам в области пожарной безопасности",
+    shortTitle: "№ 926",
+    documentNumber: "№ 926",
+    documentDate: "16.11.2015",
+    category: "orders",
+    description: "Квалификационные требования к учебным центрам по пожарной безопасности",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1500012478",
+    sortOrder: 21
+  },
+  {
+    title: "Об утверждении учебной программы первоначальной подготовки добровольных пожарных",
+    shortTitle: "№ 888",
+    documentNumber: "№ 888",
+    documentDate: "07.11.2015",
+    category: "orders",
+    description: "Учебная программа подготовки добровольных пожарных",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1500012416",
+    sortOrder: 22
+  },
+  // === КОНТРОЛЬ И НАДЗОР ===
+  {
+    title: "Об утверждении Инструкции использования технических средств при осуществлении государственного контроля и надзора в области пожарной безопасности",
+    shortTitle: "№ 236",
+    documentNumber: "№ 236",
+    documentDate: "20.06.2024",
+    category: "orders",
+    description: "Инструкция использования технических средств при госконтроле",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2400034540",
+    sortOrder: 23
+  },
+  {
+    title: "Об утверждении критериев оценки степени риска и проверочных листов в области пожарной безопасности и гражданской обороны",
+    shortTitle: "№ 758/31",
+    documentNumber: "№ 758 и № 31",
+    documentDate: "30.10.2018",
+    category: "orders",
+    description: "Критерии оценки степени риска и проверочные листы",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V1800017647",
+    sortOrder: 24
+  },
+  {
+    title: "Об утверждении формы акта о приостановлении деятельности или отдельных видов деятельности в области пожарной безопасности",
+    shortTitle: "№ 249",
+    documentNumber: "№ 249",
+    documentDate: "27.06.2024",
+    category: "orders",
+    description: "Форма акта о приостановлении деятельности в области ПБ",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2400034610",
+    sortOrder: 25
+  },
+  // === ПОЖАРНЫЕ ПОСТЫ ===
+  {
+    title: "Об утверждении Правил создания местными исполнительными органами пожарных постов, их материально-технического оснащения",
+    shortTitle: "№ 746",
+    documentNumber: "№ 746",
+    documentDate: "30.10.2014",
+    category: "orders",
+    description: "Правила создания пожарных постов местными исполнительными органами",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V14C0009928",
+    sortOrder: 26
+  },
+  // === СПЕЦИАЛЬНЫЕ ТЕХНИЧЕСКИЕ УСЛОВИЯ ===
+  {
+    title: "Об утверждении Правил согласования специальных технических условий, отражающих специфику противопожарной защиты объектов",
+    shortTitle: "№ 351",
+    documentNumber: "№ 351",
+    documentDate: "22.08.2025",
+    category: "orders",
+    description: "Правила согласования специальных технических условий",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2500036681",
+    sortOrder: 27
+  },
+  // === ФОРМЫ ОТЧЁТНОСТИ ===
+  {
+    title: "Об утверждении форм, предназначенных для сбора административных данных «Сведения о пожарах»",
+    shortTitle: "№ 377",
+    documentNumber: "№ 377",
+    documentDate: "28.08.2025",
+    category: "orders",
+    description: "Формы для сбора административных данных о пожарах",
+    externalUrl: "https://adilet.zan.kz/rus/docs/G25O0000377",
+    sortOrder: 28
+  },
+  {
+    title: "Об утверждении Правил обеспечения питанием сотрудников и военнослужащих органов гражданской защиты при нахождении на казарменном положении",
+    shortTitle: "№ 373",
+    documentNumber: "№ 373",
+    documentDate: "28.08.2025",
+    category: "orders",
+    description: "Правила обеспечения питанием сотрудников при казарменном положении",
+    externalUrl: "https://adilet.zan.kz/rus/docs/V2500036731",
+    sortOrder: 29
   },
 ];
 
