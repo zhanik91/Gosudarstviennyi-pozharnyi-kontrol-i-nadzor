@@ -203,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API для объектов контроля
   app.get('/api/control-objects', isAuthenticated, async (req: any, res) => {
     try {
-      const { region, status } = req.query;
+      const { region, status, format } = req.query;
       const result = await db.query.controlObjects.findMany({
         where: (fields, { and, eq }) => {
           const conditions = [];
@@ -218,24 +218,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderBy: (fields, { desc }) => [desc(fields.createdAt)]
       });
       
-      const objects = result.map((obj: any) => ({
-        id: obj.id,
-        type: 'object',
-        latitude: obj.latitude ? parseFloat(obj.latitude) : null,
-        longitude: obj.longitude ? parseFloat(obj.longitude) : null,
-        title: obj.name,
-        details: {
-          category: obj.category,
-          subcategory: obj.subcategory,
-          address: obj.address,
-          status: obj.status,
-          riskLevel: obj.riskLevel,
-          region: obj.region,
-          district: obj.district,
-        }
-      }));
+      // Формат для карты или полный формат для реестра
+      if (format === 'map') {
+        const objects = result.map((obj: any) => ({
+          id: obj.id,
+          type: 'object',
+          latitude: obj.latitude ? parseFloat(obj.latitude) : null,
+          longitude: obj.longitude ? parseFloat(obj.longitude) : null,
+          title: obj.name,
+          details: {
+            category: obj.category,
+            subcategory: obj.subcategory,
+            address: obj.address,
+            status: obj.status,
+            riskLevel: obj.riskLevel,
+            region: obj.region,
+            district: obj.district,
+          }
+        }));
+        return res.json(objects);
+      }
       
-      res.json(objects);
+      // Полный формат для реестра
+      res.json(result);
     } catch (error) {
       console.error('Error loading control objects:', error);
       res.status(500).json({ message: 'Ошибка загрузки объектов контроля' });
@@ -265,11 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/control-objects', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id || req.user?.username;
-      const orgUnitId = req.user?.orgUnitId;
-      
-      if (!orgUnitId) {
-        return res.status(400).json({ message: 'Не указано подразделение пользователя' });
-      }
+      const orgUnitId = req.user?.orgUnitId || null;
       
       const data = req.body;
       const result = await db.insert(controlObjects).values({

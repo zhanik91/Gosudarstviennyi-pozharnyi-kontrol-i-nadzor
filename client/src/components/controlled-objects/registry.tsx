@@ -44,18 +44,18 @@ export default function ControlledObjectsRegistry() {
     }
   });
 
-  // Преобразуем данные API в формат компонента (API возвращает {title, details:{...}})
+  // Преобразуем данные API в формат компонента (API возвращает полные данные из БД)
   // Примечание: Поля lastInspection, nextInspection, violations отсутствуют в схеме БД
   const objects: ControlledObject[] = apiObjects.map((obj: any) => ({
     id: obj.id,
-    name: obj.title || 'Без названия',
-    type: obj.details?.category || obj.details?.subcategory || 'Объект',
-    address: obj.details?.address || '',
-    status: mapControlObjectStatus(obj.details?.status),
+    name: obj.name || obj.title || 'Без названия',
+    type: obj.category || obj.details?.category || obj.subcategory || 'Объект',
+    address: obj.address || obj.details?.address || '',
+    status: mapControlObjectStatus(obj.status || obj.details?.status),
     lastInspection: '-',  // Поле отсутствует в текущей схеме
     nextInspection: '-',  // Поле отсутствует в текущей схеме  
     violations: 0,        // Поле отсутствует в текущей схеме
-    riskLevel: obj.details?.riskLevel || 'low',
+    riskLevel: obj.riskLevel || obj.details?.riskLevel || 'low',
   }));
   
   // Маппинг статусов из схемы БД к статусам UI

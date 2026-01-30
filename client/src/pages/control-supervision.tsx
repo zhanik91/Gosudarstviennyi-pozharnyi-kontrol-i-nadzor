@@ -196,26 +196,29 @@ export default function ControlSupervisionPage() {
   
   // Преобразование данных API в формат компонента
   const rows: ControlledObject[] = useMemo(() => {
-    return apiRows.map((obj: any) => ({
-      id: obj.id,
-      region: obj.region || '',
-      district: obj.district || '',
-      subjectName: obj.details?.subjectName || obj.name || '',
-      subjectBIN: obj.details?.subjectBIN || '',
-      objectName: obj.name || '',
-      address: obj.address || '',
-      entrepreneurshipCategory: obj.details?.entrepreneurshipCategory || 'Микро',
-      status: obj.status === 'active' ? 'Активный' : 'Не функционирует',
-      objectiveLevel: obj.details?.objectiveLevel || 'Низкая',
-      objectiveCategoryId: obj.details?.objectiveCategoryId || '',
-      characteristics: obj.details?.characteristics || {
-        hasPrivateFireService: false, buildingType: '', heightMeters: '', walls: '', partitions: '',
-        heating: '', lighting: '', hasAttic: false, hasBasement: false, hasParking: false,
-        primaryExtinguishing: '', hasAUPT: false, hasAPS: false, apsServiceOrg: '',
-        outsideWater: '', insideWater: ''
-      },
-      subjective: obj.details?.subjective || { prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: '' },
-    }));
+    return apiRows.map((obj: any) => {
+      const details = obj.details || {};
+      return {
+        id: obj.id,
+        region: obj.region || '',
+        district: obj.district || '',
+        subjectName: details.subjectName || obj.name || '',
+        subjectBIN: details.subjectBIN || '',
+        objectName: obj.name || '',
+        address: obj.address || '',
+        entrepreneurshipCategory: details.entrepreneurshipCategory || 'Микро',
+        status: obj.status === 'active' ? 'Активный' : 'Не функционирует',
+        objectiveLevel: details.objectiveLevel || obj.category || 'Низкая',
+        objectiveCategoryId: details.objectiveCategoryId || obj.subcategory || '',
+        characteristics: details.characteristics || {
+          hasPrivateFireService: false, buildingType: '', heightMeters: '', walls: '', partitions: '',
+          heating: '', lighting: '', hasAttic: false, hasBasement: false, hasParking: false,
+          primaryExtinguishing: '', hasAUPT: false, hasAPS: false, apsServiceOrg: '',
+          outsideWater: '', insideWater: ''
+        },
+        subjective: details.subjective || { prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: '' },
+      };
+    });
   }, [apiRows]);
 
   // Мутации для CRUD операций

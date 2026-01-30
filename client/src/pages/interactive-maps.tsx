@@ -178,10 +178,11 @@ export default function InteractiveMaps() {
   });
 
   const { data: controlObjects = [] } = useQuery<MarkerData[]>({
-    queryKey: ['/api/control-objects', { region: selectedRegion }],
+    queryKey: ['/api/control-objects', { region: selectedRegion, format: 'map' }],
     queryFn: async () => {
       const params = new URLSearchParams({
         region: selectedRegion,
+        format: 'map',
       });
       const response = await fetch(`/api/control-objects?${params}`);
       if (!response.ok) throw new Error('Ошибка загрузки объектов');
