@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ADMIN2_BY_REGION, REGION_NAMES } from "@/data/kazakhstan-data";
+import { apiRequest } from "@/lib/queryClient";
 
 /** ===== Типы ===== */
 type Status = "Активный" | "Не функционирует";
@@ -57,7 +59,7 @@ type ControlledObject = {
 };
 
 /** ===== Постоянные ===== */
-const STORAGE_KEY = "controlled_registry_v6";
+// Данные хранятся в БД через API /api/control-objects
 
 const REGIONS = REGION_NAMES;
 const ADMIN2: Record<string, string[]> = ADMIN2_BY_REGION;
@@ -179,15 +181,66 @@ export default function ControlSupervisionPage() {
   const userRegion = (user as any)?.region || "";
   const userDistrict = (user as any)?.district || "";
 
-  // данные
-  const [rows, setRows] = useState<ControlledObject[]>([]);
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) setRows(JSON.parse(saved));
-  }, []);
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  }, [rows]);
+  // данные из API
+  const queryClient = useQueryClient();
+  
+  // Загрузка данных из БД
+  const { data: apiRows = [], isLoading: isLoadingData } = useQuery<any[]>({
+    queryKey: ['/api/control-objects'],
+    queryFn: async () => {
+      const res = await fetch('/api/control-objects', { credentials: 'include' });
+      if (!res.ok) throw new Error('Ошибка загрузки');
+      return res.json();
+    }
+  });
+  
+  // Преобразование данных API в формат компонента
+  const rows: ControlledObject[] = useMemo(() => {
+    return apiRows.map((obj: any) => ({
+      id: obj.id,
+      region: obj.region || '',
+      district: obj.district || '',
+      subjectName: obj.details?.subjectName || obj.name || '',
+      subjectBIN: obj.details?.subjectBIN || '',
+      objectName: obj.name || '',
+      address: obj.address || '',
+      entrepreneurshipCategory: obj.details?.entrepreneurshipCategory || 'Микро',
+      status: obj.status === 'active' ? 'Активный' : 'Не функционирует',
+      objectiveLevel: obj.details?.objectiveLevel || 'Низкая',
+      objectiveCategoryId: obj.details?.objectiveCategoryId || '',
+      characteristics: obj.details?.characteristics || {
+        hasPrivateFireService: false, buildingType: '', heightMeters: '', walls: '', partitions: '',
+        heating: '', lighting: '', hasAttic: false, hasBasement: false, hasParking: false,
+        primaryExtinguishing: '', hasAUPT: false, hasAPS: false, apsServiceOrg: '',
+        outsideWater: '', insideWater: ''
+      },
+      subjective: obj.details?.subjective || { prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: '' },
+    }));
+  }, [apiRows]);
+
+  // Мутации для CRUD операций
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/control-objects', data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/control-objects'] })
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest('PUT', `/api/control-objects/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/control-objects'] })
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/control-objects/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/control-objects'] })
+  });
 
   // фильтры
   const [regionFilter, setRegionFilter] = useState("Все");
@@ -325,8 +378,8 @@ export default function ControlSupervisionPage() {
     return e;
   };
 
-  const onSave = () => {
-    const prepared: ControlledObject = { ...form, id: form.id || crypto.randomUUID() };
+  const onSave = async () => {
+    const prepared: ControlledObject = { ...form, id: form.id || '' };
     if (!isMchsUser && userRegion) {
       prepared.region = userRegion;
       if (userDistrict) {
@@ -337,13 +390,38 @@ export default function ControlSupervisionPage() {
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
-    setRows(prev => {
-      const ex = prev.find(x => x.id === prepared.id);
-      if (ex) return prev.map(x => x.id === prepared.id ? prepared : x);
-      return [prepared, ...prev];
-    });
+    // Преобразование в формат API
+    const apiData = {
+      name: prepared.objectName,
+      category: prepared.objectiveLevel,
+      subcategory: prepared.objectiveCategoryId,
+      address: prepared.address,
+      region: prepared.region,
+      district: prepared.district,
+      status: prepared.status === 'Активный' ? 'active' : 'inactive',
+      riskLevel: prepared.objectiveLevel === 'Высокая' ? 'high' : prepared.objectiveLevel === 'Средняя' ? 'medium' : 'low',
+      details: {
+        subjectName: prepared.subjectName,
+        subjectBIN: prepared.subjectBIN,
+        entrepreneurshipCategory: prepared.entrepreneurshipCategory,
+        objectiveLevel: prepared.objectiveLevel,
+        objectiveCategoryId: prepared.objectiveCategoryId,
+        characteristics: prepared.characteristics,
+        subjective: prepared.subjective,
+      }
+    };
 
-    setOpenForm(false); setEditingId(null); setErrors({}); setForm({...blank});
+    try {
+      if (editingId) {
+        await updateMutation.mutateAsync({ id: editingId, data: apiData });
+      } else {
+        await createMutation.mutateAsync(apiData);
+      }
+      setOpenForm(false); setEditingId(null); setErrors({}); setForm({...blank});
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+      setErrors({ general: 'Ошибка сохранения объекта' });
+    }
   };
 
   const onEdit = (id: string) => {
@@ -351,10 +429,14 @@ export default function ControlSupervisionPage() {
     setEditingId(id); setForm({...r}); setErrors({}); setOpenForm(true);
   };
 
-  const onDelete = () => {
+  const onDelete = async () => {
     if (!confirmId) return;
-    setRows(prev => prev.filter(r => r.id !== confirmId));
-    setConfirmId(null);
+    try {
+      await deleteMutation.mutateAsync(confirmId);
+      setConfirmId(null);
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+    }
   };
 
   /** ===== Импорт/экспорт ===== */
@@ -436,8 +518,38 @@ export default function ControlSupervisionPage() {
       });
 
       const nonEmpty = mapped.filter(m => m.subjectName && m.objectName);
-      setRows(prev => [...nonEmpty, ...prev]);
-      alert(`Импортировано записей: ${nonEmpty.length}`);
+      
+      // Сохраняем каждый объект в БД через API
+      let imported = 0;
+      for (const obj of nonEmpty) {
+        try {
+          const apiData = {
+            name: obj.objectName,
+            category: obj.objectiveLevel,
+            subcategory: obj.objectiveCategoryId,
+            address: obj.address,
+            region: obj.region,
+            district: obj.district,
+            status: obj.status === 'Активный' ? 'active' : 'inactive',
+            riskLevel: obj.objectiveLevel === 'Высокая' ? 'high' : obj.objectiveLevel === 'Средняя' ? 'medium' : 'low',
+            details: {
+              subjectName: obj.subjectName,
+              subjectBIN: obj.subjectBIN,
+              entrepreneurshipCategory: obj.entrepreneurshipCategory,
+              objectiveLevel: obj.objectiveLevel,
+              objectiveCategoryId: obj.objectiveCategoryId,
+              characteristics: obj.characteristics,
+              subjective: obj.subjective,
+            }
+          };
+          await createMutation.mutateAsync(apiData);
+          imported++;
+        } catch (e) {
+          console.error('Ошибка импорта объекта:', e);
+        }
+      }
+      
+      alert(`Импортировано записей: ${imported}`);
     } catch {
       alert("Не удалось импортировать файл. Попробуйте другой XLSX/CSV.");
     }
