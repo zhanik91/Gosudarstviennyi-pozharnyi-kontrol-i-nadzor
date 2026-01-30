@@ -375,6 +375,7 @@ export default function ControlSupervisionPage() {
   const [catFilter, setCatFilter] = useState<string>("Все");
   const [statusFilter, setStatusFilter] = useState<"Все"|Status>("Все");
   const [q, setQ] = useState("");
+  const [showAdditionalFilters, setShowAdditionalFilters] = useState(false);
 
   const [prescriptionRegion, setPrescriptionRegion] = useState("Все");
   const [prescriptionDistrict, setPrescriptionDistrict] = useState("Все");
@@ -898,7 +899,7 @@ export default function ControlSupervisionPage() {
 
             {/* Панель фильтров */}
             <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
-              <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                 <div>
                   <label className="text-xs text-slate-400">Регион</label>
                   <select
@@ -924,47 +925,58 @@ export default function ControlSupervisionPage() {
                     {availableDistricts.map(d => <option key={d}>{d}</option>)}
                   </select>
                 </div>
-
-                <div>
-                  <label className="text-xs text-slate-400">Объективный критерий (риск)</label>
-                  <select
-                    value={levelFilter}
-                    onChange={(e) => { setLevelFilter(e.target.value as any); setCatFilter("Все"); }}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  >
-                    <option value="Все">Все</option>
-                    <option value="Высокая">Высокая</option>
-                    <option value="Средняя">Средняя</option>
-                    <option value="Низкая">Низкая</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-400">Наименование объективного критерия</label>
-                  <select
-                    value={catFilter}
-                    onChange={(e) => setCatFilter(e.target.value)}
-                    className="block min-w-[320px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  >
-                    <option>Все</option>
-                    {(levelFilter === "Все" ? [] : CATS[levelFilter]).map(c => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-400">Статус</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  >
-                    <option value="Все">Все</option>
-                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAdditionalFilters((prev) => !prev)}
+                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 transition hover:border-slate-500"
+                >
+                  Дополнительные фильтры
+                </button>
               </div>
+
+              {showAdditionalFilters && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                  <div>
+                    <label className="text-xs text-slate-400">Объективный критерий (риск)</label>
+                    <select
+                      value={levelFilter}
+                      onChange={(e) => { setLevelFilter(e.target.value as any); setCatFilter("Все"); }}
+                      className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    >
+                      <option value="Все">Все</option>
+                      <option value="Высокая">Высокая</option>
+                      <option value="Средняя">Средняя</option>
+                      <option value="Низкая">Низкая</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400">Наименование объективного критерия</label>
+                    <select
+                      value={catFilter}
+                      onChange={(e) => setCatFilter(e.target.value)}
+                      className="block min-w-[320px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    >
+                      <option>Все</option>
+                      {(levelFilter === "Все" ? [] : CATS[levelFilter]).map(c => (
+                        <option key={c.id} value={c.id}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400">Статус</label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as any)}
+                      className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    >
+                      <option value="Все">Все</option>
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs text-slate-400">Поиск: субъект / объект / БИН / адрес</label>
