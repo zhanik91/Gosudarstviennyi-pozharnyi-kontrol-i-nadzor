@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function SimpleAnalytics() {
   const { store, updatePreset } = usePeriodStore();
   const [includeOrgTree, setIncludeOrgTree] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("all");
+  const [isMobile, setIsMobile] = useState(false);
   const numberFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
   const [appliedFilters, setAppliedFilters] = useState({
     periodFrom: store.analytics.from,
@@ -67,6 +68,14 @@ export default function SimpleAnalytics() {
     const to = store.journal.to || "настоящее время";
     return `${from} — ${to}`;
   }, [store.journal.from, store.journal.to]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const handleChange = () => setIsMobile(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const queryParams = new URLSearchParams();
   if (appliedFilters.periodFrom) {
@@ -175,6 +184,22 @@ export default function SimpleAnalytics() {
   };
   const analyticsErrorMessage =
     analyticsError instanceof Error ? analyticsError.message : "Не удалось загрузить данные аналитики.";
+  const axisFontSize = isMobile ? 10 : 12;
+  const compactAxisFontSize = isMobile ? 9 : 11;
+  const angledXAxisProps = {
+    angle: -45,
+    textAnchor: "end" as const,
+    interval: 0,
+    height: isMobile ? 70 : 60,
+  };
+  const legendProps = isMobile
+    ? {
+        layout: "horizontal" as const,
+        verticalAlign: "bottom" as const,
+        align: "center" as const,
+        wrapperStyle: { paddingTop: 12 },
+      }
+    : {};
 
   return (
     <div className="space-y-6">
@@ -299,8 +324,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={form1Monthly}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" fontSize={12} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="month" fontSize={axisFontSize} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Line type="monotone" dataKey="count" name="Пожары" stroke="#0088FE" />
                   </LineChart>
@@ -330,16 +355,16 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={form1Locality}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={12} />
-                    <YAxis yAxisId="left" fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis yAxisId="left" fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
-                      fontSize={12}
+                      fontSize={axisFontSize}
                       tickFormatter={formatNumber}
                     />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
-                    <Legend />
+                    <Legend {...legendProps} />
                     <Bar yAxisId="left" dataKey="count" fill="#00C49F" name="Пожары" />
                     <Bar yAxisId="right" dataKey="damage" fill="#FF8042" name="Ущерб" />
                   </BarChart>
@@ -370,17 +395,10 @@ export default function SimpleAnalytics() {
               <ResponsiveContainer width="100%" height={500}>
                 <BarChart data={form1RegionsSorted} margin={{ bottom: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="label"
-                    fontSize={11}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                    interval={0}
-                  />
-                  <YAxis fontSize={11} tickFormatter={formatNumber} />
+                  <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                  <YAxis fontSize={compactAxisFontSize} tickFormatter={formatNumber} />
                   <Tooltip formatter={tooltipValueFormatter} />
-                  <Legend />
+                  <Legend {...legendProps} />
                   <Bar dataKey="count" fill="#0088FE" name="Пожары" />
                   <Bar dataKey="deaths" fill="#FF4444" name="Погибшие" />
                   <Bar dataKey="injured" fill="#FFBB28" name="Травмированные" />
@@ -418,8 +436,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form2Causes}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="count" fill="#0088FE" name="Инциденты" />
                   </BarChart>
@@ -446,8 +464,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form2Regions}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="count" fill="#00C49F" name="Инциденты" />
                   </BarChart>
@@ -520,8 +538,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form3TopCauses}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="count" fill="#FF8042" name="Пожары" />
                   </BarChart>
@@ -559,8 +577,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form4Objects}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="count" fill="#8884d8" name="Пожары" />
                   </BarChart>
@@ -587,8 +605,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={comparisonChart}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="name" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="value" fill="#FFBB28" name="Пожары" />
                   </BarChart>
@@ -626,8 +644,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form5Locality}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="count" fill="#0088FE" name="Пожары" />
                   </BarChart>
@@ -654,8 +672,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form5Locality}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="damage" fill="#FF8042" name="Ущерб" />
                   </BarChart>
@@ -693,8 +711,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={form6Monthly}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="month" fontSize={axisFontSize} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Line type="monotone" dataKey="count" stroke="#00C49F" name="Степные пожары" />
                   </LineChart>
@@ -721,8 +739,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form6Regions}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="count" fill="#0088FE" name="Случаи" />
                   </BarChart>
@@ -757,8 +775,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form7TotalsChart}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="name" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="value" fill="#FF8042" name="Люди" />
                   </BarChart>
@@ -785,8 +803,8 @@ export default function SimpleAnalytics() {
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={form7Regions}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" fontSize={11} />
-                    <YAxis fontSize={12} tickFormatter={formatNumber} />
+                    <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
+                    <YAxis fontSize={axisFontSize} tickFormatter={formatNumber} />
                     <Tooltip labelFormatter={tooltipLabelFormatter} formatter={tooltipValueFormatter} />
                     <Bar dataKey="count" fill="#8884d8" name="Инциденты" />
                   </BarChart>
