@@ -23,7 +23,11 @@ Preferred communication style: Simple, everyday language.
 - **Language**: TypeScript
 - **Database ORM**: Drizzle ORM for PostgreSQL
 - **Authentication**: Replit Authentication
-- **Access Control**: Role-based (editor, reviewer, approver, admin)
+- **Access Control**: Role-based access control with hierarchical permissions:
+  - `admin` - Full access to view and edit all data across all regions
+  - `MCHS` - Can view all data but read-only (no create/update/delete)
+  - `DCHS` - Can view and edit data only within their assigned region
+  - `OCHS` - Can view and edit data only within their assigned district
 - **API Design**: RESTful with middleware for auth and authorization
 
 ## Data Storage

@@ -209,6 +209,13 @@ export class IncidentController {
       if (!user && req.user?.username) {
         user = await storage.getUserByUsername(req.user.username);
       }
+      
+      // MCHS имеет доступ только для чтения
+      const userRole = user?.role?.toUpperCase?.() ?? user?.role;
+      if (userRole === 'MCHS') {
+        return res.status(403).json({ message: 'У вас нет прав на редактирование. Доступ только для чтения.' });
+      }
+      
       console.log("📝 Creating incident for user:", user);
       console.log("📍 Request body region/city:", req.body.region, req.body.city);
 
@@ -342,6 +349,13 @@ export class IncidentController {
     try {
       const userId = req.user?.id || req.user?.username;
       const user = await storage.getUser(userId);
+      
+      // MCHS имеет доступ только для чтения
+      const userRole = user?.role?.toUpperCase?.() ?? user?.role;
+      if (userRole === 'MCHS') {
+        return res.status(403).json({ message: 'У вас нет прав на редактирование. Доступ только для чтения.' });
+      }
+      
       const incident = await storage.getIncident(req.params.id);
 
       if (!incident) {
@@ -431,6 +445,13 @@ export class IncidentController {
     try {
       const userId = req.user?.id || req.user?.username;
       const user = await storage.getUser(userId);
+      
+      // MCHS имеет доступ только для чтения
+      const userRole = user?.role?.toUpperCase?.() ?? user?.role;
+      if (userRole === 'MCHS') {
+        return res.status(403).json({ message: 'У вас нет прав на редактирование. Доступ только для чтения.' });
+      }
+      
       const incident = await storage.getIncident(req.params.id);
 
       if (!incident) {

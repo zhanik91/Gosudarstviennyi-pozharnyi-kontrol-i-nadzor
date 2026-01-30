@@ -177,7 +177,9 @@ export default function ControlSupervisionPage() {
   const userRole = (user as any)?.role;
   const isMchsUser = userRole === "MCHS" || userRole === "admin";
   const isDchsUser = userRole === "DCHS";
-  const isDistrictUser = userRole === "DISTRICT";
+  const isDistrictUser = userRole === "DISTRICT" || userRole === "OCHS";
+  // MCHS имеет доступ только для чтения, остальные могут редактировать
+  const canEdit = userRole !== "MCHS";
   const userRegion = (user as any)?.region || "";
   const userDistrict = (user as any)?.district || "";
 
@@ -573,12 +575,14 @@ export default function ControlSupervisionPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium shadow hover:bg-blue-500"
-              onClick={() => { setEditingId(null); setForm({...blank}); setErrors({}); setOpenForm(true); }}
-            >
-              ➕ Добавить объект
-            </button>
+            {canEdit && (
+              <button
+                className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium shadow hover:bg-blue-500"
+                onClick={() => { setEditingId(null); setForm({...blank}); setErrors({}); setOpenForm(true); }}
+              >
+                ➕ Добавить объект
+              </button>
+            )}
             <button
               className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700"
               onClick={() => {
@@ -775,8 +779,10 @@ export default function ControlSupervisionPage() {
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
                           <div className="flex gap-2">
-                            <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                                    onClick={() => onEdit(r.id)}>Редактировать</button>
+                            {canEdit && (
+                              <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                                      onClick={() => onEdit(r.id)}>Редактировать</button>
+                            )}
                             <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
                                     onClick={() => { setForm(r); setEditingId(r.id); setOpenCharacteristics(true); }}>
                               Характеристика
@@ -785,8 +791,10 @@ export default function ControlSupervisionPage() {
                                     onClick={() => { setForm(r); setEditingId(r.id); setOpenSubjective(true); }}>
                               Субъективные
                             </button>
-                            <button className="rounded-lg bg-red-600 px-2 py-1 text-xs hover:bg-red-500"
-                                    onClick={() => setConfirmId(r.id)}>Удалить</button>
+                            {canEdit && (
+                              <button className="rounded-lg bg-red-600 px-2 py-1 text-xs hover:bg-red-500"
+                                      onClick={() => setConfirmId(r.id)}>Удалить</button>
+                            )}
                           </div>
                         </td>
                       </tr>
