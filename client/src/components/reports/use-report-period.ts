@@ -16,9 +16,10 @@ export function useReportPeriod() {
     () => `${fallbackDate.getFullYear()}-${formatMonth(fallbackDate.getMonth() + 1)}`,
     [fallbackDate],
   );
+  const journalKey = useMemo(() => getPresetPeriodKey(store.journal), [store.journal]);
   const periodKey = useMemo(
-    () => getPresetPeriodKey(store.report) || fallbackKey,
-    [store.report, fallbackKey],
+    () => getPresetPeriodKey(store.report) || journalKey || fallbackKey,
+    [store.report, journalKey, fallbackKey],
   );
   const [reportYear, reportMonth] = periodKey.split("-");
 
