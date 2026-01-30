@@ -10,6 +10,7 @@ export class AnalyticsController {
       const period = req.query.period as string | undefined;
       const periodFrom = req.query.periodFrom as string | undefined;
       const periodTo = req.query.periodTo as string | undefined;
+      const region = req.query.region as string | undefined;
       const includeSubOrgs =
         req.query.includeChildren === "true" || req.query.includeSubOrgs === "true";
       const orgUnitId = user?.role === "MCHS" ? (req.query.orgUnitId as string | undefined) : user?.orgUnitId;
@@ -20,6 +21,7 @@ export class AnalyticsController {
         periodFrom,
         periodTo,
         includeSubOrgs,
+        region,
         scopeUser,
       });
 
@@ -37,6 +39,7 @@ export class AnalyticsController {
       const period = req.query.period as string | undefined;
       const periodFrom = req.query.periodFrom as string | undefined;
       const periodTo = req.query.periodTo as string | undefined;
+      const region = req.query.region as string | undefined;
       const includeSubOrgs =
         req.query.includeChildren === "true" || req.query.includeSubOrgs === "true";
       const orgUnitId = user?.role === "MCHS" ? (req.query.orgUnitId as string | undefined) : user?.orgUnitId;
@@ -47,12 +50,38 @@ export class AnalyticsController {
         periodFrom,
         periodTo,
         includeSubOrgs,
+        region,
         scopeUser,
       });
 
       res.json(analytics);
     } catch (error) {
       console.error("Error fetching form analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  }
+
+  async getAdvancedAnalytics(req: Request, res: Response) {
+    try {
+      const user = await storage.getUser(req.user?.id || req.user?.username);
+      const scopeUser = toScopeUser(user);
+      const period = req.query.period as string | undefined;
+      const region = req.query.region as string | undefined;
+      const includeSubOrgs =
+        req.query.includeChildren === "true" || req.query.includeSubOrgs === "true";
+      const orgUnitId = user?.role === "MCHS" ? (req.query.orgUnitId as string | undefined) : user?.orgUnitId;
+
+      const analytics = await storage.getAdvancedAnalytics({
+        orgUnitId,
+        period,
+        includeSubOrgs,
+        region,
+        scopeUser,
+      });
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching advanced analytics:", error);
       res.status(500).json({ message: "Failed to fetch analytics" });
     }
   }

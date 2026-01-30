@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRangeField } from "@/components/ui/date-range-field";
 import { usePeriodStore } from "@/hooks/use-period-store";
+import { REGION_NAMES } from "@/data/kazakhstan-data";
 import {
   BarChart,
   Bar,
@@ -27,11 +29,13 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 export default function SimpleAnalytics() {
   const { store, updatePreset } = usePeriodStore();
   const [includeOrgTree, setIncludeOrgTree] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("all");
   const numberFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
   const [appliedFilters, setAppliedFilters] = useState({
     periodFrom: store.analytics.from,
     periodTo: store.analytics.to,
     includeOrgTree: false,
+    region: "all",
   });
 
   const handleBuildCharts = () => {
@@ -39,6 +43,7 @@ export default function SimpleAnalytics() {
       periodFrom: store.analytics.from,
       periodTo: store.analytics.to,
       includeOrgTree,
+      region: selectedRegion,
     });
   };
 
@@ -69,6 +74,9 @@ export default function SimpleAnalytics() {
   }
   if (appliedFilters.periodTo) {
     queryParams.set("periodTo", appliedFilters.periodTo);
+  }
+  if (appliedFilters.region && appliedFilters.region !== "all") {
+    queryParams.set("region", appliedFilters.region);
   }
   queryParams.set("includeChildren", appliedFilters.includeOrgTree ? "true" : "false");
   const analyticsUrl = `/api/analytics/forms${queryParams.toString() ? `?${queryParams}` : ""}`;
@@ -130,7 +138,9 @@ export default function SimpleAnalytics() {
   const displayPeriodFrom = appliedFilters.periodFrom || "начало";
   const displayPeriodTo = appliedFilters.periodTo || "настоящее время";
   const periodLabel = `${displayPeriodFrom} — ${displayPeriodTo}`;
-  const tooltipLabelFormatter = (label: string | number) => `${label} (${periodLabel})`;
+  const regionLabel = appliedFilters.region && appliedFilters.region !== "all" ? appliedFilters.region : "Все регионы";
+  const periodRegionLabel = `${periodLabel} · ${regionLabel}`;
+  const tooltipLabelFormatter = (label: string | number) => `${label} (${periodRegionLabel})`;
   const formatNumber = (value: number | string) => numberFormatter.format(Number(value) || 0);
   const formatPeople = (value: number | string) => `${formatNumber(value)} чел.`;
   const formatDamage = (value: number | string) => `${formatNumber(value)} тыс. тенге`;
@@ -197,6 +207,23 @@ export default function SimpleAnalytics() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Регион</Label>
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <SelectTrigger data-testid="select-analytics-region">
+                  <SelectValue placeholder="Все регионы" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все регионы</SelectItem>
+                  {REGION_NAMES.map((region) => (
+                    <SelectItem key={region} value={region}>
+                      {region}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-end">
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -253,7 +280,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Динамика пожаров по месяцам</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
               <p className="text-sm text-muted-foreground">
                 Погибшие: {formatPeople(form1Totals.deaths)}, травмированные:{" "}
                 {formatPeople(form1Totals.injured)}, ущерб: {formatDamage(form1Totals.damage)}
@@ -285,7 +312,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Город и село</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
               <p className="text-sm text-muted-foreground">
                 Пожары (количество) и ущерб (тыс. тенге)
               </p>
@@ -325,7 +352,7 @@ export default function SimpleAnalytics() {
         <Card>
           <CardHeader>
             <CardTitle>Пожары по регионам Казахстана</CardTitle>
-            <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+            <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             <p className="text-sm text-muted-foreground">
               Статистика пожаров по всем областям и городам республиканского значения
             </p>
@@ -376,7 +403,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Причины инцидентов</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -404,7 +431,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Регионы</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -441,7 +468,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Распределение причин</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -478,7 +505,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Топ‑10 причин</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -517,7 +544,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Топ объектов пожара</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -545,7 +572,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Сравнение периодов</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
               <p className="text-sm text-muted-foreground">
                 Изменение: {formatNumber(form4Comparison.delta)}{" "}
                 {form4Comparison.percent !== null ? `(${form4Comparison.percent.toFixed(1)}%)` : ""}
@@ -584,7 +611,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Пожары в жилом секторе</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -612,7 +639,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Ущерб (жилой сектор)</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -651,7 +678,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Сезонность по месяцам</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -679,7 +706,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Регионы</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
@@ -718,7 +745,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Погибшие и травмированные</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
               <p className="text-sm text-muted-foreground">Потери (чел.)</p>
             </CardHeader>
             <CardContent>
@@ -743,7 +770,7 @@ export default function SimpleAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Распределение по регионам</CardTitle>
-              <p className="text-xs text-muted-foreground">Период: {periodLabel}</p>
+              <p className="text-xs text-muted-foreground">Период: {periodRegionLabel}</p>
             </CardHeader>
             <CardContent>
               {isAnalyticsLoading ? (
