@@ -74,37 +74,34 @@ async function getNormativeDocumentsList(): Promise<string> {
 function buildSystemPrompt(normativeDocs: string): string {
   return `Вы - ИИ-ассистент по пожарной безопасности Республики Казахстан для системы МЧС РК.
 
-ВАША ГЛАВНАЯ ЗАДАЧА:
-Отвечать ТОЛЬКО на основе актуальных нормативных документов РК, загруженных в систему. 
-При ответах ОБЯЗАТЕЛЬНО указывайте конкретный НПА и давайте ссылку на adilet.zan.kz.
+## СТРОГИЕ ПРАВИЛА (ОБЯЗАТЕЛЬНЫ К ВЫПОЛНЕНИЮ):
+
+1. ОТВЕЧАЙТЕ ТОЛЬКО на основе нормативных документов из списка ниже.
+2. ВСЕГДА указывайте источник: название НПА, номер и ссылку на adilet.zan.kz.
+3. НИКОГДА не выдумывайте номера пунктов, статей или требования.
+4. Если вопрос НЕ относится к загруженным НПА — честно скажите: "Данный вопрос не регулируется загруженными в систему НПА. Рекомендую обратиться на официальный сайт МЧС РК."
+5. Для точной и актуальной информации ВСЕГДА рекомендуйте пользователю перейти по ссылке на adilet.zan.kz.
 
 ${normativeDocs}
 
-ПРАВИЛА РАБОТЫ:
-1. Используйте ТОЛЬКО документы из списка выше — это актуальные НПА Республики Казахстан.
-2. При ответе ВСЕГДА указывайте:
-   - Название документа и его номер
-   - Ссылку на официальный источник (adilet.zan.kz)
-   - Конкретный пункт/статью если знаете
-3. Если вопрос не относится к загруженным НПА или вы не уверены — честно скажите об этом.
-4. НЕ выдумывайте номера пунктов, статей или требования — только то, что точно знаете.
-5. Для точной информации рекомендуйте пользователю перейти по ссылке на adilet.zan.kz.
-
-ВЫ МОЖЕТЕ ПОМОГАТЬ С:
-- Консультациями по Правилам пожарной безопасности (Приказ № 55)
-- Техническому регламенту «Общие требования к пожарной безопасности» (Приказ № 405)
-- Требованиями к НГПС (Приказ № 281 и связанные)
+## ВЫ МОЖЕТЕ ПОМОГАТЬ С:
+- Правилами пожарной безопасности (Приказ № 55)
+- Техническим регламентом «Общие требования к пожарной безопасности» (Приказ № 405)
+- Требованиями к НГПС (Приказ № 281, № 782, № 783, № 514)
 - Аудитом в области пожарной безопасности (Приказ № 240)
 - Обучением мерам пожарной безопасности (Приказ № 276)
+- Монтажом систем пожарной автоматики (Приказы № 372, № 322)
+- Заключениями о соответствии (Приказы № 359, № 309)
 - Расчётами первичных средств пожаротушения
 - Определением категорий помещений
-- Закону "О гражданской защите"
+- Законом "О гражданской защите"
 
-ФОРМАТ ОТВЕТА:
-- Отвечайте на русском языке
-- Структурируйте ответ с заголовками
-- Давайте ссылки на конкретные документы
-- Будьте краткими но информативными`;
+## ФОРМАТ ОТВЕТА:
+1. Краткий ответ на вопрос
+2. Ссылка на конкретный НПА из списка выше с URL
+3. Рекомендация перейти по ссылке для полной информации
+
+Отвечайте на русском языке. Будьте краткими и точными.`;
 }
 
 export function registerChatRoutes(app: Express): void {
@@ -184,64 +181,26 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      // Try using web_search with Responses API first, fallback to Chat Completions
       let fullResponse = "";
       
-      try {
-        // Attempt Responses API with web_search (domain-restricted to adilet.zan.kz)
-        const response = await (openai as any).responses.create({
-          model: "gpt-4o-mini",
-          input: [
-            { role: "system", content: systemPrompt },
-            ...chatMessages,
-            { role: "user", content: content }
-          ],
-          tools: [{
-            type: "web_search",
-            search_context_size: "medium",
-            user_location: {
-              type: "approximate",
-              country: "KZ"
-            }
-          }],
-        });
+      // Use Chat Completions API with streaming
+      // НПА из БД включены в системный промпт — ассистент отвечает только по ним
+      const stream = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...chatMessages,
+        ],
+        stream: true,
+        max_completion_tokens: 4096,
+        temperature: 0.3, // Низкая температура для более точных ответов по НПА
+      });
 
-        // Handle Responses API output
-        if (response.output_text) {
-          fullResponse = response.output_text;
-          res.write(`data: ${JSON.stringify({ content: fullResponse })}\n\n`);
-        } else if (response.output) {
-          for (const item of response.output) {
-            if (item.type === "message" && item.content) {
-              for (const contentItem of item.content) {
-                if (contentItem.type === "output_text") {
-                  fullResponse = contentItem.text;
-                  res.write(`data: ${JSON.stringify({ content: fullResponse })}\n\n`);
-                }
-              }
-            }
-          }
-        }
-      } catch (responsesError: any) {
-        // Fallback to Chat Completions API (streaming)
-        console.log("Responses API not available, using Chat Completions:", responsesError?.message);
-        
-        const stream = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...chatMessages,
-          ],
-          stream: true,
-          max_completion_tokens: 4096,
-        });
-
-        for await (const chunk of stream) {
-          const chunkContent = chunk.choices[0]?.delta?.content || "";
-          if (chunkContent) {
-            fullResponse += chunkContent;
-            res.write(`data: ${JSON.stringify({ content: chunkContent })}\n\n`);
-          }
+      for await (const chunk of stream) {
+        const chunkContent = chunk.choices[0]?.delta?.content || "";
+        if (chunkContent) {
+          fullResponse += chunkContent;
+          res.write(`data: ${JSON.stringify({ content: chunkContent })}\n\n`);
         }
       }
 
