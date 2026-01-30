@@ -70,7 +70,7 @@ export default function SimpleAnalytics() {
   }, [store.journal.from, store.journal.to]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
     const handleChange = () => setIsMobile(mediaQuery.matches);
     handleChange();
     mediaQuery.addEventListener("change", handleChange);
@@ -322,7 +322,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={280} minHeight={280}>
                   <LineChart data={form1Monthly}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" fontSize={axisFontSize} />
@@ -353,7 +353,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={280} minHeight={280}>
                   <BarChart data={form1Locality}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -393,7 +393,7 @@ export default function SimpleAnalytics() {
                 Нет данных за выбранный период
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={500}>
+              <ResponsiveContainer width="100%" height={500} minHeight={500}>
                 <BarChart data={form1RegionsSorted} margin={{ bottom: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -615,7 +615,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <BarChart data={form4Objects}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -643,7 +643,7 @@ export default function SimpleAnalytics() {
                   Загрузка данных...
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <BarChart data={comparisonChart}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -682,7 +682,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <BarChart data={form5Locality}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -710,7 +710,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <BarChart data={form5Locality}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -749,7 +749,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <LineChart data={form6Monthly}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" fontSize={axisFontSize} />
@@ -777,7 +777,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <BarChart data={form6Regions}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -813,7 +813,7 @@ export default function SimpleAnalytics() {
                   Загрузка данных...
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <BarChart data={form7TotalsChart}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" fontSize={compactAxisFontSize} {...angledXAxisProps} />
@@ -841,7 +841,7 @@ export default function SimpleAnalytics() {
                   Нет данных за выбранный период
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={260} minHeight={260}>
                   <BarChart data={form7Regions}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" fontSize={compactAxisFontSize} {...angledXAxisProps} />
