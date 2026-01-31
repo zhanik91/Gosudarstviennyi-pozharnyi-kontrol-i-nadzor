@@ -411,12 +411,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const toOptionalDate = (value?: string | null) => (value ? new Date(value) : null);
+  const toRequiredDate = (value?: string | null) => (value ? new Date(value) : new Date());
+  const toOptionalNumber = (value?: string | number | null) => {
+    if (value === undefined || value === null || value === '') {
+      return null;
+    }
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? null : numeric;
+  };
+
   app.post('/api/inspections', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
     try {
       const userId = req.user?.id || req.user?.username;
       const orgUnitId = req.user?.orgUnitId || null;
+      const payload = req.body || {};
       const [inspection] = await db.insert(inspections).values({
-        ...req.body,
+        ...payload,
+        inspectionDate: toRequiredDate(payload.inspectionDate),
+        ukpsisuRegistrationDate: toOptionalDate(payload.ukpsisuRegistrationDate),
+        actualStartDate: toOptionalDate(payload.actualStartDate),
+        actualEndDate: toOptionalDate(payload.actualEndDate),
+        violationsDeadline: toOptionalDate(payload.violationsDeadline),
+        ticketRegistrationDate: toOptionalDate(payload.ticketRegistrationDate),
+        violationsCount: toOptionalNumber(payload.violationsCount),
         orgUnitId,
         createdBy: userId,
       }).returning();
@@ -429,8 +447,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/inspections/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
     try {
+      const payload = req.body || {};
       const [inspection] = await db.update(inspections)
-        .set({ ...req.body, updatedAt: new Date() })
+        .set({
+          ...payload,
+          inspectionDate: toRequiredDate(payload.inspectionDate),
+          ukpsisuRegistrationDate: toOptionalDate(payload.ukpsisuRegistrationDate),
+          actualStartDate: toOptionalDate(payload.actualStartDate),
+          actualEndDate: toOptionalDate(payload.actualEndDate),
+          violationsDeadline: toOptionalDate(payload.violationsDeadline),
+          ticketRegistrationDate: toOptionalDate(payload.ticketRegistrationDate),
+          violationsCount: toOptionalNumber(payload.violationsCount),
+          updatedAt: new Date(),
+        })
         .where(eq(inspections.id, req.params.id))
         .returning();
       if (!inspection) {
