@@ -52,6 +52,12 @@ type ReportRow = {
   totalCount: number;
   plannedCount: number;
   completedCount: number;
+  scheduledCount: number;
+  unscheduledCount: number;
+  preventiveCount: number;
+  monitoringCount: number;
+  withViolationsCount: number;
+  withPrescriptionsCount: number;
 };
 
 type InspectionRow = {
@@ -744,9 +750,9 @@ export default function ControlSupervisionPage() {
   });
 
   const { data: reportRows = [], isLoading: isLoadingReports } = useQuery<ReportRow[]>({
-    queryKey: ['/api/control-supervision/reports', reportQuery],
+    queryKey: ['/api/reports/inspections', reportQuery],
     queryFn: async () => {
-      const res = await fetch(`/api/control-supervision/reports${reportQuery ? `?${reportQuery}` : ""}`, {
+      const res = await fetch(`/api/reports/inspections${reportQuery ? `?${reportQuery}` : ""}`, {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Ошибка загрузки отчёта');
@@ -760,8 +766,24 @@ export default function ControlSupervisionPage() {
         totalCount: acc.totalCount + Number(row.totalCount || 0),
         plannedCount: acc.plannedCount + Number(row.plannedCount || 0),
         completedCount: acc.completedCount + Number(row.completedCount || 0),
+        scheduledCount: acc.scheduledCount + Number(row.scheduledCount || 0),
+        unscheduledCount: acc.unscheduledCount + Number(row.unscheduledCount || 0),
+        preventiveCount: acc.preventiveCount + Number(row.preventiveCount || 0),
+        monitoringCount: acc.monitoringCount + Number(row.monitoringCount || 0),
+        withViolationsCount: acc.withViolationsCount + Number(row.withViolationsCount || 0),
+        withPrescriptionsCount: acc.withPrescriptionsCount + Number(row.withPrescriptionsCount || 0),
       }),
-      { totalCount: 0, plannedCount: 0, completedCount: 0 }
+      {
+        totalCount: 0,
+        plannedCount: 0,
+        completedCount: 0,
+        scheduledCount: 0,
+        unscheduledCount: 0,
+        preventiveCount: 0,
+        monitoringCount: 0,
+        withViolationsCount: 0,
+        withPrescriptionsCount: 0,
+      }
     );
   }, [reportRows]);
 
@@ -2067,7 +2089,7 @@ export default function ControlSupervisionPage() {
               </div>
             </section>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-7">
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
                 <p className="text-xs uppercase text-slate-400">Всего проверок</p>
                 <p className="text-2xl font-semibold">{reportTotals.totalCount}</p>
@@ -2080,29 +2102,57 @@ export default function ControlSupervisionPage() {
                 <p className="text-xs uppercase text-slate-400">Завершено</p>
                 <p className="text-2xl font-semibold">{reportTotals.completedCount}</p>
               </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                <p className="text-xs uppercase text-slate-400">Плановые</p>
+                <p className="text-2xl font-semibold">{reportTotals.scheduledCount}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                <p className="text-xs uppercase text-slate-400">Внеплановые</p>
+                <p className="text-2xl font-semibold">{reportTotals.unscheduledCount}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                <p className="text-xs uppercase text-slate-400">С нарушениями</p>
+                <p className="text-2xl font-semibold">{reportTotals.withViolationsCount}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                <p className="text-xs uppercase text-slate-400">С предписаниями</p>
+                <p className="text-2xl font-semibold">{reportTotals.withPrescriptionsCount}</p>
+              </div>
             </div>
 
             <section className="overflow-x-auto rounded-2xl border border-slate-800">
-              <table className="min-w-full text-sm">
+              <table className="min-w-[1200px] text-sm">
                 <thead className="bg-slate-900/60">
                   <tr className="text-left text-slate-300">
                     <th className="px-3 py-3">Период</th>
                     <th className="px-3 py-3">Всего</th>
                     <th className="px-3 py-3">Запланировано</th>
                     <th className="px-3 py-3">Завершено</th>
+                    <th className="px-3 py-3">Плановые</th>
+                    <th className="px-3 py-3">Внеплановые</th>
+                    <th className="px-3 py-3">Профилактические</th>
+                    <th className="px-3 py-3">Мониторинг</th>
+                    <th className="px-3 py-3">С нарушениями</th>
+                    <th className="px-3 py-3">С предписаниями</th>
                   </tr>
                 </thead>
                 <tbody>
                   {isLoadingReports ? (
-                    <tr><td colSpan={4} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
                   ) : reportRows.length === 0 ? (
-                    <tr><td colSpan={4} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
                   ) : reportRows.map((row) => (
                     <tr key={row.period} className="border-t border-slate-800 hover:bg-slate-900/40">
                       <td className="px-3 py-2 whitespace-nowrap">{formatDate(row.period)}</td>
                       <td className="px-3 py-2">{row.totalCount}</td>
                       <td className="px-3 py-2">{row.plannedCount}</td>
                       <td className="px-3 py-2">{row.completedCount}</td>
+                      <td className="px-3 py-2">{row.scheduledCount}</td>
+                      <td className="px-3 py-2">{row.unscheduledCount}</td>
+                      <td className="px-3 py-2">{row.preventiveCount}</td>
+                      <td className="px-3 py-2">{row.monitoringCount}</td>
+                      <td className="px-3 py-2">{row.withViolationsCount}</td>
+                      <td className="px-3 py-2">{row.withPrescriptionsCount}</td>
                     </tr>
                   ))}
                 </tbody>

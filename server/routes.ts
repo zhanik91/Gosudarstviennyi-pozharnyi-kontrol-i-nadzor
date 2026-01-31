@@ -114,6 +114,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         warningsCount: sql<number>`sum(case when ${adminCases.outcome} = 'warning' then 1 else 0 end)`,
         terminationsCount: sql<number>`sum(case when ${adminCases.outcome} = 'termination' then 1 else 0 end)`,
         appealsCount: sql<number>`sum(case when ${adminCases.type} = 'appeal' then 1 else 0 end)`,
+        openedCount: sql<number>`sum(case when ${adminCases.status} = 'opened' then 1 else 0 end)`,
+        inReviewCount: sql<number>`sum(case when ${adminCases.status} = 'in_review' then 1 else 0 end)`,
+        resolvedCount: sql<number>`sum(case when ${adminCases.status} = 'resolved' then 1 else 0 end)`,
+        closedCount: sql<number>`sum(case when ${adminCases.status} = 'closed' then 1 else 0 end)`,
+        canceledCount: sql<number>`sum(case when ${adminCases.status} = 'canceled' then 1 else 0 end)`,
       }).from(adminCases);
 
       if (conditions.length > 0) {
@@ -901,6 +906,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCount: sql<number>`count(*)`,
         plannedCount: sql<number>`sum(case when ${inspections.status} = 'planned' then 1 else 0 end)`,
         completedCount: sql<number>`sum(case when ${inspections.status} = 'completed' then 1 else 0 end)`,
+        scheduledCount: sql<number>`sum(case when ${inspections.type} = 'scheduled' then 1 else 0 end)`,
+        unscheduledCount: sql<number>`sum(case when ${inspections.type} = 'unscheduled' then 1 else 0 end)`,
+        preventiveCount: sql<number>`sum(case when ${inspections.type} = 'preventive' then 1 else 0 end)`,
+        monitoringCount: sql<number>`sum(case when ${inspections.type} = 'monitoring' then 1 else 0 end)`,
+        withViolationsCount: sql<number>`sum(case when coalesce(${inspections.violationsCount}, 0) > 0 then 1 else 0 end)`,
+        withPrescriptionsCount: sql<number>`sum(case when exists(select 1 from ${prescriptions} where ${prescriptions.inspectionId} = ${inspections.id}) then 1 else 0 end)`,
       }).from(inspections);
 
       if (conditions.length > 0) {
