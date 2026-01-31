@@ -421,15 +421,6 @@ export default function ControlSupervisionPage() {
   const [prescriptionSearch, setPrescriptionSearch] = useState("");
   const [prescriptionInspectionNumber, setPrescriptionInspectionNumber] = useState("");
 
-  const [inspectionRegion, setInspectionRegion] = useState("Все");
-  const [inspectionDistrict, setInspectionDistrict] = useState("Все");
-  const [inspectionStatus, setInspectionStatus] = useState("Все");
-  const [inspectionType, setInspectionType] = useState("Все");
-  const [inspectionDateFrom, setInspectionDateFrom] = useState("");
-  const [inspectionDateTo, setInspectionDateTo] = useState("");
-  const [inspectionSearch, setInspectionSearch] = useState("");
-  const [inspectionNumberFilter, setInspectionNumberFilter] = useState("");
-
   const [measureRegion, setMeasureRegion] = useState("Все");
   const [measureDistrict, setMeasureDistrict] = useState("Все");
   const [measureStatus, setMeasureStatus] = useState("Все");
@@ -672,26 +663,6 @@ export default function ControlSupervisionPage() {
     prescriptionDateTo,
     prescriptionSearch,
     prescriptionInspectionNumber,
-  ]);
-
-  const inspectionQuery = useMemo(() => buildRegistryQuery({
-    region: inspectionRegion,
-    district: inspectionDistrict,
-    status: inspectionStatus,
-    type: inspectionType,
-    dateFrom: inspectionDateFrom,
-    dateTo: inspectionDateTo,
-    search: inspectionSearch,
-    inspectionNumber: inspectionNumberFilter,
-  }), [
-    inspectionRegion,
-    inspectionDistrict,
-    inspectionStatus,
-    inspectionType,
-    inspectionDateFrom,
-    inspectionDateTo,
-    inspectionSearch,
-    inspectionNumberFilter,
   ]);
 
   const measureQuery = useMemo(() => buildRegistryQuery({
@@ -1538,8 +1509,8 @@ export default function ControlSupervisionPage() {
                   <label className="text-xs text-slate-400">Номер проверки</label>
                   <input
                     placeholder="Например: 123/2024"
-                    value={inspectionNumberFilter}
-                    onChange={(e) => setInspectionNumberFilter(e.target.value)}
+                    value={inspectionNumber}
+                    onChange={(e) => setInspectionNumber(e.target.value)}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   />
                 </div>
