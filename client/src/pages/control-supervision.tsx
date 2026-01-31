@@ -3,9 +3,10 @@ import * as XLSX from "xlsx";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ADMIN2_BY_REGION, REGION_NAMES } from "@/data/kazakhstan-data";
+import ControlledObjectsRegistry from "@/components/controlled-objects/registry";
 
 /** ===== Типы ===== */
-type TabType = "registry" | "preventive" | "prescriptions" | "measures" | "reports";
+type TabType = "registry" | "inspections" | "preventive" | "prescriptions" | "measures" | "reports";
 type InspectionType = "scheduled" | "unscheduled" | "preventive" | "monitoring";
 type InspectionStatus = "planned" | "in_progress" | "completed" | "canceled";
 type PrescriptionStatus = "issued" | "in_progress" | "fulfilled" | "overdue" | "canceled";
@@ -280,7 +281,7 @@ export default function ControlSupervisionPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") as TabType | null;
-    const allowedTabs: TabType[] = ["registry", "preventive", "prescriptions", "measures", "reports"];
+    const allowedTabs: TabType[] = ["registry", "inspections", "preventive", "prescriptions", "measures", "reports"];
     if (tab && allowedTabs.includes(tab)) {
       setActiveTab(tab);
     }
@@ -528,7 +529,7 @@ export default function ControlSupervisionPage() {
               Государственный контроль и надзор
             </h1>
             <p className="text-slate-400">
-              Журнал проверок и контроль соблюдения требований пожарной безопасности
+              Реестр объектов, журнал проверок и контроль соблюдения требований пожарной безопасности
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -554,7 +555,8 @@ export default function ControlSupervisionPage() {
         <div className="border-b border-slate-800">
           <nav className="flex space-x-8 overflow-x-auto">
             {[
-              { id: "registry", label: "📋 Журнал проверок" },
+              { id: "registry", label: "🏢 Реестр объектов" },
+              { id: "inspections", label: "📋 Журнал проверок" },
               { id: "preventive", label: "🧾 Списки проверок" },
               { id: "prescriptions", label: "📝 Предписания" },
               { id: "measures", label: "⚖️ Меры ОР" },
@@ -577,6 +579,10 @@ export default function ControlSupervisionPage() {
         </div>
 
         {activeTab === "registry" && (
+          <ControlledObjectsRegistry />
+        )}
+
+        {activeTab === "inspections" && (
           <>
             {/* Счётчик */}
             <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
