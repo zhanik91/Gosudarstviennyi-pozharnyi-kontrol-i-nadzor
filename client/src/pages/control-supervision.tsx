@@ -54,6 +54,36 @@ type ReportRow = {
   completedCount: number;
 };
 
+type InspectionRow = {
+  id: string;
+  number: string;
+  inspectionDate: string;
+  type: InspectionType;
+  status: InspectionStatus;
+  ukpsisuCheckNumber: string | null;
+  ukpsisuRegistrationDate: string | null;
+  assigningAuthority: string | null;
+  registrationAuthority: string | null;
+  inspectionKind: string | null;
+  inspectedObjects: string | null;
+  basis: string | null;
+  inspectionPeriod: string | null;
+  extensionPeriod: string | null;
+  suspensionResumptionDates: string | null;
+  actualStartDate: string | null;
+  actualEndDate: string | null;
+  result: string | null;
+  violationsCount: number | null;
+  violationsDeadline: string | null;
+  ticketRegistrationDate: string | null;
+  region: string | null;
+  district: string | null;
+  bin: string | null;
+  iin: string | null;
+  subjectName: string | null;
+  address: string | null;
+};
+
 /** ===== Постоянные ===== */
 // Данные хранятся в БД через API /api/control-objects
 
@@ -68,6 +98,13 @@ const INSPECTION_STATUSES: Array<{ value: InspectionStatus; label: string }> = [
   { value: "in_progress", label: "В работе" },
   { value: "completed", label: "Завершена" },
   { value: "canceled", label: "Отменена" },
+];
+
+const INSPECTION_TYPES: Array<{ value: InspectionType; label: string }> = [
+  { value: "scheduled", label: "Плановая" },
+  { value: "unscheduled", label: "Внеплановая" },
+  { value: "preventive", label: "Профилактическая" },
+  { value: "monitoring", label: "Мониторинг" },
 ];
 
 const PRESCRIPTION_STATUSES: Array<{ value: PrescriptionStatus; label: string }> = [
@@ -328,6 +365,22 @@ export default function ControlSupervisionPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/control-objects'] })
   });
 
+  const createInspectionMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/inspections', data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/inspections'] }),
+  });
+
+  const updateInspectionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest('PUT', `/api/inspections/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/inspections'] }),
+  });
+
   // фильтры
   const [regionFilter, setRegionFilter] = useState("Все");
   const [districtFilter, setDistrictFilter] = useState("Все");
@@ -336,6 +389,15 @@ export default function ControlSupervisionPage() {
   const [statusFilter, setStatusFilter] = useState<"Все"|Status>("Все");
   const [q, setQ] = useState("");
   const [showAdditionalFilters, setShowAdditionalFilters] = useState(false);
+
+  const [inspectionRegion, setInspectionRegion] = useState("Все");
+  const [inspectionDistrict, setInspectionDistrict] = useState("Все");
+  const [inspectionStatus, setInspectionStatus] = useState("Все");
+  const [inspectionType, setInspectionType] = useState("Все");
+  const [inspectionDateFrom, setInspectionDateFrom] = useState("");
+  const [inspectionDateTo, setInspectionDateTo] = useState("");
+  const [inspectionSearch, setInspectionSearch] = useState("");
+  const [inspectionNumber, setInspectionNumber] = useState("");
 
   const [prescriptionRegion, setPrescriptionRegion] = useState("Все");
   const [prescriptionDistrict, setPrescriptionDistrict] = useState("Все");
@@ -386,6 +448,36 @@ export default function ControlSupervisionPage() {
     subjective: blankSubj(),
   };
 
+  const blankInspection: InspectionRow = {
+    id: "",
+    number: "",
+    inspectionDate: todayISO(),
+    type: "scheduled",
+    status: "planned",
+    ukpsisuCheckNumber: "",
+    ukpsisuRegistrationDate: "",
+    assigningAuthority: "",
+    registrationAuthority: "",
+    inspectionKind: "",
+    inspectedObjects: "",
+    basis: "",
+    inspectionPeriod: "",
+    extensionPeriod: "",
+    suspensionResumptionDates: "",
+    actualStartDate: "",
+    actualEndDate: "",
+    result: "",
+    violationsCount: null,
+    violationsDeadline: "",
+    ticketRegistrationDate: "",
+    region: userRegion || "",
+    district: userDistrict || "",
+    bin: "",
+    iin: "",
+    subjectName: "",
+    address: "",
+  };
+
   const [openForm, setOpenForm] = useState(false);
   const [openCharacteristics, setOpenCharacteristics] = useState(false);
   const [openSubjective, setOpenSubjective] = useState(false);
@@ -393,6 +485,10 @@ export default function ControlSupervisionPage() {
   const [form, setForm] = useState<ControlledObject>({...blank});
   const [errors, setErrors] = useState<Record<string,string>>({});
   const [confirmId, setConfirmId] = useState<string|null>(null);
+  const [openInspectionForm, setOpenInspectionForm] = useState(false);
+  const [inspectionErrors, setInspectionErrors] = useState<Record<string, string>>({});
+  const [editingInspectionId, setEditingInspectionId] = useState<string | null>(null);
+  const [inspectionForm, setInspectionForm] = useState<InspectionRow>({ ...blankInspection });
 
   // импорт/экспорт
   const fileRef = useRef<HTMLInputElement>(null);
@@ -419,6 +515,8 @@ export default function ControlSupervisionPage() {
     const scopedRegion = isMchsUser ? "Все" : userRegion || "Все";
     const scopedDistrict = isDistrictUser ? (userDistrict || "Все") : "Все";
 
+    setInspectionRegion(scopedRegion);
+    setInspectionDistrict(scopedDistrict);
     setPrescriptionRegion(scopedRegion);
     setPrescriptionDistrict(scopedDistrict);
     setMeasureRegion(scopedRegion);
@@ -469,6 +567,18 @@ export default function ControlSupervisionPage() {
     return ADMIN2[userRegion] || [];
   }, [form.region, isDistrictUser, isMchsUser, userDistrict, userRegion]);
 
+  const availableInspectionRegions = useMemo(() => {
+    if (isMchsUser) return REGIONS;
+    return userRegion ? [userRegion] : [];
+  }, [isMchsUser, userRegion]);
+
+  const availableInspectionDistricts = useMemo(() => {
+    if (isMchsUser) return ADMIN2[inspectionForm.region || ""] || [];
+    if (!userRegion) return [];
+    if (isDistrictUser) return userDistrict ? [userDistrict] : [];
+    return ADMIN2[userRegion] || [];
+  }, [inspectionForm.region, isDistrictUser, isMchsUser, userDistrict, userRegion]);
+
   const getDistrictOptions = (regionValue: string) => {
     if (isMchsUser) {
       return regionValue !== "Все" ? (ADMIN2[regionValue] || []) : [];
@@ -500,6 +610,26 @@ export default function ControlSupervisionPage() {
     }
     return list;
   }, [rows, regionFilter, districtFilter, levelFilter, catFilter, statusFilter, q, isDistrictUser, isMchsUser, userDistrict, userRegion]);
+
+  const inspectionQuery = useMemo(() => buildRegistryQuery({
+    region: inspectionRegion,
+    district: inspectionDistrict,
+    status: inspectionStatus,
+    type: inspectionType,
+    dateFrom: inspectionDateFrom,
+    dateTo: inspectionDateTo,
+    search: inspectionSearch,
+    inspectionNumber,
+  }), [
+    inspectionRegion,
+    inspectionDistrict,
+    inspectionStatus,
+    inspectionType,
+    inspectionDateFrom,
+    inspectionDateTo,
+    inspectionSearch,
+    inspectionNumber,
+  ]);
 
   const prescriptionQuery = useMemo(() => buildRegistryQuery({
     region: prescriptionRegion,
@@ -548,6 +678,49 @@ export default function ControlSupervisionPage() {
     period: reportPeriod,
   }), [reportDistrict, reportRegion, reportStatus, reportDateFrom, reportDateTo, reportPeriod]);
 
+  const { data: inspectionsData = [], isLoading: isLoadingInspections } = useQuery<any[]>({
+    queryKey: ['/api/inspections', inspectionQuery],
+    queryFn: async () => {
+      const res = await fetch(`/api/inspections${inspectionQuery ? `?${inspectionQuery}` : ""}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Ошибка загрузки проверок');
+      return res.json();
+    },
+  });
+
+  const inspectionsRows: InspectionRow[] = useMemo(() => {
+    return inspectionsData.map((item: any) => ({
+      id: item.id,
+      number: item.number || "",
+      inspectionDate: item.inspectionDate ? new Date(item.inspectionDate).toISOString().slice(0, 10) : "",
+      type: item.type || "scheduled",
+      status: item.status || "planned",
+      ukpsisuCheckNumber: item.ukpsisuCheckNumber ?? "",
+      ukpsisuRegistrationDate: item.ukpsisuRegistrationDate ? new Date(item.ukpsisuRegistrationDate).toISOString().slice(0, 10) : "",
+      assigningAuthority: item.assigningAuthority ?? "",
+      registrationAuthority: item.registrationAuthority ?? "",
+      inspectionKind: item.inspectionKind ?? "",
+      inspectedObjects: item.inspectedObjects ?? "",
+      basis: item.basis ?? "",
+      inspectionPeriod: item.inspectionPeriod ?? "",
+      extensionPeriod: item.extensionPeriod ?? "",
+      suspensionResumptionDates: item.suspensionResumptionDates ?? "",
+      actualStartDate: item.actualStartDate ? new Date(item.actualStartDate).toISOString().slice(0, 10) : "",
+      actualEndDate: item.actualEndDate ? new Date(item.actualEndDate).toISOString().slice(0, 10) : "",
+      result: item.result ?? "",
+      violationsCount: item.violationsCount ?? null,
+      violationsDeadline: item.violationsDeadline ? new Date(item.violationsDeadline).toISOString().slice(0, 10) : "",
+      ticketRegistrationDate: item.ticketRegistrationDate ? new Date(item.ticketRegistrationDate).toISOString().slice(0, 10) : "",
+      region: item.region ?? "",
+      district: item.district ?? "",
+      bin: item.bin ?? "",
+      iin: item.iin ?? "",
+      subjectName: item.subjectName ?? "",
+      address: item.address ?? "",
+    }));
+  }, [inspectionsData]);
+
   const { data: prescriptions = [], isLoading: isLoadingPrescriptions } = useQuery<PrescriptionItem[]>({
     queryKey: ['/api/control-supervision/prescriptions', prescriptionQuery],
     queryFn: async () => {
@@ -591,6 +764,41 @@ export default function ControlSupervisionPage() {
       { totalCount: 0, plannedCount: 0, completedCount: 0 }
     );
   }, [reportRows]);
+
+  const normalizeInspectionPayload = (value: InspectionRow) => {
+    const toOptionalValue = (v: string | null) => (v && v.trim() ? v.trim() : null);
+    const toOptionalDate = (v: string | null) => (v ? v : null);
+    const toOptionalNumber = (v: number | null) => (v === null ? null : v);
+
+    return {
+      number: value.number.trim(),
+      inspectionDate: value.inspectionDate,
+      type: value.type,
+      status: value.status,
+      ukpsisuCheckNumber: toOptionalValue(value.ukpsisuCheckNumber),
+      ukpsisuRegistrationDate: toOptionalDate(value.ukpsisuRegistrationDate),
+      assigningAuthority: toOptionalValue(value.assigningAuthority),
+      registrationAuthority: toOptionalValue(value.registrationAuthority),
+      inspectionKind: toOptionalValue(value.inspectionKind),
+      inspectedObjects: toOptionalValue(value.inspectedObjects),
+      basis: toOptionalValue(value.basis),
+      inspectionPeriod: toOptionalValue(value.inspectionPeriod),
+      extensionPeriod: toOptionalValue(value.extensionPeriod),
+      suspensionResumptionDates: toOptionalValue(value.suspensionResumptionDates),
+      actualStartDate: toOptionalDate(value.actualStartDate),
+      actualEndDate: toOptionalDate(value.actualEndDate),
+      result: toOptionalValue(value.result),
+      violationsCount: toOptionalNumber(value.violationsCount),
+      violationsDeadline: toOptionalDate(value.violationsDeadline),
+      ticketRegistrationDate: toOptionalDate(value.ticketRegistrationDate),
+      region: toOptionalValue(value.region),
+      district: toOptionalValue(value.district),
+      bin: toOptionalValue(value.bin),
+      iin: toOptionalValue(value.iin),
+      subjectName: toOptionalValue(value.subjectName),
+      address: toOptionalValue(value.address),
+    };
+  };
 
   /** ===== CRUD ===== */
   const validate = (v: ControlledObject) => {
@@ -649,6 +857,42 @@ export default function ControlSupervisionPage() {
     }
   };
 
+  const validateInspection = (value: InspectionRow) => {
+    const result: Record<string, string> = {};
+    if (!value.number.trim()) result.number = "Укажите номер проверки";
+    if (!value.inspectionDate) result.inspectionDate = "Укажите дату проверки";
+    return result;
+  };
+
+  const onSaveInspection = async () => {
+    const prepared = { ...inspectionForm };
+    if (!isMchsUser && userRegion) {
+      prepared.region = userRegion;
+      if (userDistrict) {
+        prepared.district = userDistrict;
+      }
+    }
+    const errorsFound = validateInspection(prepared);
+    setInspectionErrors(errorsFound);
+    if (Object.keys(errorsFound).length) return;
+    const payload = normalizeInspectionPayload(prepared);
+
+    try {
+      if (editingInspectionId) {
+        await updateInspectionMutation.mutateAsync({ id: editingInspectionId, data: payload });
+      } else {
+        await createInspectionMutation.mutateAsync(payload);
+      }
+      setOpenInspectionForm(false);
+      setEditingInspectionId(null);
+      setInspectionForm({ ...blankInspection });
+      setInspectionErrors({});
+    } catch (error) {
+      console.error('Ошибка сохранения проверки:', error);
+      setInspectionErrors({ general: 'Ошибка сохранения проверки' });
+    }
+  };
+
   const resetPrescriptionFilters = () => {
     setPrescriptionRegion(isMchsUser ? "Все" : userRegion || "Все");
     setPrescriptionDistrict(isDistrictUser ? (userDistrict || "Все") : "Все");
@@ -657,6 +901,17 @@ export default function ControlSupervisionPage() {
     setPrescriptionDateTo("");
     setPrescriptionSearch("");
     setPrescriptionInspectionNumber("");
+  };
+
+  const resetInspectionFilters = () => {
+    setInspectionRegion(isMchsUser ? "Все" : userRegion || "Все");
+    setInspectionDistrict(isDistrictUser ? (userDistrict || "Все") : "Все");
+    setInspectionStatus("Все");
+    setInspectionType("Все");
+    setInspectionDateFrom("");
+    setInspectionDateTo("");
+    setInspectionSearch("");
+    setInspectionNumber("");
   };
 
   const resetMeasureFilters = () => {
@@ -682,6 +937,15 @@ export default function ControlSupervisionPage() {
   const onEdit = (id: string) => {
     const r = rows.find(x => x.id === id); if (!r) return;
     setEditingId(id); setForm({...r}); setErrors({}); setOpenForm(true);
+  };
+
+  const onEditInspection = (id: string) => {
+    const inspection = inspectionsRows.find((item) => item.id === id);
+    if (!inspection) return;
+    setEditingInspectionId(id);
+    setInspectionForm({ ...inspection });
+    setInspectionErrors({});
+    setOpenInspectionForm(true);
   };
 
   const onDelete = async () => {
@@ -731,6 +995,62 @@ export default function ControlSupervisionPage() {
       const a = document.createElement("a");
       a.href = url;
       a.download = `реестр_контроль_надзор_${todayISO()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const exportInspectionsXLSX = () => {
+    if (inspectionsRows.length === 0) {
+      alert("Нет данных для экспорта");
+      return;
+    }
+    const data = inspectionsRows.map((r, i) => ({
+      "№": i + 1,
+      "Номер проверки": r.number,
+      "Дата проверки": formatDate(r.inspectionDate),
+      "Тип проверки": INSPECTION_TYPES.find((t) => t.value === r.type)?.label ?? r.type,
+      "Статус": INSPECTION_STATUSES.find((s) => s.value === r.status)?.label ?? r.status,
+      "№ проверки УКПСиСУ": r.ukpsisuCheckNumber || "",
+      "Дата регистрации УКПСиСУ": formatDate(r.ukpsisuRegistrationDate),
+      "Назначивший орган": r.assigningAuthority || "",
+      "Орган регистрации": r.registrationAuthority || "",
+      "Вид проверки": r.inspectionKind || "",
+      "Проверяемые объекты": r.inspectedObjects || "",
+      "Основание": r.basis || "",
+      "Сроки проведения": r.inspectionPeriod || "",
+      "Сроки продления": r.extensionPeriod || "",
+      "Даты приостановления/возобновления": r.suspensionResumptionDates || "",
+      "Фактическая дата начала": formatDate(r.actualStartDate),
+      "Фактическая дата завершения": formatDate(r.actualEndDate),
+      "Результат": r.result || "",
+      "Кол-во нарушений": r.violationsCount ?? "",
+      "Крайний срок устранения": formatDate(r.violationsDeadline),
+      "Дата регистрации талона": formatDate(r.ticketRegistrationDate),
+      "Регион": r.region || "",
+      "Район/город": r.district || "",
+      "БИН": r.bin || "",
+      "ИИН": r.iin || "",
+      "Субъект": r.subjectName || "",
+      "Адрес": r.address || "",
+    }));
+
+    try {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, "Журнал проверок");
+      XLSX.writeFile(wb, `журнал_проверок_${todayISO()}.xlsx`);
+    } catch {
+      const header = Object.keys(data[0]);
+      const csv =
+        [header, ...data.map((o) => header.map((h) => String((o as any)[h]).replace(/"/g, '""')))]
+          .map((row) => row.map((c) => `"${c}"`).join(";"))
+          .join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `журнал_проверок_${todayISO()}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -855,6 +1175,7 @@ export default function ControlSupervisionPage() {
           <nav className="flex space-x-8 overflow-x-auto">
             {[
               { id: "registry", label: "📋 Реестр объектов" },
+              { id: "inspections", label: "📘 Журнал проверок" },
               { id: "preventive", label: "🧾 Списки проверок" },
               { id: "measures", label: "⚖️ Меры ОР" },
               { id: "reports", label: "📊 Отчёты" },
@@ -1060,6 +1381,250 @@ export default function ControlSupervisionPage() {
                             )}
                           </div>
                         </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </section>
+          </>
+        )}
+
+        {activeTab === "inspections" && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+                Всего проверок:&nbsp;
+                <span className="font-semibold">
+                  {isLoadingInspections ? "Загрузка..." : inspectionsRows.length}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {canEdit && (
+                  <button
+                    className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium shadow hover:bg-blue-500"
+                    onClick={() => {
+                      setEditingInspectionId(null);
+                      setInspectionForm({ ...blankInspection });
+                      setInspectionErrors({});
+                      setOpenInspectionForm(true);
+                    }}
+                    type="button"
+                  >
+                    ➕ Добавить проверку
+                  </button>
+                )}
+                <button
+                  className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500"
+                  onClick={exportInspectionsXLSX}
+                  type="button"
+                >
+                  ⬇️ Экспорт ({inspectionsRows.length})
+                </button>
+              </div>
+            </div>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">Регион</label>
+                  <select
+                    value={inspectionRegion}
+                    onChange={(e) => { setInspectionRegion(e.target.value); setInspectionDistrict("Все"); }}
+                    disabled={!isMchsUser && Boolean(userRegion)}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    {isMchsUser && <option>Все</option>}
+                    {availableRegions.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <select
+                    value={inspectionDistrict}
+                    onChange={(e) => setInspectionDistrict(e.target.value)}
+                    disabled={isDistrictUser}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    {(isMchsUser || isDchsUser) && <option>Все</option>}
+                    {getDistrictOptions(inspectionRegion).map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Статус</label>
+                  <select
+                    value={inspectionStatus}
+                    onChange={(e) => setInspectionStatus(e.target.value)}
+                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option value="Все">Все</option>
+                    {INSPECTION_STATUSES.map((status) => (
+                      <option key={status.value} value={status.value}>{status.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Тип проверки</label>
+                  <select
+                    value={inspectionType}
+                    onChange={(e) => setInspectionType(e.target.value)}
+                    className="block min-w-[200px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option value="Все">Все</option>
+                    {INSPECTION_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Дата проверки</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={inspectionDateFrom}
+                      onChange={(e) => setInspectionDateFrom(e.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    />
+                    <span className="text-slate-500">—</span>
+                    <input
+                      type="date"
+                      value={inspectionDateTo}
+                      onChange={(e) => setInspectionDateTo(e.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">Номер проверки</label>
+                  <input
+                    placeholder="Например: 123/2024"
+                    value={inspectionNumber}
+                    onChange={(e) => setInspectionNumber(e.target.value)}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="flex-1 min-w-[240px]">
+                  <label className="text-xs text-slate-400">Поиск: номер / БИН / ИИН / субъект / адрес</label>
+                  <div className="relative">
+                    <input
+                      placeholder="Начните ввод…"
+                      value={inspectionSearch}
+                      onChange={(e) => setInspectionSearch(e.target.value)}
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
+                    />
+                    <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                  onClick={resetInspectionFilters}
+                  type="button"
+                >
+                  Очистить фильтры
+                </button>
+              </div>
+            </section>
+
+            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-900/60">
+                  <tr className="text-left text-slate-300">
+                    <th className="px-3 py-3">№</th>
+                    <th className="px-3 py-3">Номер проверки</th>
+                    <th className="px-3 py-3">Дата проверки</th>
+                    <th className="px-3 py-3">Тип</th>
+                    <th className="px-3 py-3">Статус</th>
+                    <th className="px-3 py-3">№ проверки УКПСиСУ</th>
+                    <th className="px-3 py-3">Дата регистрации УКПСиСУ</th>
+                    <th className="px-3 py-3">Назначивший орган</th>
+                    <th className="px-3 py-3">Орган регистрации</th>
+                    <th className="px-3 py-3">Вид проверки</th>
+                    <th className="px-3 py-3">Проверяемые объекты</th>
+                    <th className="px-3 py-3">Основание</th>
+                    <th className="px-3 py-3">Сроки проведения</th>
+                    <th className="px-3 py-3">Сроки продления</th>
+                    <th className="px-3 py-3">Даты приостановления/возобновления</th>
+                    <th className="px-3 py-3">Фактическая дата начала</th>
+                    <th className="px-3 py-3">Фактическая дата завершения</th>
+                    <th className="px-3 py-3">Результат</th>
+                    <th className="px-3 py-3">Кол-во нарушений</th>
+                    <th className="px-3 py-3">Крайний срок устранения</th>
+                    <th className="px-3 py-3">Дата регистрации талона</th>
+                    <th className="px-3 py-3">Регион</th>
+                    <th className="px-3 py-3">Район/город</th>
+                    <th className="px-3 py-3">БИН</th>
+                    <th className="px-3 py-3">ИИН</th>
+                    <th className="px-3 py-3">Субъект</th>
+                    <th className="px-3 py-3">Адрес</th>
+                    {canEdit && <th className="px-3 py-3">Действия</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingInspections ? (
+                    <tr>
+                      <td colSpan={canEdit ? 28 : 27} className="px-3 py-10 text-center text-slate-400">
+                        Загрузка...
+                      </td>
+                    </tr>
+                  ) : inspectionsRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={canEdit ? 28 : 27} className="px-3 py-10 text-center text-slate-400">
+                        Данных нет
+                      </td>
+                    </tr>
+                  ) : inspectionsRows.map((item, idx) => {
+                    const statusLabel = INSPECTION_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
+                    const typeLabel = INSPECTION_TYPES.find((t) => t.value === item.type)?.label ?? item.type;
+                    return (
+                      <tr key={item.id} className="border-t border-slate-800 hover:bg-slate-900/40">
+                        <td className="px-3 py-2">{idx + 1}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.number}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.inspectionDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{typeLabel}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{statusLabel}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.ukpsisuCheckNumber || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.ukpsisuRegistrationDate)}</td>
+                        <td className="px-3 py-2">{item.assigningAuthority || "—"}</td>
+                        <td className="px-3 py-2">{item.registrationAuthority || "—"}</td>
+                        <td className="px-3 py-2">{item.inspectionKind || "—"}</td>
+                        <td className="px-3 py-2">{item.inspectedObjects || "—"}</td>
+                        <td className="px-3 py-2">{item.basis || "—"}</td>
+                        <td className="px-3 py-2">{item.inspectionPeriod || "—"}</td>
+                        <td className="px-3 py-2">{item.extensionPeriod || "—"}</td>
+                        <td className="px-3 py-2">{item.suspensionResumptionDates || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.actualStartDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.actualEndDate)}</td>
+                        <td className="px-3 py-2">{item.result || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.violationsCount ?? "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.violationsDeadline)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.ticketRegistrationDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.region || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.district || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.bin || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.iin || "—"}</td>
+                        <td className="px-3 py-2">{item.subjectName || "—"}</td>
+                        <td className="px-3 py-2">{item.address || "—"}</td>
+                        {canEdit && (
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <button
+                              className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                              onClick={() => onEditInspection(item.id)}
+                              type="button"
+                            >
+                              Редактировать
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -1795,6 +2360,251 @@ export default function ControlSupervisionPage() {
             </div>
           )}
         </>
+      )}
+
+      {activeTab === "inspections" && openInspectionForm && (
+        <Modal
+          title={editingInspectionId ? "Редактировать проверку" : "Добавить проверку"}
+          onClose={() => setOpenInspectionForm(false)}
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Field label="Номер проверки" error={inspectionErrors.number}>
+              <input
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.number ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                value={inspectionForm.number}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, number: e.target.value }))}
+              />
+            </Field>
+            <Field label="Дата проверки" error={inspectionErrors.inspectionDate}>
+              <input
+                type="date"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.inspectionDate ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                value={inspectionForm.inspectionDate}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionDate: e.target.value }))}
+              />
+            </Field>
+            <Field label="Тип проверки">
+              <select
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.type}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, type: e.target.value as InspectionType }))}
+              >
+                {INSPECTION_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Статус">
+              <select
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.status}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, status: e.target.value as InspectionStatus }))}
+              >
+                {INSPECTION_STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>{status.label}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Регион">
+              <select
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.region || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, region: e.target.value, district: "" }))}
+                disabled={!isMchsUser && Boolean(userRegion)}
+              >
+                <option value="">— выберите —</option>
+                {availableInspectionRegions.map((r) => <option key={r}>{r}</option>)}
+              </select>
+            </Field>
+            <Field label="Район / ГОС">
+              <select
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.district || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, district: e.target.value }))}
+                disabled={isDistrictUser}
+              >
+                <option value="">— выберите —</option>
+                {availableInspectionDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </Field>
+
+            <Field label="БИН">
+              <input
+                inputMode="numeric"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.bin || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, bin: e.target.value.replace(/[^0-9]/g, "") }))}
+              />
+            </Field>
+            <Field label="ИИН">
+              <input
+                inputMode="numeric"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.iin || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, iin: e.target.value.replace(/[^0-9]/g, "") }))}
+              />
+            </Field>
+            <Field label="Субъект">
+              <input
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.subjectName || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, subjectName: e.target.value }))}
+              />
+            </Field>
+            <Field label="Адрес">
+              <input
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.address || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, address: e.target.value }))}
+              />
+            </Field>
+
+            <Field label="№ проверки УКПСиСУ">
+              <input
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.ukpsisuCheckNumber || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuCheckNumber: e.target.value }))}
+              />
+            </Field>
+            <Field label="Дата регистрации УКПСиСУ">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.ukpsisuRegistrationDate || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuRegistrationDate: e.target.value }))}
+              />
+            </Field>
+            <Field label="Назначивший орган">
+              <input
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.assigningAuthority || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, assigningAuthority: e.target.value }))}
+              />
+            </Field>
+            <Field label="Орган регистрации">
+              <input
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.registrationAuthority || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, registrationAuthority: e.target.value }))}
+              />
+            </Field>
+            <Field label="Вид проверки">
+              <input
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.inspectionKind || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionKind: e.target.value }))}
+              />
+            </Field>
+            <Field label="Проверяемые объекты">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.inspectedObjects || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectedObjects: e.target.value }))}
+              />
+            </Field>
+            <Field label="Основание">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.basis || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, basis: e.target.value }))}
+              />
+            </Field>
+            <Field label="Сроки проведения">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.inspectionPeriod || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionPeriod: e.target.value }))}
+              />
+            </Field>
+            <Field label="Сроки продления">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.extensionPeriod || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, extensionPeriod: e.target.value }))}
+              />
+            </Field>
+            <Field label="Даты приостановления/возобновления">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.suspensionResumptionDates || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, suspensionResumptionDates: e.target.value }))}
+              />
+            </Field>
+            <Field label="Фактическая дата начала">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.actualStartDate || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, actualStartDate: e.target.value }))}
+              />
+            </Field>
+            <Field label="Фактическая дата завершения">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.actualEndDate || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, actualEndDate: e.target.value }))}
+              />
+            </Field>
+            <Field label="Результат">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.result || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, result: e.target.value }))}
+              />
+            </Field>
+            <Field label="Кол-во нарушений">
+              <input
+                type="number"
+                min={0}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.violationsCount ?? ""}
+                onChange={(e) => setInspectionForm((s) => ({
+                  ...s,
+                  violationsCount: e.target.value === "" ? null : Number(e.target.value),
+                }))}
+              />
+            </Field>
+            <Field label="Крайний срок устранения">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.violationsDeadline || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, violationsDeadline: e.target.value }))}
+              />
+            </Field>
+            <Field label="Дата регистрации талона">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={inspectionForm.ticketRegistrationDate || ""}
+                onChange={(e) => setInspectionForm((s) => ({ ...s, ticketRegistrationDate: e.target.value }))}
+              />
+            </Field>
+          </div>
+
+          {inspectionErrors.general && (
+            <p className="mt-3 text-sm text-red-400">{inspectionErrors.general}</p>
+          )}
+
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <button
+              className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+              onClick={() => setOpenInspectionForm(false)}
+              type="button"
+            >
+              Отмена
+            </button>
+            <button
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+              onClick={onSaveInspection}
+              type="button"
+            >
+              Сохранить
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );
