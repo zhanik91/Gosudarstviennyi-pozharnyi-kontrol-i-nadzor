@@ -22,6 +22,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   setupLocalAuth(app);
 
+  // === Проверка прав на запись ===
+  const canWriteRegistry = (req: any, res: any, next: any) => {
+    const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
+    if (userRole === 'MCHS') {
+      return res.status(403).json({ message: 'У вас нет прав на редактирование. Доступ только для чтения.' });
+    }
+    next();
+  };
+
+  const buildScopeWriteCheck = ({
+    table,
+    regionColumn,
+    districtColumn,
+    regionKey = 'region',
+    districtKey = 'district',
+  }: {
+    table: any;
+    regionColumn: any;
+    districtColumn?: any;
+    regionKey?: string;
+    districtKey?: string;
+  }) => async (req: any, res: any, next: any) => {
+    const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
+    const userRegion = req.user?.region;
+    const userDistrict = req.user?.district;
+
+    if (userRole === 'ADMIN') {
+      return next();
+    }
+
+    let existingRegion = req.body?.[regionKey];
+    let existingDistrict = req.body?.[districtKey];
+
+    if (req.params?.id) {
+      try {
+        const selection: Record<string, any> = { region: regionColumn };
+        if (districtColumn) {
+          selection.district = districtColumn;
+        }
+        const existing = await db
+          .select(selection)
+          .from(table)
+          .where(eq(table.id, req.params.id))
+          .limit(1);
+        if (existing[0]) {
+          existingRegion = existing[0].region;
+          existingDistrict = existing[0].district;
+        }
+      } catch (error) {
+        console.error('Error checking registry scope:', error);
+      }
+    }
+
+    const targetRegion = req.body?.[regionKey] ?? existingRegion;
+    const targetDistrict = req.body?.[districtKey] ?? existingDistrict;
+
+    if (userRole === 'DCHS' && userRegion) {
+      if (targetRegion && targetRegion !== userRegion) {
+        return res.status(403).json({
+          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion
+        });
+      }
+      return next();
+    }
+
+    if ((userRole === 'OCHS' || userRole === 'DISTRICT') && userRegion && userDistrict) {
+      if (targetRegion && targetRegion !== userRegion) {
+        return res.status(403).json({
+          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion
+        });
+      }
+      if (targetDistrict && targetDistrict !== userDistrict) {
+        return res.status(403).json({
+          message: 'Вы можете редактировать данные только вашего района: ' + userDistrict
+        });
+      }
+      return next();
+    }
+
+    next();
+  };
+
+  const checkIncidentWriteScope = buildScopeWriteCheck({
+    table: incidents,
+    regionColumn: incidents.region,
+    districtColumn: incidents.city,
+    districtKey: 'city',
+  });
+
   // === Организации ===
   app.get('/api/organizations', isAuthenticated, organizationController.getOrganizations);
   app.post('/api/organizations', isAuthenticated, organizationController.createOrganization);
@@ -31,9 +120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/incidents/search', isAuthenticated, incidentController.searchIncidents);
   app.get('/api/incidents/:id', isAuthenticated, incidentController.getIncident);
   app.get('/api/incidents', isAuthenticated, incidentController.getIncidents);
-  app.post('/api/incidents', isAuthenticated, incidentController.createIncident);
-  app.put('/api/incidents/:id', isAuthenticated, incidentController.updateIncident);
-  app.delete('/api/incidents/:id', isAuthenticated, incidentController.deleteIncident);
+  app.post('/api/incidents', isAuthenticated, canWriteRegistry, checkIncidentWriteScope, incidentController.createIncident);
+  app.put('/api/incidents/:id', isAuthenticated, canWriteRegistry, checkIncidentWriteScope, incidentController.updateIncident);
+  app.delete('/api/incidents/:id', isAuthenticated, canWriteRegistry, checkIncidentWriteScope, incidentController.deleteIncident);
 
   // === Пакеты ===
   app.get('/api/packages', isAuthenticated, packageController.getPackages);
@@ -198,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // === ИНТЕРАКТИВНЫЕ КАРТЫ & Forecasts (Stub/Logic) ===
   app.get('/api/maps/data', isAuthenticated, async (req: any, res) => {
     try {
-      const { region, timeRange } = req.query;
+      const { region, district, timeRange } = req.query;
       const analyticsData = await storage.getAdvancedAnalytics({
         period: timeRange,
         orgUnitId: region,
@@ -215,7 +304,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? incidentsResult 
         : (incidentsResult as any).items || [];
       
+      const regionFilter = typeof region === 'string' && region !== 'all' ? region : null;
+      const districtFilter = typeof district === 'string' && district !== 'all' ? district : null;
+
       const incidentsWithCoords = incidents
+        .filter((inc: any) => {
+          if (regionFilter && inc.region !== regionFilter) {
+            return false;
+          }
+          if (districtFilter && inc.city !== districtFilter) {
+            return false;
+          }
+          return true;
+        })
         .filter((inc: any) => inc.latitude && inc.longitude)
         .map((inc: any) => ({
           id: inc.id,
@@ -229,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             damage: inc.damage,
             address: inc.address,
             region: inc.region,
-            district: inc.district,
+            district: inc.city,
           }
         }));
       
@@ -246,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update incident coordinates
-  app.patch('/api/incidents/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/incidents/:id', isAuthenticated, canWriteRegistry, checkIncidentWriteScope, async (req: any, res) => {
     try {
       const { latitude, longitude } = req.body;
       const [incident] = await db.update(incidents)
@@ -267,70 +368,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // === ПРОВЕРКИ / ПРЕДПИСАНИЯ / МЕРЫ / АДМИН ДЕЛА ===
-  const canWriteRegistry = (req: any, res: any, next: any) => {
-    const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
-    if (userRole === 'MCHS') {
-      return res.status(403).json({ message: 'У вас нет прав на редактирование. Доступ только для чтения.' });
-    }
-    next();
-  };
-
-  const buildScopeWriteCheck = (table: any) => async (req: any, res: any, next: any) => {
-    const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
-    const userRegion = req.user?.region;
-    const userDistrict = req.user?.district;
-
-    if (userRole === 'ADMIN') {
-      return next();
-    }
-
-    let existingRegion = req.body?.region;
-    let existingDistrict = req.body?.district;
-
-    if (req.params?.id) {
-      try {
-        const existing = await db
-          .select({ region: table.region, district: table.district })
-          .from(table)
-          .where(eq(table.id, req.params.id))
-          .limit(1);
-        if (existing[0]) {
-          existingRegion = existing[0].region;
-          existingDistrict = existing[0].district;
-        }
-      } catch (error) {
-        console.error('Error checking registry scope:', error);
-      }
-    }
-
-    const targetRegion = req.body?.region ?? existingRegion;
-    const targetDistrict = req.body?.district ?? existingDistrict;
-
-    if (userRole === 'DCHS' && userRegion) {
-      if (targetRegion && targetRegion !== userRegion) {
-        return res.status(403).json({
-          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion
-        });
-      }
-      return next();
-    }
-
-    if ((userRole === 'OCHS' || userRole === 'DISTRICT') && userRegion && userDistrict) {
-      if (targetRegion && targetRegion !== userRegion) {
-        return res.status(403).json({
-          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion
-        });
-      }
-      if (targetDistrict && targetDistrict !== userDistrict) {
-        return res.status(403).json({
-          message: 'Вы можете редактировать данные только вашего района: ' + userDistrict
-        });
-      }
-      return next();
-    }
-
-    next();
-  };
 
   const buildRegistryFilters = (
     table: any,
@@ -421,7 +458,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return Number.isNaN(numeric) ? null : numeric;
   };
 
-  app.post('/api/inspections', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
+  app.post('/api/inspections', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: inspections,
+    regionColumn: inspections.region,
+    districtColumn: inspections.district,
+  }), async (req: any, res) => {
     try {
       const userId = req.user?.id || req.user?.username;
       const orgUnitId = req.user?.orgUnitId || null;
@@ -445,7 +486,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/inspections/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
+  app.put('/api/inspections/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: inspections,
+    regionColumn: inspections.region,
+    districtColumn: inspections.district,
+  }), async (req: any, res) => {
     try {
       const payload = req.body || {};
       const [inspection] = await db.update(inspections)
@@ -494,7 +539,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/prescriptions', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(prescriptions), async (req: any, res) => {
+  app.post('/api/prescriptions', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: prescriptions,
+    regionColumn: prescriptions.region,
+    districtColumn: prescriptions.district,
+  }), async (req: any, res) => {
     try {
       const [prescription] = await db.insert(prescriptions).values({
         ...req.body,
@@ -506,7 +555,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/prescriptions/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(prescriptions), async (req: any, res) => {
+  app.put('/api/prescriptions/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: prescriptions,
+    regionColumn: prescriptions.region,
+    districtColumn: prescriptions.district,
+  }), async (req: any, res) => {
     try {
       const [prescription] = await db.update(prescriptions)
         .set({ ...req.body, updatedAt: new Date() })
@@ -544,7 +597,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/measures', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(measures), async (req: any, res) => {
+  app.post('/api/measures', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: measures,
+    regionColumn: measures.region,
+    districtColumn: measures.district,
+  }), async (req: any, res) => {
     try {
       const [measure] = await db.insert(measures).values({
         ...req.body,
@@ -556,7 +613,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/measures/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(measures), async (req: any, res) => {
+  app.put('/api/measures/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: measures,
+    regionColumn: measures.region,
+    districtColumn: measures.district,
+  }), async (req: any, res) => {
     try {
       const [measure] = await db.update(measures)
         .set({ ...req.body, updatedAt: new Date() })
@@ -818,7 +879,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin-cases', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(adminCases), async (req: any, res) => {
+  app.post('/api/admin-cases', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: adminCases,
+    regionColumn: adminCases.region,
+    districtColumn: adminCases.district,
+  }), async (req: any, res) => {
     try {
       const [adminCase] = await db.insert(adminCases).values({
         ...req.body,
@@ -830,7 +895,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin-cases/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(adminCases), async (req: any, res) => {
+  app.put('/api/admin-cases/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: adminCases,
+    regionColumn: adminCases.region,
+    districtColumn: adminCases.district,
+  }), async (req: any, res) => {
     try {
       const [adminCase] = await db.update(adminCases)
         .set({ ...req.body, updatedAt: new Date() })
@@ -1035,65 +1104,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   
   // Проверка scope при записи - DCHS может писать только в свой регион, OCHS - в свой район
-  const checkWriteScope = async (req: any, res: any, next: any) => {
-    const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
-    const userRegion = req.user?.region;
-    const userDistrict = req.user?.district;
-    
-    // admin может всё
-    if (userRole === 'ADMIN') {
-      return next();
-    }
-    
-    // Для PUT/PATCH/DELETE проверяем существующий объект
-    let existingRegion = req.body?.region;
-    let existingDistrict = req.body?.district;
-    
-    if (req.params?.id) {
-      try {
-        const [existing] = await db.query.controlObjects.findMany({
-          where: (fields, { eq }) => eq(fields.id, req.params.id),
-          limit: 1
-        });
-        if (existing) {
-          existingRegion = existing.region;
-          existingDistrict = existing.district;
-        }
-      } catch (e) {
-        console.error('Error checking object scope:', e);
-      }
-    }
-    
-    const targetRegion = req.body?.region || existingRegion;
-    const targetDistrict = req.body?.district || existingDistrict;
-    
-    // DCHS может писать только в свой регион
-    if (userRole === 'DCHS' && userRegion) {
-      if (targetRegion && targetRegion !== userRegion) {
-        return res.status(403).json({ 
-          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion 
-        });
-      }
-      return next();
-    }
-    
-    // OCHS может писать только в свой район
-    if ((userRole === 'OCHS' || userRole === 'DISTRICT') && userRegion && userDistrict) {
-      if (targetRegion && targetRegion !== userRegion) {
-        return res.status(403).json({ 
-          message: 'Вы можете редактировать данные только вашего региона: ' + userRegion 
-        });
-      }
-      if (targetDistrict && targetDistrict !== userDistrict) {
-        return res.status(403).json({ 
-          message: 'Вы можете редактировать данные только вашего района: ' + userDistrict 
-        });
-      }
-      return next();
-    }
-    
-    next();
-  };
+  const checkWriteScope = buildScopeWriteCheck({
+    table: controlObjects,
+    regionColumn: controlObjects.region,
+    districtColumn: controlObjects.district,
+  });
 
   app.patch('/api/control-objects/:id', isAuthenticated, canWriteControlObjects, checkWriteScope, async (req: any, res) => {
     try {

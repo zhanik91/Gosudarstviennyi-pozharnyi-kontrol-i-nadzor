@@ -296,6 +296,8 @@ export default function ControlSupervisionPage() {
   const isMchsUser = userRole === "MCHS" || userRole === "admin";
   const isDchsUser = userRole === "DCHS";
   const isDistrictUser = userRole === "DISTRICT" || userRole === "OCHS";
+  const shouldLockRegion = isDchsUser || isDistrictUser;
+  const shouldLockDistrict = isDchsUser || isDistrictUser;
   // MCHS имеет доступ только для чтения, остальные могут редактировать
   const canEdit = userRole !== "MCHS";
   const userRegion = (user as any)?.region || "";
@@ -1211,7 +1213,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={regionFilter}
                     onChange={(e) => { setRegionFilter(e.target.value); setDistrictFilter("Все"); }}
-                    disabled={!isMchsUser && Boolean(userRegion)}
+                    disabled={shouldLockRegion}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
@@ -1224,7 +1226,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={districtFilter}
                     onChange={(e) => setDistrictFilter(e.target.value)}
-                    disabled={isDistrictUser}
+                    disabled={shouldLockDistrict}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
@@ -1431,7 +1433,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={inspectionRegion}
                     onChange={(e) => { setInspectionRegion(e.target.value); setInspectionDistrict("Все"); }}
-                    disabled={!isMchsUser && Boolean(userRegion)}
+                    disabled={shouldLockRegion}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
@@ -1444,7 +1446,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={inspectionDistrict}
                     onChange={(e) => setInspectionDistrict(e.target.value)}
-                    disabled={isDistrictUser}
+                    disabled={shouldLockDistrict}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
@@ -1675,7 +1677,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={prescriptionRegion}
                     onChange={(e) => { setPrescriptionRegion(e.target.value); setPrescriptionDistrict("Все"); }}
-                    disabled={!isMchsUser && Boolean(userRegion)}
+                    disabled={shouldLockRegion}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
@@ -1688,7 +1690,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={prescriptionDistrict}
                     onChange={(e) => setPrescriptionDistrict(e.target.value)}
-                    disabled={isDistrictUser}
+                    disabled={shouldLockDistrict}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
@@ -1827,7 +1829,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={measureRegion}
                     onChange={(e) => { setMeasureRegion(e.target.value); setMeasureDistrict("Все"); }}
-                    disabled={!isMchsUser && Boolean(userRegion)}
+                    disabled={shouldLockRegion}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
@@ -1840,7 +1842,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={measureDistrict}
                     onChange={(e) => setMeasureDistrict(e.target.value)}
-                    disabled={isDistrictUser}
+                    disabled={shouldLockDistrict}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
@@ -2001,7 +2003,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={reportRegion}
                     onChange={(e) => { setReportRegion(e.target.value); setReportDistrict("Все"); }}
-                    disabled={!isMchsUser && Boolean(userRegion)}
+                    disabled={shouldLockRegion}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
@@ -2014,7 +2016,7 @@ export default function ControlSupervisionPage() {
                   <select
                     value={reportDistrict}
                     onChange={(e) => setReportDistrict(e.target.value)}
-                    disabled={isDistrictUser}
+                    disabled={shouldLockDistrict}
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
@@ -2125,7 +2127,7 @@ export default function ControlSupervisionPage() {
                     className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                     value={form.region}
                     onChange={(e) => setForm(s => ({...s, region: e.target.value, district:""}))}
-                    disabled={!isMchsUser && Boolean(userRegion)}
+                    disabled={shouldLockRegion}
                   >
                     {availableFormRegions.map(r => <option key={r}>{r}</option>)}
                   </select>
@@ -2135,7 +2137,7 @@ export default function ControlSupervisionPage() {
                     className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                     value={form.district}
                     onChange={(e) => setForm(s => ({...s, district: e.target.value}))}
-                    disabled={isDistrictUser}
+                    disabled={shouldLockDistrict}
                   >
                     <option value="">— выберите —</option>
                     {availableFormDistricts.map(d => <option key={d} value={d}>{d}</option>)}
@@ -2411,7 +2413,7 @@ export default function ControlSupervisionPage() {
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                 value={inspectionForm.region || ""}
                 onChange={(e) => setInspectionForm((s) => ({ ...s, region: e.target.value, district: "" }))}
-                disabled={!isMchsUser && Boolean(userRegion)}
+                disabled={shouldLockRegion}
               >
                 <option value="">— выберите —</option>
                 {availableInspectionRegions.map((r) => <option key={r}>{r}</option>)}
@@ -2422,7 +2424,7 @@ export default function ControlSupervisionPage() {
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                 value={inspectionForm.district || ""}
                 onChange={(e) => setInspectionForm((s) => ({ ...s, district: e.target.value }))}
-                disabled={isDistrictUser}
+                disabled={shouldLockDistrict}
               >
                 <option value="">— выберите —</option>
                 {availableInspectionDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
