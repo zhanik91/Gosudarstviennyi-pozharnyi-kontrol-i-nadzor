@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { adminCases, controlObjects, inspections, measures, prescriptions } from "@shared/schema";
-import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
 import { incidentController } from "./controllers/incident.controller";
 import { organizationController } from "./controllers/organization.controller";
@@ -625,12 +625,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin-cases', isAuthenticated, async (req: any, res) => {
     try {
+      const { article, paymentStatus, period, dateFrom, dateTo } = req.query;
       const conditions = buildRegistryFilters(
         adminCases,
         adminCases.caseDate,
-        [adminCases.number, adminCases.bin, adminCases.iin, adminCases.article],
+        [
+          adminCases.number,
+          adminCases.bin,
+          adminCases.iin,
+          adminCases.article,
+          adminCases.protocolNumber,
+          adminCases.offenderName,
+          adminCases.orgName,
+          adminCases.offenderIin,
+          adminCases.orgBin,
+          adminCases.inspectorName,
+        ],
         req,
       );
+
+      const normalizeFilterValues = (value: any) => {
+        if (!value || value === 'all') {
+          return [];
+        }
+        if (Array.isArray(value)) {
+          return value.filter((item) => item && item !== 'all');
+        }
+        if (typeof value === 'string') {
+          return value
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item && item !== 'all');
+        }
+        return [];
+      };
+
+      if (article && article !== 'all') {
+        conditions.push(eq(adminCases.article, article as string));
+      }
+
+      if (period && !dateFrom && !dateTo) {
+        const now = new Date();
+        let startDate: Date | undefined;
+        if (period === 'month') {
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (period === 'quarter') {
+          const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+          startDate = new Date(now.getFullYear(), quarterStart, 1);
+        } else if (period === 'year') {
+          startDate = new Date(now.getFullYear(), 0, 1);
+        }
+        if (startDate) {
+          conditions.push(gte(adminCases.caseDate, startDate));
+          conditions.push(lte(adminCases.caseDate, now));
+        }
+      }
+
+      const paymentStatusValues = normalizeFilterValues(paymentStatus);
+      if (paymentStatusValues.length > 0) {
+        const paymentConditions = paymentStatusValues
+          .map((status) => {
+            switch (status) {
+              case 'voluntary':
+                return eq(adminCases.finePaidVoluntary, true);
+              case 'reduced':
+                return eq(adminCases.finePaidReduced, true);
+              case 'forced':
+                return eq(adminCases.finePaidForced, true);
+              case 'unpaid':
+                return and(
+                  or(isNull(adminCases.finePaidVoluntary), eq(adminCases.finePaidVoluntary, false)),
+                  or(isNull(adminCases.finePaidReduced), eq(adminCases.finePaidReduced, false)),
+                  or(isNull(adminCases.finePaidForced), eq(adminCases.finePaidForced, false)),
+                );
+              default:
+                return undefined;
+            }
+          })
+          .filter(Boolean);
+
+        if (paymentConditions.length === 1) {
+          conditions.push(paymentConditions[0]);
+        } else if (paymentConditions.length > 1) {
+          conditions.push(or(...paymentConditions));
+        }
+      }
 
       let query = db.select().from(adminCases);
       if (conditions.length > 0) {
