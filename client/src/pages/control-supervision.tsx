@@ -6,58 +6,8 @@ import { ADMIN2_BY_REGION, REGION_NAMES } from "@/data/kazakhstan-data";
 import { apiRequest } from "@/lib/queryClient";
 
 /** ===== Типы ===== */
-type Status = "Активный" | "Не функционирует";
-type ObjectiveLevel = "Высокая" | "Средняя" | "Низкая";
-type BizCat = "Микро" | "Малый" | "Средний" | "Крупный";
-type TabType = "registry" | "preventive" | "prescriptions" | "measures" | "reports";
-
-type CategoryItem = { id: string; label: string; full: string };
-
-type ObjectCharacteristics = {
-  hasPrivateFireService: boolean;
-  buildingType: string;
-  heightMeters: number | "";
-  walls: string;
-  partitions: string;
-  heating: string;
-  lighting: string;
-  hasAttic: boolean;
-  hasBasement: boolean;
-  hasParking: boolean;
-  primaryExtinguishing: string;
-  hasAUPT: boolean;
-  hasAPS: boolean;
-  apsServiceOrg: string;
-  outsideWater: string;
-  insideWater: string;
-};
-
-type SubjectiveCriteria = {
-  prevViolations: number;
-  incidents12m: number;
-  powerOverload: boolean;
-  otherRiskNotes: string;
-};
-
-type ControlledObject = {
-  id: string;
-
-  region: string;         // Регион (область/город РЗ)
-  district: string;       // Район/ГОС
-  subjectName: string;    // Наименование субъекта
-  subjectBIN: string;     // БИН/ИИН
-  objectName: string;     // Наименование объекта
-  address: string;        // Адрес
-  entrepreneurshipCategory: BizCat;
-  status: Status;
-
-  objectiveLevel: ObjectiveLevel;   // Уровень (высокая/средняя/низкая)
-  objectiveCategoryId: string;      // Категория (наименование внутри уровня)
-
-  characteristics: ObjectCharacteristics;
-  subjective: SubjectiveCriteria;
-};
-
+type TabType = "registry" | "inspections" | "preventive" | "measures" | "reports";
+type InspectionType = "scheduled" | "unscheduled" | "preventive" | "monitoring";
 type InspectionStatus = "planned" | "in_progress" | "completed" | "canceled";
 type PrescriptionStatus = "issued" | "in_progress" | "fulfilled" | "overdue" | "canceled";
 type MeasureStatus = "draft" | "issued" | "in_progress" | "completed" | "canceled";
@@ -480,7 +430,7 @@ export default function ControlSupervisionPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") as TabType | null;
-    const allowedTabs: TabType[] = ["registry", "preventive", "prescriptions", "measures", "reports"];
+    const allowedTabs: TabType[] = ["registry", "inspections", "preventive", "measures", "reports"];
     if (tab && allowedTabs.includes(tab)) {
       setActiveTab(tab);
     }
@@ -906,7 +856,6 @@ export default function ControlSupervisionPage() {
             {[
               { id: "registry", label: "📋 Реестр объектов" },
               { id: "preventive", label: "🧾 Списки проверок" },
-              { id: "prescriptions", label: "📝 Предписания" },
               { id: "measures", label: "⚖️ Меры ОР" },
               { id: "reports", label: "📊 Отчёты" },
             ].map((tab) => (
@@ -1139,13 +1088,19 @@ export default function ControlSupervisionPage() {
           </section>
         )}
 
-        {activeTab === "prescriptions" && (
+        {activeTab === "measures" && (
           <>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
-              Всего предписаний:&nbsp;
-              <span className="font-semibold">
-                {isLoadingPrescriptions ? "Загрузка..." : prescriptions.length}
-              </span>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold">Предписания</h2>
+                <span className="text-sm text-slate-400">Раздел перенесён в «Меры ОР».</span>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+                Всего предписаний:&nbsp;
+                <span className="font-semibold">
+                  {isLoadingPrescriptions ? "Загрузка..." : prescriptions.length}
+                </span>
+              </div>
             </div>
 
             <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
@@ -1289,11 +1244,10 @@ export default function ControlSupervisionPage() {
                 </tbody>
               </table>
             </section>
-          </>
-        )}
 
-        {activeTab === "measures" && (
-          <>
+            <div className="pt-4">
+              <h2 className="text-lg font-semibold">Меры реагирования</h2>
+            </div>
             <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
               Всего мер реагирования:&nbsp;
               <span className="font-semibold">
