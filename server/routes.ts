@@ -631,10 +631,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [adminCases.number, adminCases.bin, adminCases.iin, adminCases.article],
         req,
       );
-      const { article } = req.query;
-      if (article && article !== 'all') {
-        conditions.push(eq(adminCases.article, article as string));
-      }
 
       let query = db.select().from(adminCases);
       if (conditions.length > 0) {

@@ -64,14 +64,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Shield,
       },
       {
-        title: "Карты",
-        description: "Интерактивные карты по пожарам",
-        href: "/maps",
-        icon: MapPin,
-      },
-      {
-        title: "Карты в госучёте",
-        description: "Карты внутри модуля государственного учёта",
+        title: "Карты пожаров",
+        description: "Интерактивные карты из модуля госучёта пожаров",
         href: "/fire-module?tab=maps",
         icon: MapPin,
       },
