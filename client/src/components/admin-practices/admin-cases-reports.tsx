@@ -13,6 +13,11 @@ interface AdminCaseReportRow {
   warningsCount: number | string;
   terminationsCount: number | string;
   appealsCount: number | string;
+  openedCount: number | string;
+  inReviewCount: number | string;
+  resolvedCount: number | string;
+  closedCount: number | string;
+  canceledCount: number | string;
 }
 
 const periodOptions = [
@@ -77,6 +82,11 @@ export default function AdminCasesReports() {
       warningsCount: Number(row.warningsCount || 0),
       terminationsCount: Number(row.terminationsCount || 0),
       appealsCount: Number(row.appealsCount || 0),
+      openedCount: Number(row.openedCount || 0),
+      inReviewCount: Number(row.inReviewCount || 0),
+      resolvedCount: Number(row.resolvedCount || 0),
+      closedCount: Number(row.closedCount || 0),
+      canceledCount: Number(row.canceledCount || 0),
     }));
   }, [rows]);
 
@@ -101,6 +111,11 @@ export default function AdminCasesReports() {
         acc.warningsCount += row.warningsCount;
         acc.terminationsCount += row.terminationsCount;
         acc.appealsCount += row.appealsCount;
+        acc.openedCount += row.openedCount;
+        acc.inReviewCount += row.inReviewCount;
+        acc.resolvedCount += row.resolvedCount;
+        acc.closedCount += row.closedCount;
+        acc.canceledCount += row.canceledCount;
         return acc;
       },
       {
@@ -111,6 +126,11 @@ export default function AdminCasesReports() {
         warningsCount: 0,
         terminationsCount: 0,
         appealsCount: 0,
+        openedCount: 0,
+        inReviewCount: 0,
+        resolvedCount: 0,
+        closedCount: 0,
+        canceledCount: 0,
       }
     );
   }, [filteredRows]);
@@ -178,7 +198,7 @@ export default function AdminCasesReports() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-4 xl:grid-cols-6">
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-xs text-muted-foreground">Дел всего</p>
           <p className="text-2xl font-semibold text-foreground">{totals.totalCount}</p>
@@ -195,10 +215,22 @@ export default function AdminCasesReports() {
           <p className="text-xs text-muted-foreground">Оплачено принудительно</p>
           <p className="text-2xl font-semibold text-foreground">{totals.paidForcedCount}</p>
         </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Открытые</p>
+          <p className="text-2xl font-semibold text-foreground">{totals.openedCount}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Рассмотрение</p>
+          <p className="text-2xl font-semibold text-foreground">{totals.inReviewCount}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Закрытые</p>
+          <p className="text-2xl font-semibold text-foreground">{totals.closedCount}</p>
+        </div>
       </section>
 
       <section className="overflow-x-auto rounded-2xl border border-border">
-        <table className="min-w-[1200px] w-full text-sm">
+        <table className="min-w-[1400px] w-full text-sm">
           <thead className="bg-muted/60 text-left text-muted-foreground">
             <tr>
               <th className="px-3 py-3">Период</th>
@@ -210,18 +242,23 @@ export default function AdminCasesReports() {
               <th className="px-3 py-3">Предупреждения</th>
               <th className="px-3 py-3">Прекращения</th>
               <th className="px-3 py-3">Обжалования</th>
+              <th className="px-3 py-3">Открыты</th>
+              <th className="px-3 py-3">На рассмотрении</th>
+              <th className="px-3 py-3">Решены</th>
+              <th className="px-3 py-3">Закрыты</th>
+              <th className="px-3 py-3">Отменены</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={14} className="px-4 py-10 text-center text-muted-foreground">
                   Загрузка отчёта...
                 </td>
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={14} className="px-4 py-10 text-center text-muted-foreground">
                   По выбранным фильтрам записи не найдены.
                 </td>
               </tr>
@@ -239,6 +276,11 @@ export default function AdminCasesReports() {
                   <td className="px-3 py-2">{row.warningsCount}</td>
                   <td className="px-3 py-2">{row.terminationsCount}</td>
                   <td className="px-3 py-2">{row.appealsCount}</td>
+                  <td className="px-3 py-2">{row.openedCount}</td>
+                  <td className="px-3 py-2">{row.inReviewCount}</td>
+                  <td className="px-3 py-2">{row.resolvedCount}</td>
+                  <td className="px-3 py-2">{row.closedCount}</td>
+                  <td className="px-3 py-2">{row.canceledCount}</td>
                 </tr>
               ))
             )}
