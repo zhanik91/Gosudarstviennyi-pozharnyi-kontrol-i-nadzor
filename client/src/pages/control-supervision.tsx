@@ -24,8 +24,6 @@ type InspectionRow = {
   bin: string | null;
   iin: string | null;
   address: string | null;
-  objectName?: string | null;
-  orgUnitName?: string | null;
   orgUnitId?: string | null;
   basis?: string | null;
   actNumber?: string | null;
@@ -334,7 +332,7 @@ export default function ControlSupervisionPage() {
     if (inspectionSearch.trim()) {
       const qq = inspectionSearch.toLowerCase();
       list = list.filter(r =>
-        [r.number, r.subjectName, r.bin, r.iin, r.objectName, r.address]
+        [r.number, r.subjectName, r.bin, r.iin]
           .filter(Boolean)
           .join(" ")
           .toLowerCase()
@@ -486,8 +484,8 @@ export default function ControlSupervisionPage() {
         "Район": r.district || "",
         "Субъект": r.subjectName || "",
         "БИН/ИИН": r.bin || r.iin || "",
-        "Объект": r.objectName || r.address || "",
-        "Орган": r.orgUnitName || r.orgUnitId || "",
+        "Объект": r.address || "",
+        "Орган": r.orgUnitId || "",
         "Тип": INSPECTION_TYPES.find((t) => t.value === r.type)?.label ?? r.type,
         "Основание": r.basis || "",
         "№ акта": r.actNumber || "",
@@ -704,8 +702,8 @@ export default function ControlSupervisionPage() {
                         <td className="px-3 py-2 whitespace-nowrap">{r.district || "—"}</td>
                         <td className="px-3 py-2">{r.subjectName || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{r.bin || r.iin || "—"}</td>
-                        <td className="px-3 py-2">{r.objectName || r.address || "—"}</td>
-                        <td className="px-3 py-2">{r.orgUnitName || r.orgUnitId || "—"}</td>
+                        <td className="px-3 py-2">{r.address || "—"}</td>
+                        <td className="px-3 py-2">{r.orgUnitId || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{typeLabel}</td>
                         <td className="px-3 py-2">{r.basis || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{r.actNumber || "—"}</td>
