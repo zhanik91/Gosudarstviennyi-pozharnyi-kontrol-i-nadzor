@@ -79,6 +79,14 @@ export const adminCaseTypeEnum = pgEnum('admin_case_type', [
   'protocol', 'resolution', 'appeal', 'other'
 ]);
 
+export const adminCasePaymentTypeEnum = pgEnum('admin_case_payment_type', [
+  'voluntary', 'forced'
+]);
+
+export const adminCaseOutcomeEnum = pgEnum('admin_case_outcome', [
+  'warning', 'termination', 'other'
+]);
+
 // Users table for local authentication (МЧС РК)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -325,6 +333,22 @@ export const inspections = pgTable("inspections", {
   inspectionDate: timestamp("inspection_date").notNull(),
   type: inspectionTypeEnum("type").notNull(),
   status: inspectionStatusEnum("status").notNull().default('planned'),
+  ukpsisuCheckNumber: varchar("ukpsisu_check_number"),
+  ukpsisuRegistrationDate: timestamp("ukpsisu_registration_date"),
+  assigningAuthority: varchar("assigning_authority"),
+  registrationAuthority: varchar("registration_authority"),
+  inspectionKind: varchar("inspection_kind"),
+  inspectedObjects: text("inspected_objects"),
+  basis: text("basis"),
+  inspectionPeriod: text("inspection_period"),
+  extensionPeriod: text("extension_period"),
+  suspensionResumptionDates: text("suspension_resumption_dates"),
+  actualStartDate: timestamp("actual_start_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  result: text("result"),
+  violationsCount: integer("violations_count"),
+  violationsDeadline: timestamp("violations_deadline"),
+  ticketRegistrationDate: timestamp("ticket_registration_date"),
   region: varchar("region"),
   district: varchar("district"),
   bin: varchar("bin"),
@@ -403,11 +427,36 @@ export const adminCases = pgTable("admin_cases", {
   caseDate: timestamp("case_date").notNull(),
   type: adminCaseTypeEnum("type").notNull().default('protocol'),
   status: adminCaseStatusEnum("status").notNull().default('opened'),
+  fineAmount: decimal("fine_amount", { precision: 15, scale: 2 }).default('0'),
+  paymentType: adminCasePaymentTypeEnum("payment_type"),
+  outcome: adminCaseOutcomeEnum("outcome").default('other'),
   region: varchar("region"),
   district: varchar("district"),
   bin: varchar("bin"),
   iin: varchar("iin"),
   article: text("article"),
+  protocolNumber: varchar("protocol_number"),
+  protocolDate: timestamp("protocol_date"),
+  offenderName: varchar("offender_name"),
+  offenderBirthDate: timestamp("offender_birth_date"),
+  offenderIin: varchar("offender_iin"),
+  orgName: varchar("org_name"),
+  orgBin: varchar("org_bin"),
+  inspectorName: varchar("inspector_name"),
+  penaltyType: varchar("penalty_type"),
+  resolutionDate: timestamp("resolution_date"),
+  fineAmount: decimal("fine_amount", { precision: 15, scale: 2 }),
+  finePaidVoluntary: boolean("fine_paid_voluntary"),
+  finePaidReduced: boolean("fine_paid_reduced"),
+  finePaidForced: boolean("fine_paid_forced"),
+  terminationReason: text("termination_reason"),
+  terminationDate: timestamp("termination_date"),
+  appealResult: text("appeal_result"),
+  appealDecisionDate: timestamp("appeal_decision_date"),
+  transferTo: varchar("transfer_to"),
+  transferType: varchar("transfer_type"),
+  enforcementSent: boolean("enforcement_sent"),
+  offenderContact: text("offender_contact"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -419,6 +468,16 @@ export const adminCases = pgTable("admin_cases", {
   index("admin_cases_bin_idx").on(table.bin),
   index("admin_cases_iin_idx").on(table.iin),
   index("admin_cases_number_idx").on(table.number),
+  index("admin_cases_article_idx").on(table.article),
+  index("admin_cases_protocol_number_idx").on(table.protocolNumber),
+  index("admin_cases_protocol_date_idx").on(table.protocolDate),
+  index("admin_cases_offender_iin_idx").on(table.offenderIin),
+  index("admin_cases_org_bin_idx").on(table.orgBin),
+  index("admin_cases_penalty_type_idx").on(table.penaltyType),
+  index("admin_cases_resolution_date_idx").on(table.resolutionDate),
+  index("admin_cases_fine_paid_voluntary_idx").on(table.finePaidVoluntary),
+  index("admin_cases_fine_paid_reduced_idx").on(table.finePaidReduced),
+  index("admin_cases_fine_paid_forced_idx").on(table.finePaidForced),
 ]);
 
 // Relations

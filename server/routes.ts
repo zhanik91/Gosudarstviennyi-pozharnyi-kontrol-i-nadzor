@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { adminCases, controlObjects, inspections, measures, prescriptions } from "@shared/schema";
-import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
 import { incidentController } from "./controllers/incident.controller";
 import { organizationController } from "./controllers/organization.controller";
@@ -64,6 +64,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/summary', isAuthenticated, reportController.getReportsDashboard);
   app.get('/api/stats/dashboard', reportController.getDashboardStats);
   app.get('/api/reports/validate', isAuthenticated, reportController.validateReports);
+  app.get('/api/reports/admin-cases', isAuthenticated, async (req: any, res) => {
+    try {
+      const { period, dateFrom, dateTo, region, district, article } = req.query;
+      const scopeUser = toScopeUser(req.user);
+
+      const allowedPeriods = ['quarter', 'year'];
+      const periodValue = allowedPeriods.includes(period as string) ? (period as string) : 'quarter';
+      const periodExpression = sql`date_trunc(${sql.raw(`'${periodValue}'`)}, ${adminCases.caseDate})`;
+
+      const conditions = [];
+      const scopeCondition = applyScopeCondition(scopeUser, adminCases.region, adminCases.district);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+
+      if (region && region !== 'all') {
+        conditions.push(eq(adminCases.region, region as string));
+      }
+      if (district && district !== 'all') {
+        conditions.push(eq(adminCases.district, district as string));
+      }
+      if (dateFrom) {
+        conditions.push(gte(adminCases.caseDate, new Date(dateFrom as string)));
+      }
+      if (dateTo) {
+        conditions.push(lte(adminCases.caseDate, new Date(dateTo as string)));
+      }
+      if (article && article !== 'all') {
+        const articleValues = typeof article === 'string'
+          ? article.split(',').map((value) => value.trim()).filter(Boolean)
+          : Array.isArray(article) ? article : [];
+        if (articleValues.length === 1) {
+          conditions.push(eq(adminCases.article, articleValues[0]));
+        } else if (articleValues.length > 1) {
+          conditions.push(inArray(adminCases.article, articleValues));
+        }
+      }
+
+      let query = db.select({
+        period: periodExpression,
+        article: adminCases.article,
+        totalCount: sql<number>`count(*)`,
+        totalFines: sql<number>`coalesce(sum(${adminCases.fineAmount}), 0)`,
+        paidVoluntaryCount: sql<number>`sum(case when ${adminCases.paymentType} = 'voluntary' then 1 else 0 end)`,
+        paidForcedCount: sql<number>`sum(case when ${adminCases.paymentType} = 'forced' then 1 else 0 end)`,
+        paidVoluntaryShare: sql<number>`coalesce(sum(case when ${adminCases.paymentType} = 'voluntary' then 1 else 0 end)::float / nullif(count(*), 0), 0)`,
+        paidForcedShare: sql<number>`coalesce(sum(case when ${adminCases.paymentType} = 'forced' then 1 else 0 end)::float / nullif(count(*), 0), 0)`,
+        warningsCount: sql<number>`sum(case when ${adminCases.outcome} = 'warning' then 1 else 0 end)`,
+        terminationsCount: sql<number>`sum(case when ${adminCases.outcome} = 'termination' then 1 else 0 end)`,
+        appealsCount: sql<number>`sum(case when ${adminCases.type} = 'appeal' then 1 else 0 end)`,
+      }).from(adminCases);
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const rows = await query
+        .groupBy(periodExpression, adminCases.article)
+        .orderBy(periodExpression, adminCases.article);
+      res.json(rows);
+    } catch (error) {
+      console.error('Error loading admin cases report:', error);
+      res.status(500).json({ message: 'Ошибка загрузки отчета по административным делам' });
+    }
+  });
 
   // === Экспорт ===
   app.get('/api/export/report', isAuthenticated, exportController.exportReport);
@@ -346,12 +411,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const toOptionalDate = (value?: string | null) => (value ? new Date(value) : null);
+  const toRequiredDate = (value?: string | null) => (value ? new Date(value) : new Date());
+  const toOptionalNumber = (value?: string | number | null) => {
+    if (value === undefined || value === null || value === '') {
+      return null;
+    }
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? null : numeric;
+  };
+
   app.post('/api/inspections', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
     try {
       const userId = req.user?.id || req.user?.username;
       const orgUnitId = req.user?.orgUnitId || null;
+      const payload = req.body || {};
       const [inspection] = await db.insert(inspections).values({
-        ...req.body,
+        ...payload,
+        inspectionDate: toRequiredDate(payload.inspectionDate),
+        ukpsisuRegistrationDate: toOptionalDate(payload.ukpsisuRegistrationDate),
+        actualStartDate: toOptionalDate(payload.actualStartDate),
+        actualEndDate: toOptionalDate(payload.actualEndDate),
+        violationsDeadline: toOptionalDate(payload.violationsDeadline),
+        ticketRegistrationDate: toOptionalDate(payload.ticketRegistrationDate),
+        violationsCount: toOptionalNumber(payload.violationsCount),
         orgUnitId,
         createdBy: userId,
       }).returning();
@@ -364,8 +447,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/inspections/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck(inspections), async (req: any, res) => {
     try {
+      const payload = req.body || {};
       const [inspection] = await db.update(inspections)
-        .set({ ...req.body, updatedAt: new Date() })
+        .set({
+          ...payload,
+          inspectionDate: toRequiredDate(payload.inspectionDate),
+          ukpsisuRegistrationDate: toOptionalDate(payload.ukpsisuRegistrationDate),
+          actualStartDate: toOptionalDate(payload.actualStartDate),
+          actualEndDate: toOptionalDate(payload.actualEndDate),
+          violationsDeadline: toOptionalDate(payload.violationsDeadline),
+          ticketRegistrationDate: toOptionalDate(payload.ticketRegistrationDate),
+          violationsCount: toOptionalNumber(payload.violationsCount),
+          updatedAt: new Date(),
+        })
         .where(eq(inspections.id, req.params.id))
         .returning();
       if (!inspection) {
@@ -625,12 +719,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin-cases', isAuthenticated, async (req: any, res) => {
     try {
+      const { article, paymentStatus, period, dateFrom, dateTo } = req.query;
       const conditions = buildRegistryFilters(
         adminCases,
         adminCases.caseDate,
-        [adminCases.number, adminCases.bin, adminCases.iin, adminCases.article],
+        [
+          adminCases.number,
+          adminCases.bin,
+          adminCases.iin,
+          adminCases.article,
+          adminCases.protocolNumber,
+          adminCases.offenderName,
+          adminCases.orgName,
+          adminCases.offenderIin,
+          adminCases.orgBin,
+          adminCases.inspectorName,
+        ],
         req,
       );
+
+      const normalizeFilterValues = (value: any) => {
+        if (!value || value === 'all') {
+          return [];
+        }
+        if (Array.isArray(value)) {
+          return value.filter((item) => item && item !== 'all');
+        }
+        if (typeof value === 'string') {
+          return value
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item && item !== 'all');
+        }
+        return [];
+      };
+
+      if (article && article !== 'all') {
+        conditions.push(eq(adminCases.article, article as string));
+      }
+
+      if (period && !dateFrom && !dateTo) {
+        const now = new Date();
+        let startDate: Date | undefined;
+        if (period === 'month') {
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (period === 'quarter') {
+          const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+          startDate = new Date(now.getFullYear(), quarterStart, 1);
+        } else if (period === 'year') {
+          startDate = new Date(now.getFullYear(), 0, 1);
+        }
+        if (startDate) {
+          conditions.push(gte(adminCases.caseDate, startDate));
+          conditions.push(lte(adminCases.caseDate, now));
+        }
+      }
+
+      const paymentStatusValues = normalizeFilterValues(paymentStatus);
+      if (paymentStatusValues.length > 0) {
+        const paymentConditions = paymentStatusValues
+          .map((status) => {
+            switch (status) {
+              case 'voluntary':
+                return eq(adminCases.finePaidVoluntary, true);
+              case 'reduced':
+                return eq(adminCases.finePaidReduced, true);
+              case 'forced':
+                return eq(adminCases.finePaidForced, true);
+              case 'unpaid':
+                return and(
+                  or(isNull(adminCases.finePaidVoluntary), eq(adminCases.finePaidVoluntary, false)),
+                  or(isNull(adminCases.finePaidReduced), eq(adminCases.finePaidReduced, false)),
+                  or(isNull(adminCases.finePaidForced), eq(adminCases.finePaidForced, false)),
+                );
+              default:
+                return undefined;
+            }
+          })
+          .filter(Boolean);
+
+        if (paymentConditions.length === 1) {
+          conditions.push(paymentConditions[0]);
+        } else if (paymentConditions.length > 1) {
+          conditions.push(or(...paymentConditions));
+        }
+      }
 
       let query = db.select().from(adminCases);
       if (conditions.length > 0) {

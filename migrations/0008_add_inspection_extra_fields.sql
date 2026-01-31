@@ -1,0 +1,17 @@
+ALTER TABLE "inspections"
+  ADD COLUMN "ukpsisu_check_number" varchar,
+  ADD COLUMN "ukpsisu_registration_date" timestamp,
+  ADD COLUMN "assigning_authority" varchar,
+  ADD COLUMN "registration_authority" varchar,
+  ADD COLUMN "inspection_kind" varchar,
+  ADD COLUMN "inspected_objects" text,
+  ADD COLUMN "basis" text,
+  ADD COLUMN "inspection_period" text,
+  ADD COLUMN "extension_period" text,
+  ADD COLUMN "suspension_resumption_dates" text,
+  ADD COLUMN "actual_start_date" timestamp,
+  ADD COLUMN "actual_end_date" timestamp,
+  ADD COLUMN "result" text,
+  ADD COLUMN "violations_count" integer,
+  ADD COLUMN "violations_deadline" timestamp,
+  ADD COLUMN "ticket_registration_date" timestamp;

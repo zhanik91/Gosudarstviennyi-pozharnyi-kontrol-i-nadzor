@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import AdminPanel from "@/pages/admin-panel";
 import AdminPracticesPage from "@/pages/admin-practices";
+import AdminPracticesModule from "@/pages/admin-practices-module";
 import DocumentsPage from "@/pages/documents-page";
 import CRMDashboard from "@/pages/crm-dashboard";
 import AdvancedAnalytics from "@/pages/advanced-analytics";
@@ -103,7 +104,8 @@ function Router() {
       <Route path="/crm" component={protectedRoute(CRMDashboard)} />
       <Route path="/analytics" component={protectedRoute(AdvancedAnalytics)} />
       <Route path="/admin" component={protectedRoute(AdminPanel)} />
-      <Route path="/admin-practices" component={protectedRoute(AdminPracticesPage)} />
+      <Route path="/admin-practices" component={protectedRoute(AdminPracticesModule)} />
+      <Route path="/admin-practices/journal" component={protectedRoute(AdminPracticesPage)} />
       <Route path="/calculators" component={protectedRoute(CalculatorsPage)} />
       <Route path="/calculators/fire-extinguishers" component={protectedRoute(FireExtinguishersCalculator)} />
       <Route path="/calculators/ngps" component={protectedRoute(NGPSCalculator)} />

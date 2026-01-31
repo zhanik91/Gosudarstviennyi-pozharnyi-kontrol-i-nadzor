@@ -76,6 +76,12 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Layers,
       },
       {
+        title: "Административные практики",
+        description: "Журналы, фотопротоколы и контроль исполнения",
+        href: "/admin-practices",
+        icon: ClipboardList,
+      },
+      {
         title: "Нормативные документы",
         description: "Законы, техрегламенты, ППБ РК и другие НПА",
         href: "/normative-documents",
@@ -125,12 +131,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         description: "Настройки системы, роли и логирование",
         href: "/admin",
         icon: Users,
-      },
-      {
-        title: "Журнал административной практики",
-        description: "Протоколы, штрафы и контроль исполнения",
-        href: "/admin-practices",
-        icon: ClipboardList,
       },
       {
         title: "CRM данные",
