@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Building, 
   MapPin, 
@@ -28,10 +37,42 @@ interface ControlledObject {
   riskLevel: 'low' | 'medium' | 'high';
 }
 
+type InspectionFormState = {
+  ukpsisNumber: string;
+  registrationDate: string;
+  authority: string;
+  inspectionType: string;
+  binIin: string;
+  subject: string;
+  inspectedObjects: string;
+  basis: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+};
+
+const inspectionTypeOptions = [
+  { value: "scheduled", label: "Плановая" },
+  { value: "unscheduled", label: "Внеплановая" },
+  { value: "preventive", label: "Профилактическая" },
+  { value: "monitoring", label: "Мониторинг" },
+];
+
+const inspectionStatusOptions = [
+  { value: "planned", label: "Запланирована" },
+  { value: "in_progress", label: "В работе" },
+  { value: "completed", label: "Завершена" },
+  { value: "canceled", label: "Отменена" },
+];
+
 export default function ControlledObjectsRegistry() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedObject, setSelectedObject] = useState<ControlledObject | null>(null);
+  const [inspectionTarget, setInspectionTarget] = useState<ControlledObject | null>(null);
+  const [isInspectionDialogOpen, setIsInspectionDialogOpen] = useState(false);
+  const [inspectionError, setInspectionError] = useState<string | null>(null);
+  const [isSavingInspection, setIsSavingInspection] = useState(false);
 
   // Получаем реальные данные из API с параметром фильтрации
   const queryParams = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
@@ -57,6 +98,29 @@ export default function ControlledObjectsRegistry() {
     violations: 0,        // Поле отсутствует в текущей схеме
     riskLevel: obj.riskLevel || obj.details?.riskLevel || 'low',
   }));
+
+  const buildInspectionDefaults = useMemo(() => {
+    return (object?: ControlledObject | null): InspectionFormState => {
+      const today = new Date().toISOString().split('T')[0];
+      return {
+        ukpsisNumber: '',
+        registrationDate: today,
+        authority: '',
+        inspectionType: 'scheduled',
+        binIin: '',
+        subject: object?.name || '',
+        inspectedObjects: object ? `${object.name}${object.address ? `, ${object.address}` : ''}` : '',
+        basis: '',
+        startDate: today,
+        endDate: '',
+        status: 'planned',
+      };
+    };
+  }, []);
+
+  const [inspectionForm, setInspectionForm] = useState<InspectionFormState>(() =>
+    buildInspectionDefaults(null)
+  );
   
   // Маппинг статусов из схемы БД к статусам UI
   function mapControlObjectStatus(dbStatus: string | undefined): ControlledObject['status'] {
@@ -115,6 +179,66 @@ export default function ControlledObjectsRegistry() {
       case 'medium': return 'text-yellow-600';
       case 'high': return 'text-red-600';
       default: return 'text-gray-600';
+    }
+  };
+
+  const handleOpenInspection = (obj: ControlledObject) => {
+    setInspectionTarget(obj);
+    setInspectionForm(buildInspectionDefaults(obj));
+    setInspectionError(null);
+    setIsInspectionDialogOpen(true);
+  };
+
+  const handleInspectionChange = (field: keyof InspectionFormState) => (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setInspectionForm((prev) => ({
+      ...prev,
+      [field]: event.target.value,
+    }));
+  };
+
+  const handleInspectionSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSavingInspection(true);
+    setInspectionError(null);
+    try {
+      const res = await fetch("/api/inspections", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ukpsisNumber: inspectionForm.ukpsisNumber,
+          registrationDate: inspectionForm.registrationDate,
+          authority: inspectionForm.authority,
+          inspectionType: inspectionForm.inspectionType,
+          binIin: inspectionForm.binIin,
+          subject: inspectionForm.subject,
+          inspectedObjects: inspectionForm.inspectedObjects,
+          basis: inspectionForm.basis,
+          startDate: inspectionForm.startDate,
+          endDate: inspectionForm.endDate,
+          status: inspectionForm.status,
+          controlObjectId: inspectionTarget?.id,
+          controlObjectName: inspectionTarget?.name,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Не удалось сохранить проверку.");
+      }
+
+      setIsInspectionDialogOpen(false);
+      const url = new URL(window.location.href);
+      url.pathname = "/controlled-objects";
+      url.searchParams.set("tab", "inspections");
+      window.location.href = url.toString();
+    } catch (error) {
+      setInspectionError(error instanceof Error ? error.message : "Ошибка сохранения.");
+    } finally {
+      setIsSavingInspection(false);
     }
   };
 
@@ -313,9 +437,10 @@ export default function ControlledObjectsRegistry() {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => handleOpenInspection(obj)}
                     data-testid={`button-inspect-${obj.id}`}
                   >
-                    Проверка
+                    Сгенерировать проверку
                   </Button>
                 </div>
               </div>
@@ -378,6 +503,154 @@ export default function ControlledObjectsRegistry() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={isInspectionDialogOpen} onOpenChange={setIsInspectionDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Сгенерировать проверку</DialogTitle>
+            <DialogDescription>
+              Заполните данные для регистрации проверки в журнале.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={handleInspectionSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">№ проверки УКПСиСУ</label>
+                <Input
+                  value={inspectionForm.ukpsisNumber}
+                  onChange={handleInspectionChange("ukpsisNumber")}
+                  placeholder="Например, УКПС-2024-001"
+                  data-testid="input-ukpsis-number"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Дата регистрации</label>
+                <Input
+                  type="date"
+                  value={inspectionForm.registrationDate}
+                  onChange={handleInspectionChange("registrationDate")}
+                  data-testid="input-registration-date"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Органы</label>
+                <Input
+                  value={inspectionForm.authority}
+                  onChange={handleInspectionChange("authority")}
+                  placeholder="Орган, проводящий проверку"
+                  data-testid="input-authority"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Вид проверки</label>
+                <select
+                  className="border rounded px-3 py-2 w-full"
+                  value={inspectionForm.inspectionType}
+                  onChange={handleInspectionChange("inspectionType")}
+                  data-testid="select-inspection-type"
+                >
+                  {inspectionTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">БИН/ИИН</label>
+                <Input
+                  value={inspectionForm.binIin}
+                  onChange={handleInspectionChange("binIin")}
+                  placeholder="Введите БИН или ИИН"
+                  data-testid="input-bin-iin"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Субъект</label>
+                <Input
+                  value={inspectionForm.subject}
+                  onChange={handleInspectionChange("subject")}
+                  placeholder="Наименование субъекта"
+                  data-testid="input-subject"
+                  required
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">Проверяемые объекты</label>
+                <Textarea
+                  value={inspectionForm.inspectedObjects}
+                  onChange={handleInspectionChange("inspectedObjects")}
+                  placeholder="Перечень проверяемых объектов"
+                  data-testid="textarea-inspected-objects"
+                  required
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">Основание</label>
+                <Textarea
+                  value={inspectionForm.basis}
+                  onChange={handleInspectionChange("basis")}
+                  placeholder="Основание проведения проверки"
+                  data-testid="textarea-basis"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Срок начала</label>
+                <Input
+                  type="date"
+                  value={inspectionForm.startDate}
+                  onChange={handleInspectionChange("startDate")}
+                  data-testid="input-start-date"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Срок окончания</label>
+                <Input
+                  type="date"
+                  value={inspectionForm.endDate}
+                  onChange={handleInspectionChange("endDate")}
+                  data-testid="input-end-date"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Статус</label>
+                <select
+                  className="border rounded px-3 py-2 w-full"
+                  value={inspectionForm.status}
+                  onChange={handleInspectionChange("status")}
+                  data-testid="select-inspection-status"
+                >
+                  {inspectionStatusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {inspectionError && (
+              <div className="text-sm text-red-600">{inspectionError}</div>
+            )}
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsInspectionDialogOpen(false)}
+              >
+                Отмена
+              </Button>
+              <Button type="submit" disabled={isSavingInspection}>
+                {isSavingInspection ? "Сохранение..." : "Сохранить"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
