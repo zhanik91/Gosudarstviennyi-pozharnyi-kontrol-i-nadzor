@@ -79,6 +79,14 @@ export const adminCaseTypeEnum = pgEnum('admin_case_type', [
   'protocol', 'resolution', 'appeal', 'other'
 ]);
 
+export const adminCasePaymentTypeEnum = pgEnum('admin_case_payment_type', [
+  'voluntary', 'forced'
+]);
+
+export const adminCaseOutcomeEnum = pgEnum('admin_case_outcome', [
+  'warning', 'termination', 'other'
+]);
+
 // Users table for local authentication (МЧС РК)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -403,6 +411,9 @@ export const adminCases = pgTable("admin_cases", {
   caseDate: timestamp("case_date").notNull(),
   type: adminCaseTypeEnum("type").notNull().default('protocol'),
   status: adminCaseStatusEnum("status").notNull().default('opened'),
+  fineAmount: decimal("fine_amount", { precision: 15, scale: 2 }).default('0'),
+  paymentType: adminCasePaymentTypeEnum("payment_type"),
+  outcome: adminCaseOutcomeEnum("outcome").default('other'),
   region: varchar("region"),
   district: varchar("district"),
   bin: varchar("bin"),

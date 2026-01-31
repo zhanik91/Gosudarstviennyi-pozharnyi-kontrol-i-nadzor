@@ -7,6 +7,7 @@ import Footer from "@/components/layout/footer";
 import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
 import { Button } from "@/components/ui/button";
 import AdminPracticesPage from "@/pages/admin-practices";
+import AdminCasesReports from "@/components/admin-practices/admin-cases-reports";
 
 const tabs = [
   { id: "journal", label: "📋 Журнал административной практики", icon: ClipboardList },
@@ -98,35 +99,7 @@ export default function AdminPracticesModule() {
 
         <div className="fade-in">
           {activeTab === "journal" && <AdminPracticesPage />}
-          {activeTab === "reports" && (
-            <div className="rounded-2xl border border-border bg-card p-6 shadow space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Отчётность с фотофиксацией</h3>
-                <p className="text-sm text-muted-foreground">
-                  Раздел в разработке. Здесь появятся фотопротоколы, карточки нарушений и отчёты
-                  по административной практике.
-                </p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4">
-                  <p className="text-sm font-medium text-foreground">Будущие возможности</p>
-                  <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                    <li>• Загрузка фотоматериалов и доказательной базы</li>
-                    <li>• Формирование отчётов по нарушениям и инспекторам</li>
-                    <li>• Экспорт PDF с привязкой к протоколам</li>
-                  </ul>
-                </div>
-                <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4">
-                  <p className="text-sm font-medium text-foreground">Планируемые интеграции</p>
-                  <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                    <li>• Хранилище фото- и видеофиксаций</li>
-                    <li>• Привязка к маршрутам проверок</li>
-                    <li>• Уведомления о статусах согласования</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === "reports" && <AdminCasesReports />}
         </div>
         <Footer />
       </div>
