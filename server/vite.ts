@@ -6,10 +6,8 @@ import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
-// For ESM/CJS compatibility
-const __dirname = typeof import.meta !== 'undefined' && import.meta.dirname 
-  ? import.meta.dirname 
-  : process.cwd();
+// Use import.meta.dirname (Node 20.11+) for ESM compatibility
+const __dirname = import.meta.dirname;
 
 const viteLogger = createLogger();
 
