@@ -13,6 +13,20 @@ type PrescriptionStatus = "issued" | "in_progress" | "fulfilled" | "overdue" | "
 type MeasureStatus = "draft" | "issued" | "in_progress" | "completed" | "canceled";
 type MeasureType = "warning" | "order" | "fine" | "suspension" | "other";
 
+type InspectionItem = {
+  id: string;
+  number: string;
+  inspectionDate: string;
+  type: InspectionType;
+  status: InspectionStatus;
+  region: string | null;
+  district: string | null;
+  bin: string | null;
+  iin: string | null;
+  subjectName: string | null;
+  address: string | null;
+};
+
 type PrescriptionItem = {
   id: string;
   inspectionId: string;
@@ -68,6 +82,13 @@ const INSPECTION_STATUSES: Array<{ value: InspectionStatus; label: string }> = [
   { value: "in_progress", label: "В работе" },
   { value: "completed", label: "Завершена" },
   { value: "canceled", label: "Отменена" },
+];
+
+const INSPECTION_TYPES: Array<{ value: InspectionType; label: string }> = [
+  { value: "scheduled", label: "Плановая" },
+  { value: "unscheduled", label: "Внеплановая" },
+  { value: "preventive", label: "Профилактическая" },
+  { value: "monitoring", label: "Мониторинг" },
 ];
 
 const PRESCRIPTION_STATUSES: Array<{ value: PrescriptionStatus; label: string }> = [
@@ -345,6 +366,15 @@ export default function ControlSupervisionPage() {
   const [prescriptionSearch, setPrescriptionSearch] = useState("");
   const [prescriptionInspectionNumber, setPrescriptionInspectionNumber] = useState("");
 
+  const [inspectionRegion, setInspectionRegion] = useState("Все");
+  const [inspectionDistrict, setInspectionDistrict] = useState("Все");
+  const [inspectionStatus, setInspectionStatus] = useState("Все");
+  const [inspectionType, setInspectionType] = useState("Все");
+  const [inspectionDateFrom, setInspectionDateFrom] = useState("");
+  const [inspectionDateTo, setInspectionDateTo] = useState("");
+  const [inspectionSearch, setInspectionSearch] = useState("");
+  const [inspectionNumberFilter, setInspectionNumberFilter] = useState("");
+
   const [measureRegion, setMeasureRegion] = useState("Все");
   const [measureDistrict, setMeasureDistrict] = useState("Все");
   const [measureStatus, setMeasureStatus] = useState("Все");
@@ -421,6 +451,8 @@ export default function ControlSupervisionPage() {
 
     setPrescriptionRegion(scopedRegion);
     setPrescriptionDistrict(scopedDistrict);
+    setInspectionRegion(scopedRegion);
+    setInspectionDistrict(scopedDistrict);
     setMeasureRegion(scopedRegion);
     setMeasureDistrict(scopedDistrict);
     setReportRegion(scopedRegion);
@@ -519,6 +551,26 @@ export default function ControlSupervisionPage() {
     prescriptionInspectionNumber,
   ]);
 
+  const inspectionQuery = useMemo(() => buildRegistryQuery({
+    region: inspectionRegion,
+    district: inspectionDistrict,
+    status: inspectionStatus,
+    type: inspectionType,
+    dateFrom: inspectionDateFrom,
+    dateTo: inspectionDateTo,
+    search: inspectionSearch,
+    inspectionNumber: inspectionNumberFilter,
+  }), [
+    inspectionRegion,
+    inspectionDistrict,
+    inspectionStatus,
+    inspectionType,
+    inspectionDateFrom,
+    inspectionDateTo,
+    inspectionSearch,
+    inspectionNumberFilter,
+  ]);
+
   const measureQuery = useMemo(() => buildRegistryQuery({
     region: measureRegion,
     district: measureDistrict,
@@ -555,6 +607,17 @@ export default function ControlSupervisionPage() {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Ошибка загрузки предписаний');
+      return res.json();
+    },
+  });
+
+  const { data: inspections = [], isLoading: isLoadingInspections } = useQuery<InspectionItem[]>({
+    queryKey: ['/api/inspections', inspectionQuery],
+    queryFn: async () => {
+      const res = await fetch(`/api/inspections${inspectionQuery ? `?${inspectionQuery}` : ""}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Ошибка загрузки проверок');
       return res.json();
     },
   });
@@ -657,6 +720,17 @@ export default function ControlSupervisionPage() {
     setPrescriptionDateTo("");
     setPrescriptionSearch("");
     setPrescriptionInspectionNumber("");
+  };
+
+  const resetInspectionFilters = () => {
+    setInspectionRegion(isMchsUser ? "Все" : userRegion || "Все");
+    setInspectionDistrict(isDistrictUser ? (userDistrict || "Все") : "Все");
+    setInspectionStatus("Все");
+    setInspectionType("Все");
+    setInspectionDateFrom("");
+    setInspectionDateTo("");
+    setInspectionSearch("");
+    setInspectionNumberFilter("");
   };
 
   const resetMeasureFilters = () => {
@@ -855,6 +929,7 @@ export default function ControlSupervisionPage() {
           <nav className="flex space-x-8 overflow-x-auto">
             {[
               { id: "registry", label: "📋 Реестр объектов" },
+              { id: "inspections", label: "📓 Журнал проверок" },
               { id: "preventive", label: "🧾 Списки проверок" },
               { id: "measures", label: "⚖️ Меры ОР" },
               { id: "reports", label: "📊 Отчёты" },
@@ -1060,6 +1135,175 @@ export default function ControlSupervisionPage() {
                             )}
                           </div>
                         </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </section>
+          </>
+        )}
+
+        {activeTab === "inspections" && (
+          <>
+            <div className="space-y-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+                Всего проверок:&nbsp;
+                <span className="font-semibold">
+                  {isLoadingInspections ? "Загрузка..." : inspections.length}
+                </span>
+              </div>
+            </div>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">Регион</label>
+                  <select
+                    value={inspectionRegion}
+                    onChange={(e) => { setInspectionRegion(e.target.value); setInspectionDistrict("Все"); }}
+                    disabled={!isMchsUser && Boolean(userRegion)}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    {isMchsUser && <option>Все</option>}
+                    {availableRegions.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <select
+                    value={inspectionDistrict}
+                    onChange={(e) => setInspectionDistrict(e.target.value)}
+                    disabled={isDistrictUser}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    {(isMchsUser || isDchsUser) && <option>Все</option>}
+                    {getDistrictOptions(inspectionRegion).map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Статус</label>
+                  <select
+                    value={inspectionStatus}
+                    onChange={(e) => setInspectionStatus(e.target.value)}
+                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option value="Все">Все</option>
+                    {INSPECTION_STATUSES.map((status) => (
+                      <option key={status.value} value={status.value}>{status.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Вид проверки</label>
+                  <select
+                    value={inspectionType}
+                    onChange={(e) => setInspectionType(e.target.value)}
+                    className="block min-w-[200px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option value="Все">Все</option>
+                    {INSPECTION_TYPES.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Дата проверки</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={inspectionDateFrom}
+                      onChange={(e) => setInspectionDateFrom(e.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    />
+                    <span className="text-slate-500">—</span>
+                    <input
+                      type="date"
+                      value={inspectionDateTo}
+                      onChange={(e) => setInspectionDateTo(e.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs text-slate-400">Номер проверки</label>
+                  <input
+                    placeholder="Например: 123/2024"
+                    value={inspectionNumberFilter}
+                    onChange={(e) => setInspectionNumberFilter(e.target.value)}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400">Поиск: номер / БИН / ИИН / субъект / адрес</label>
+                  <div className="relative">
+                    <input
+                      placeholder="Начните ввод…"
+                      value={inspectionSearch}
+                      onChange={(e) => setInspectionSearch(e.target.value)}
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
+                    />
+                    <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                  onClick={resetInspectionFilters}
+                  type="button"
+                >
+                  Очистить фильтры
+                </button>
+              </div>
+            </section>
+
+            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-900/60">
+                  <tr className="text-left text-slate-300">
+                    <th className="px-3 py-3">№</th>
+                    <th className="px-3 py-3">Дата</th>
+                    <th className="px-3 py-3">Номер</th>
+                    <th className="px-3 py-3">Вид</th>
+                    <th className="px-3 py-3">Статус</th>
+                    <th className="px-3 py-3">Субъект</th>
+                    <th className="px-3 py-3">БИН/ИИН</th>
+                    <th className="px-3 py-3">Регион</th>
+                    <th className="px-3 py-3">Район</th>
+                    <th className="px-3 py-3">Адрес/объект</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingInspections ? (
+                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                  ) : inspections.length === 0 ? (
+                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                  ) : inspections.map((item, idx) => {
+                    const statusLabel = INSPECTION_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
+                    const typeLabel = INSPECTION_TYPES.find((t) => t.value === item.type)?.label ?? item.type;
+                    return (
+                      <tr key={item.id} className="border-t border-slate-800 hover:bg-slate-900/40">
+                        <td className="px-3 py-2">{idx + 1}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.inspectionDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.number}</td>
+                        <td className="px-3 py-2">{typeLabel}</td>
+                        <td className="px-3 py-2">
+                          <span className="rounded bg-blue-500/20 px-2 py-1 text-blue-300">{statusLabel}</span>
+                        </td>
+                        <td className="px-3 py-2">{item.subjectName || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.bin || item.iin || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.region || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.district || "—"}</td>
+                        <td className="px-3 py-2">{item.address || "—"}</td>
                       </tr>
                     );
                   })}
