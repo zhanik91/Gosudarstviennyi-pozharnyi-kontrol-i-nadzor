@@ -1,118 +1,163 @@
 import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-const entries = [
-  {
-    id: "AP-2024-001",
-    date: "2024-01-14",
-    protocolNumber: "АП-01/24",
-    region: "г. Астана",
-    district: "Есиль",
-    subject: "ТОО " + "\"" + "Нур-Сервис" + "\"",
-    bin: "120540003221",
-    object: "Бизнес-центр " + "\"" + "Сарыарка" + "\"",
-    article: "ст. 410 ч.2",
-    violation: "Неисправная сигнализация и отсутствие журнала проверок",
-    inspector: "А. Тлеубаев",
-    fine: 245000,
-    status: "В работе",
-    dueDate: "2024-02-14",
-    note: "Назначена повторная проверка",
-  },
-  {
-    id: "AP-2024-002",
-    date: "2024-01-22",
-    protocolNumber: "АП-05/24",
-    region: "Алматинская область",
-    district: "Карасай",
-    subject: "ИП " + "\"" + "Алтын" + "\"",
-    bin: "990440102933",
-    object: "Складской комплекс",
-    article: "ст. 409 ч.1",
-    violation: "Не проведена эвакуационная тренировка",
-    inspector: "Н. Ермекова",
-    fine: 120000,
-    status: "Оплачено",
-    dueDate: "2024-02-05",
-    note: "Оплата подтверждена 03.02.2024",
-  },
-  {
-    id: "AP-2024-003",
-    date: "2024-02-01",
-    protocolNumber: "АП-08/24",
-    region: "г. Алматы",
-    district: "Алмалы",
-    subject: "АО " + "\"" + "КазТех" + "\"",
-    bin: "070540005644",
-    object: "ЦОД " + "\"" + "Медеу" + "\"",
-    article: "ст. 410 ч.3",
-    violation: "Отсутствует система дымоудаления на 3 этаже",
-    inspector: "Ж. Муратов",
-    fine: 450000,
-    status: "Просрочено",
-    dueDate: "2024-02-20",
-    note: "Назначено административное взыскание",
-  },
-  {
-    id: "AP-2024-004",
-    date: "2024-02-11",
-    protocolNumber: "АП-12/24",
-    region: "г. Шымкент",
-    district: "Енбекши",
-    subject: "ТОО " + "\"" + "ЮгСтрой" + "\"",
-    bin: "060330004812",
-    object: "ЖК " + "\"" + "Самал" + "\"",
-    article: "ст. 409 ч.2",
-    violation: "Частично перекрыты эвакуационные выходы",
-    inspector: "С. Садырбек",
-    fine: 180000,
-    status: "В работе",
-    dueDate: "2024-03-05",
-    note: "Выдано предписание",
-  },
-  {
-    id: "AP-2024-005",
-    date: "2024-02-18",
-    protocolNumber: "АП-15/24",
-    region: "Карагандинская область",
-    district: "Темиртау",
-    subject: "ГКП " + "\"" + "ТЭЦ-2" + "\"",
-    bin: "050110020312",
-    object: "Производственный блок",
-    article: "ст. 410 ч.1",
-    violation: "Не обновлены планы эвакуации",
-    inspector: "Р. Нургалиев",
-    fine: 98000,
-    status: "Оплачено",
-    dueDate: "2024-03-01",
-    note: "Оплата 27.02.2024",
-  },
+type AdminCase = {
+  id: string;
+  inspectionId?: string | null;
+  number: string;
+  caseDate: string;
+  type: "protocol" | "resolution" | "appeal" | "other";
+  status: "opened" | "in_review" | "resolved" | "closed" | "canceled";
+  region?: string | null;
+  district?: string | null;
+  bin?: string | null;
+  iin?: string | null;
+  article?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+const periodOptions = [
+  { value: "all", label: "Все" },
+  { value: "day", label: "Сегодня" },
+  { value: "week", label: "Неделя" },
+  { value: "month", label: "Месяц" },
+  { value: "quarter", label: "Квартал" },
+  { value: "year", label: "Год" },
 ];
 
-const articles = ["Все", ...Array.from(new Set(entries.map((item) => item.article)))];
-const statuses = ["Все", "В работе", "Оплачено", "Просрочено"];
+const statusOptions = [
+  { value: "all", label: "Все" },
+  { value: "opened", label: "Открыто" },
+  { value: "in_review", label: "На рассмотрении" },
+  { value: "resolved", label: "Рассмотрено" },
+  { value: "closed", label: "Закрыто" },
+  { value: "canceled", label: "Отменено" },
+];
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "KZT",
-    maximumFractionDigits: 0,
-  }).format(value);
+const statusStyles: Record<AdminCase["status"], string> = {
+  opened: "bg-amber-500/15 text-amber-400",
+  in_review: "bg-sky-500/15 text-sky-400",
+  resolved: "bg-emerald-500/15 text-emerald-400",
+  closed: "bg-slate-500/15 text-slate-300",
+  canceled: "bg-rose-500/15 text-rose-400",
+};
+
+const statusLabels: Record<AdminCase["status"], string> = {
+  opened: "Открыто",
+  in_review: "На рассмотрении",
+  resolved: "Рассмотрено",
+  closed: "Закрыто",
+  canceled: "Отменено",
+};
+
+const typeLabels: Record<AdminCase["type"], string> = {
+  protocol: "Протокол",
+  resolution: "Постановление",
+  appeal: "Обжалование",
+  other: "Другое",
+};
+
+const toDateInput = (value: Date) => value.toISOString().slice(0, 10);
+
+const getPeriodRange = (period: string) => {
+  if (period === "all") {
+    return { dateFrom: "", dateTo: "" };
+  }
+
+  const now = new Date();
+  const dateTo = toDateInput(now);
+  const dateFrom = new Date(now);
+
+  switch (period) {
+    case "day":
+      break;
+    case "week":
+      dateFrom.setDate(now.getDate() - 7);
+      break;
+    case "month":
+      dateFrom.setMonth(now.getMonth() - 1);
+      break;
+    case "quarter":
+      dateFrom.setMonth(now.getMonth() - 3);
+      break;
+    case "year":
+      dateFrom.setFullYear(now.getFullYear() - 1);
+      break;
+    default:
+      return { dateFrom: "", dateTo: "" };
+  }
+
+  return { dateFrom: toDateInput(dateFrom), dateTo };
+};
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("ru-RU");
+};
+
+const normalizeValue = (value?: string | null) => value?.trim() || "—";
 
 export default function AdminPracticesPage() {
-  const [article, setArticle] = useState("Все");
-  const [status, setStatus] = useState("Все");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [period, setPeriod] = useState("all");
+  const [article, setArticle] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [region, setRegion] = useState("all");
+  const [district, setDistrict] = useState("all");
+  const [search, setSearch] = useState("");
 
-  const filtered = useMemo(() => {
-    return entries.filter((item) => {
-      if (article !== "Все" && item.article !== article) return false;
-      if (status !== "Все" && item.status !== status) return false;
-      if (dateFrom && item.date < dateFrom) return false;
-      if (dateTo && item.date > dateTo) return false;
-      return true;
+  const { data: adminCases = [], isLoading, error } = useQuery<AdminCase[]>({
+    queryKey: [
+      "/api/admin-cases",
+      { period, article, status, region, district, search },
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (period !== "all") params.set("period", period);
+      if (article !== "all") params.set("article", article);
+      if (status !== "all") params.set("status", status);
+      if (region !== "all") params.set("region", region);
+      if (district !== "all") params.set("district", district);
+      if (search.trim()) params.set("search", search.trim());
+
+      const { dateFrom, dateTo } = getPeriodRange(period);
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
+
+      const response = await fetch(`/api/admin-cases?${params.toString()}`);
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Ошибка загрузки административных дел");
+      }
+      return response.json();
+    },
+  });
+
+  const articleOptions = useMemo(() => {
+    const values = new Set<string>();
+    adminCases.forEach((item) => {
+      if (item.article) values.add(item.article);
     });
-  }, [article, status, dateFrom, dateTo]);
+    return ["all", ...Array.from(values).sort()];
+  }, [adminCases]);
+
+  const regionOptions = useMemo(() => {
+    const values = new Set<string>();
+    adminCases.forEach((item) => {
+      if (item.region) values.add(item.region);
+    });
+    return ["all", ...Array.from(values).sort()];
+  }, [adminCases]);
+
+  const districtOptions = useMemo(() => {
+    const values = new Set<string>();
+    adminCases.forEach((item) => {
+      if (item.district) values.add(item.district);
+    });
+    return ["all", ...Array.from(values).sort()];
+  }, [adminCases]);
 
   return (
     <div className="space-y-8 px-4 py-6 sm:px-6 lg:px-8">
@@ -123,17 +168,32 @@ export default function AdminPracticesPage() {
               Журнал административной практики
             </h1>
             <p className="text-sm text-muted-foreground">
-              Отбирайте протоколы по периоду, статье КоАП и статусу исполнения.
+              Отбирайте дела по периоду, статье КоАП, статусу и территории.
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
-            Записей: <span className="font-semibold text-foreground">{filtered.length}</span>
+            Записей: <span className="font-semibold text-foreground">{adminCases.length}</span>
           </div>
         </div>
       </header>
 
       <section className="rounded-2xl border border-border bg-card/40 p-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-4">
+        <div className="grid gap-4 lg:grid-cols-6">
+          <div>
+            <label className="text-xs text-muted-foreground">Период</label>
+            <select
+              value={period}
+              onChange={(event) => setPeriod(event.target.value)}
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            >
+              {periodOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="text-xs text-muted-foreground">Статья КоАП</label>
             <select
@@ -141,9 +201,9 @@ export default function AdminPracticesPage() {
               onChange={(event) => setArticle(event.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             >
-              {articles.map((item) => (
+              {articleOptions.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {item === "all" ? "Все" : item}
                 </option>
               ))}
             </select>
@@ -156,30 +216,51 @@ export default function AdminPracticesPage() {
               onChange={(event) => setStatus(event.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             >
-              {statuses.map((item) => (
-                <option key={item} value={item}>
-                  {item}
+              {statusOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground">Дата с</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
+            <label className="text-xs text-muted-foreground">Регион</label>
+            <select
+              value={region}
+              onChange={(event) => setRegion(event.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
+            >
+              {regionOptions.map((item) => (
+                <option key={item} value={item}>
+                  {item === "all" ? "Все" : item}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground">Дата по</label>
+            <label className="text-xs text-muted-foreground">Район</label>
+            <select
+              value={district}
+              onChange={(event) => setDistrict(event.target.value)}
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            >
+              {districtOptions.map((item) => (
+                <option key={item} value={item}>
+                  {item === "all" ? "Все" : item}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="lg:col-span-2">
+            <label className="text-xs text-muted-foreground">Поиск</label>
             <input
-              type="date"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Номер дела, БИН/ИИН, статья..."
               className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             />
           </div>
@@ -193,68 +274,72 @@ export default function AdminPracticesPage() {
       </section>
 
       <section className="overflow-x-auto rounded-2xl border border-border">
-        <table className="min-w-[1400px] w-full text-sm">
+        <table className="min-w-[1200px] w-full text-sm">
           <thead className="bg-muted/60 text-left text-muted-foreground">
             <tr>
               <th className="px-3 py-3">№</th>
-              <th className="px-3 py-3">Дата</th>
-              <th className="px-3 py-3">Протокол</th>
+              <th className="px-3 py-3">Номер дела</th>
+              <th className="px-3 py-3">Дата дела</th>
+              <th className="px-3 py-3">Тип</th>
+              <th className="px-3 py-3">Статья</th>
+              <th className="px-3 py-3">Статус</th>
               <th className="px-3 py-3">Регион</th>
               <th className="px-3 py-3">Район</th>
-              <th className="px-3 py-3">Субъект</th>
               <th className="px-3 py-3">БИН</th>
-              <th className="px-3 py-3">Объект</th>
-              <th className="px-3 py-3">Статья</th>
-              <th className="px-3 py-3">Нарушение</th>
-              <th className="px-3 py-3">Инспектор</th>
-              <th className="px-3 py-3">Сумма штрафа</th>
-              <th className="px-3 py-3">Статус</th>
-              <th className="px-3 py-3">Срок оплаты</th>
-              <th className="px-3 py-3">Примечание</th>
+              <th className="px-3 py-3">ИИН</th>
+              <th className="px-3 py-3">Проверка</th>
+              <th className="px-3 py-3">Создано</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {isLoading ? (
               <tr>
-                <td colSpan={15} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={12} className="px-4 py-10 text-center text-muted-foreground">
+                  Загрузка данных...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={12} className="px-4 py-10 text-center text-rose-400">
+                  Не удалось загрузить административные дела. Попробуйте обновить страницу.
+                </td>
+              </tr>
+            ) : adminCases.length === 0 ? (
+              <tr>
+                <td colSpan={12} className="px-4 py-10 text-center text-muted-foreground">
                   По выбранным фильтрам записи не найдены.
                 </td>
               </tr>
             ) : (
-              filtered.map((item, index) => (
+              adminCases.map((item, index) => (
                 <tr
                   key={item.id}
                   className="border-t border-border/60 hover:bg-muted/30"
                 >
                   <td className="px-3 py-2 text-muted-foreground">{index + 1}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.date}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.protocolNumber}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.region}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.district}</td>
-                  <td className="px-3 py-2">{item.subject}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.bin}</td>
-                  <td className="px-3 py-2">{item.object}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.article}</td>
-                  <td className="px-3 py-2 max-w-[260px]">
-                    <span className="line-clamp-2">{item.violation}</span>
+                  <td className="px-3 py-2 whitespace-nowrap font-medium">
+                    {normalizeValue(item.number)}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.inspector}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{formatCurrency(item.fine)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.caseDate)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {typeLabels[item.type]}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {normalizeValue(item.article)}
+                  </td>
                   <td className="px-3 py-2">
                     <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        item.status === "Оплачено"
-                          ? "bg-emerald-500/15 text-emerald-400"
-                          : item.status === "Просрочено"
-                          ? "bg-rose-500/15 text-rose-400"
-                          : "bg-amber-500/15 text-amber-400"
-                      }`}
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${statusStyles[item.status]}`}
                     >
-                      {item.status}
+                      {statusLabels[item.status]}
                     </span>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">{item.dueDate}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{item.note}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{normalizeValue(item.region)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{normalizeValue(item.district)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{normalizeValue(item.bin)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{normalizeValue(item.iin)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{normalizeValue(item.inspectionId)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.createdAt)}</td>
                 </tr>
               ))
             )}
