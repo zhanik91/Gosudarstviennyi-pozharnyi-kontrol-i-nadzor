@@ -13,20 +13,6 @@ type PrescriptionStatus = "issued" | "in_progress" | "fulfilled" | "overdue" | "
 type MeasureStatus = "draft" | "issued" | "in_progress" | "completed" | "canceled";
 type MeasureType = "warning" | "order" | "fine" | "suspension" | "other";
 
-type InspectionItem = {
-  id: string;
-  number: string;
-  inspectionDate: string;
-  type: InspectionType;
-  status: InspectionStatus;
-  region: string | null;
-  district: string | null;
-  bin: string | null;
-  iin: string | null;
-  subjectName: string | null;
-  address: string | null;
-};
-
 type PrescriptionItem = {
   id: string;
   inspectionId: string;
@@ -533,8 +519,6 @@ export default function ControlSupervisionPage() {
     setInspectionDistrict(scopedDistrict);
     setPrescriptionRegion(scopedRegion);
     setPrescriptionDistrict(scopedDistrict);
-    setInspectionRegion(scopedRegion);
-    setInspectionDistrict(scopedDistrict);
     setMeasureRegion(scopedRegion);
     setMeasureDistrict(scopedDistrict);
     setReportRegion(scopedRegion);
@@ -694,7 +678,7 @@ export default function ControlSupervisionPage() {
     period: reportPeriod,
   }), [reportDistrict, reportRegion, reportStatus, reportDateFrom, reportDateTo, reportPeriod]);
 
-  const { data: inspections = [], isLoading: isLoadingInspections } = useQuery<any[]>({
+  const { data: inspectionsData = [], isLoading: isLoadingInspections } = useQuery<any[]>({
     queryKey: ['/api/inspections', inspectionQuery],
     queryFn: async () => {
       const res = await fetch(`/api/inspections${inspectionQuery ? `?${inspectionQuery}` : ""}`, {
@@ -927,7 +911,7 @@ export default function ControlSupervisionPage() {
     setInspectionDateFrom("");
     setInspectionDateTo("");
     setInspectionSearch("");
-    setInspectionNumberFilter("");
+    setInspectionNumber("");
   };
 
   const resetMeasureFilters = () => {
@@ -1191,7 +1175,7 @@ export default function ControlSupervisionPage() {
           <nav className="flex space-x-8 overflow-x-auto">
             {[
               { id: "registry", label: "📋 Реестр объектов" },
-              { id: "inspections", label: "📓 Журнал проверок" },
+              { id: "inspections", label: "📘 Журнал проверок" },
               { id: "preventive", label: "🧾 Списки проверок" },
               { id: "measures", label: "⚖️ Меры ОР" },
               { id: "reports", label: "📊 Отчёты" },
@@ -1408,12 +1392,35 @@ export default function ControlSupervisionPage() {
 
         {activeTab === "inspections" && (
           <>
-            <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
                 Всего проверок:&nbsp;
                 <span className="font-semibold">
-                  {isLoadingInspections ? "Загрузка..." : inspections.length}
+                  {isLoadingInspections ? "Загрузка..." : inspectionsRows.length}
                 </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {canEdit && (
+                  <button
+                    className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium shadow hover:bg-blue-500"
+                    onClick={() => {
+                      setEditingInspectionId(null);
+                      setInspectionForm({ ...blankInspection });
+                      setInspectionErrors({});
+                      setOpenInspectionForm(true);
+                    }}
+                    type="button"
+                  >
+                    ➕ Добавить проверку
+                  </button>
+                )}
+                <button
+                  className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500"
+                  onClick={exportInspectionsXLSX}
+                  type="button"
+                >
+                  ⬇️ Экспорт ({inspectionsRows.length})
+                </button>
               </div>
             </div>
 
@@ -1460,15 +1467,15 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Вид проверки</label>
+                  <label className="text-xs text-slate-400">Тип проверки</label>
                   <select
                     value={inspectionType}
                     onChange={(e) => setInspectionType(e.target.value)}
                     className="block min-w-[200px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   >
                     <option value="Все">Все</option>
-                    {INSPECTION_TYPES.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                    {INSPECTION_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
                     ))}
                   </select>
                 </div>
@@ -1493,7 +1500,7 @@ export default function ControlSupervisionPage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-wrap gap-3">
                 <div>
                   <label className="text-xs text-slate-400">Номер проверки</label>
                   <input
@@ -1503,7 +1510,7 @@ export default function ControlSupervisionPage() {
                     className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   />
                 </div>
-                <div>
+                <div className="flex-1 min-w-[240px]">
                   <label className="text-xs text-slate-400">Поиск: номер / БИН / ИИН / субъект / адрес</label>
                   <div className="relative">
                     <input
@@ -1533,39 +1540,91 @@ export default function ControlSupervisionPage() {
                 <thead className="bg-slate-900/60">
                   <tr className="text-left text-slate-300">
                     <th className="px-3 py-3">№</th>
-                    <th className="px-3 py-3">Дата</th>
-                    <th className="px-3 py-3">Номер</th>
-                    <th className="px-3 py-3">Вид</th>
+                    <th className="px-3 py-3">Номер проверки</th>
+                    <th className="px-3 py-3">Дата проверки</th>
+                    <th className="px-3 py-3">Тип</th>
                     <th className="px-3 py-3">Статус</th>
-                    <th className="px-3 py-3">Субъект</th>
-                    <th className="px-3 py-3">БИН/ИИН</th>
+                    <th className="px-3 py-3">№ проверки УКПСиСУ</th>
+                    <th className="px-3 py-3">Дата регистрации УКПСиСУ</th>
+                    <th className="px-3 py-3">Назначивший орган</th>
+                    <th className="px-3 py-3">Орган регистрации</th>
+                    <th className="px-3 py-3">Вид проверки</th>
+                    <th className="px-3 py-3">Проверяемые объекты</th>
+                    <th className="px-3 py-3">Основание</th>
+                    <th className="px-3 py-3">Сроки проведения</th>
+                    <th className="px-3 py-3">Сроки продления</th>
+                    <th className="px-3 py-3">Даты приостановления/возобновления</th>
+                    <th className="px-3 py-3">Фактическая дата начала</th>
+                    <th className="px-3 py-3">Фактическая дата завершения</th>
+                    <th className="px-3 py-3">Результат</th>
+                    <th className="px-3 py-3">Кол-во нарушений</th>
+                    <th className="px-3 py-3">Крайний срок устранения</th>
+                    <th className="px-3 py-3">Дата регистрации талона</th>
                     <th className="px-3 py-3">Регион</th>
-                    <th className="px-3 py-3">Район</th>
-                    <th className="px-3 py-3">Адрес/объект</th>
+                    <th className="px-3 py-3">Район/город</th>
+                    <th className="px-3 py-3">БИН</th>
+                    <th className="px-3 py-3">ИИН</th>
+                    <th className="px-3 py-3">Субъект</th>
+                    <th className="px-3 py-3">Адрес</th>
+                    {canEdit && <th className="px-3 py-3">Действия</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {isLoadingInspections ? (
-                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
-                  ) : inspections.length === 0 ? (
-                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
-                  ) : inspections.map((item, idx) => {
+                    <tr>
+                      <td colSpan={canEdit ? 28 : 27} className="px-3 py-10 text-center text-slate-400">
+                        Загрузка...
+                      </td>
+                    </tr>
+                  ) : inspectionsRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={canEdit ? 28 : 27} className="px-3 py-10 text-center text-slate-400">
+                        Данных нет
+                      </td>
+                    </tr>
+                  ) : inspectionsRows.map((item, idx) => {
                     const statusLabel = INSPECTION_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
                     const typeLabel = INSPECTION_TYPES.find((t) => t.value === item.type)?.label ?? item.type;
                     return (
                       <tr key={item.id} className="border-t border-slate-800 hover:bg-slate-900/40">
                         <td className="px-3 py-2">{idx + 1}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.inspectionDate)}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.number}</td>
-                        <td className="px-3 py-2">{typeLabel}</td>
-                        <td className="px-3 py-2">
-                          <span className="rounded bg-blue-500/20 px-2 py-1 text-blue-300">{statusLabel}</span>
-                        </td>
-                        <td className="px-3 py-2">{item.subjectName || "—"}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{item.bin || item.iin || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.inspectionDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{typeLabel}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{statusLabel}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.ukpsisuCheckNumber || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.ukpsisuRegistrationDate)}</td>
+                        <td className="px-3 py-2">{item.assigningAuthority || "—"}</td>
+                        <td className="px-3 py-2">{item.registrationAuthority || "—"}</td>
+                        <td className="px-3 py-2">{item.inspectionKind || "—"}</td>
+                        <td className="px-3 py-2">{item.inspectedObjects || "—"}</td>
+                        <td className="px-3 py-2">{item.basis || "—"}</td>
+                        <td className="px-3 py-2">{item.inspectionPeriod || "—"}</td>
+                        <td className="px-3 py-2">{item.extensionPeriod || "—"}</td>
+                        <td className="px-3 py-2">{item.suspensionResumptionDates || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.actualStartDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.actualEndDate)}</td>
+                        <td className="px-3 py-2">{item.result || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.violationsCount ?? "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.violationsDeadline)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.ticketRegistrationDate)}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.region || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.district || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.bin || "—"}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{item.iin || "—"}</td>
+                        <td className="px-3 py-2">{item.subjectName || "—"}</td>
                         <td className="px-3 py-2">{item.address || "—"}</td>
+                        {canEdit && (
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <button
+                              className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                              onClick={() => onEditInspection(item.id)}
+                              type="button"
+                            >
+                              Редактировать
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

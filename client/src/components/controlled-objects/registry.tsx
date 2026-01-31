@@ -42,8 +42,7 @@ type InspectionFormState = {
   registrationDate: string;
   authority: string;
   inspectionType: string;
-  bin: string;
-  iin: string;
+  binIin: string;
   subject: string;
   inspectedObjects: string;
   basis: string;
@@ -108,8 +107,7 @@ export default function ControlledObjectsRegistry() {
         registrationDate: today,
         authority: '',
         inspectionType: 'scheduled',
-        bin: '',
-        iin: '',
+        binIin: '',
         subject: object?.name || '',
         inspectedObjects: object ? `${object.name}${object.address ? `, ${object.address}` : ''}` : '',
         basis: '',
@@ -212,14 +210,19 @@ export default function ControlledObjectsRegistry() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          number: inspectionForm.ukpsisNumber,
-          inspectionDate: inspectionForm.registrationDate,
-          type: inspectionForm.inspectionType,
+          ukpsisNumber: inspectionForm.ukpsisNumber,
+          registrationDate: inspectionForm.registrationDate,
+          authority: inspectionForm.authority,
+          inspectionType: inspectionForm.inspectionType,
+          binIin: inspectionForm.binIin,
+          subject: inspectionForm.subject,
+          inspectedObjects: inspectionForm.inspectedObjects,
+          basis: inspectionForm.basis,
+          startDate: inspectionForm.startDate,
+          endDate: inspectionForm.endDate,
           status: inspectionForm.status,
-          bin: inspectionForm.bin || null,
-          iin: inspectionForm.iin || null,
-          subjectName: inspectionForm.subject,
-          address: inspectionForm.inspectedObjects,
+          controlObjectId: inspectionTarget?.id,
+          controlObjectName: inspectionTarget?.name,
         }),
       });
 
@@ -557,21 +560,12 @@ export default function ControlledObjectsRegistry() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">БИН</label>
+                <label className="text-sm font-medium">БИН/ИИН</label>
                 <Input
-                  value={inspectionForm.bin}
-                  onChange={handleInspectionChange("bin")}
-                  placeholder="Введите БИН"
-                  data-testid="input-bin"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">ИИН</label>
-                <Input
-                  value={inspectionForm.iin}
-                  onChange={handleInspectionChange("iin")}
-                  placeholder="Введите ИИН"
-                  data-testid="input-iin"
+                  value={inspectionForm.binIin}
+                  onChange={handleInspectionChange("binIin")}
+                  placeholder="Введите БИН или ИИН"
+                  data-testid="input-bin-iin"
                 />
               </div>
               <div className="space-y-2">
