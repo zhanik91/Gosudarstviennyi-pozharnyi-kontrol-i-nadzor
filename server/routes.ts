@@ -64,6 +64,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/summary', isAuthenticated, reportController.getReportsDashboard);
   app.get('/api/stats/dashboard', reportController.getDashboardStats);
   app.get('/api/reports/validate', isAuthenticated, reportController.validateReports);
+  app.get('/api/reports/admin-cases', isAuthenticated, async (req: any, res) => {
+    try {
+      const { period, dateFrom, dateTo, region, district, article } = req.query;
+      const scopeUser = toScopeUser(req.user);
+
+      const allowedPeriods = ['quarter', 'year'];
+      const periodValue = allowedPeriods.includes(period as string) ? (period as string) : 'quarter';
+      const periodExpression = sql`date_trunc(${sql.raw(`'${periodValue}'`)}, ${adminCases.caseDate})`;
+
+      const conditions = [];
+      const scopeCondition = applyScopeCondition(scopeUser, adminCases.region, adminCases.district);
+      if (scopeCondition) {
+        conditions.push(scopeCondition);
+      }
+
+      if (region && region !== 'all') {
+        conditions.push(eq(adminCases.region, region as string));
+      }
+      if (district && district !== 'all') {
+        conditions.push(eq(adminCases.district, district as string));
+      }
+      if (dateFrom) {
+        conditions.push(gte(adminCases.caseDate, new Date(dateFrom as string)));
+      }
+      if (dateTo) {
+        conditions.push(lte(adminCases.caseDate, new Date(dateTo as string)));
+      }
+      if (article && article !== 'all') {
+        const articleValues = typeof article === 'string'
+          ? article.split(',').map((value) => value.trim()).filter(Boolean)
+          : Array.isArray(article) ? article : [];
+        if (articleValues.length === 1) {
+          conditions.push(eq(adminCases.article, articleValues[0]));
+        } else if (articleValues.length > 1) {
+          conditions.push(inArray(adminCases.article, articleValues));
+        }
+      }
+
+      let query = db.select({
+        period: periodExpression,
+        article: adminCases.article,
+        totalCount: sql<number>`count(*)`,
+        totalFines: sql<number>`coalesce(sum(${adminCases.fineAmount}), 0)`,
+        paidVoluntaryCount: sql<number>`sum(case when ${adminCases.paymentType} = 'voluntary' then 1 else 0 end)`,
+        paidForcedCount: sql<number>`sum(case when ${adminCases.paymentType} = 'forced' then 1 else 0 end)`,
+        paidVoluntaryShare: sql<number>`coalesce(sum(case when ${adminCases.paymentType} = 'voluntary' then 1 else 0 end)::float / nullif(count(*), 0), 0)`,
+        paidForcedShare: sql<number>`coalesce(sum(case when ${adminCases.paymentType} = 'forced' then 1 else 0 end)::float / nullif(count(*), 0), 0)`,
+        warningsCount: sql<number>`sum(case when ${adminCases.outcome} = 'warning' then 1 else 0 end)`,
+        terminationsCount: sql<number>`sum(case when ${adminCases.outcome} = 'termination' then 1 else 0 end)`,
+        appealsCount: sql<number>`sum(case when ${adminCases.type} = 'appeal' then 1 else 0 end)`,
+      }).from(adminCases);
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const rows = await query
+        .groupBy(periodExpression, adminCases.article)
+        .orderBy(periodExpression, adminCases.article);
+      res.json(rows);
+    } catch (error) {
+      console.error('Error loading admin cases report:', error);
+      res.status(500).json({ message: 'Ошибка загрузки отчета по административным делам' });
+    }
+  });
 
   // === Экспорт ===
   app.get('/api/export/report', isAuthenticated, exportController.exportReport);
