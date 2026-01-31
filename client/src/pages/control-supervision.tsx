@@ -694,7 +694,7 @@ export default function ControlSupervisionPage() {
     period: reportPeriod,
   }), [reportDistrict, reportRegion, reportStatus, reportDateFrom, reportDateTo, reportPeriod]);
 
-  const { data: inspectionsData = [], isLoading: isLoadingInspections } = useQuery<any[]>({
+  const { data: inspections = [], isLoading: isLoadingInspections } = useQuery<any[]>({
     queryKey: ['/api/inspections', inspectionQuery],
     queryFn: async () => {
       const res = await fetch(`/api/inspections${inspectionQuery ? `?${inspectionQuery}` : ""}`, {
@@ -744,17 +744,6 @@ export default function ControlSupervisionPage() {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Ошибка загрузки предписаний');
-      return res.json();
-    },
-  });
-
-  const { data: inspections = [], isLoading: isLoadingInspections } = useQuery<InspectionItem[]>({
-    queryKey: ['/api/inspections', inspectionQuery],
-    queryFn: async () => {
-      const res = await fetch(`/api/inspections${inspectionQuery ? `?${inspectionQuery}` : ""}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Ошибка загрузки проверок');
       return res.json();
     },
   });
