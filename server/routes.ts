@@ -3,7 +3,7 @@ import { Router } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { adminCases, controlObjects, inspections, measures, prescriptions } from "@shared/schema";
+import { adminCases, controlObjects, incidents, inspections, measures, prescriptions } from "@shared/schema";
 import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
 import { incidentController } from "./controllers/incident.controller";
