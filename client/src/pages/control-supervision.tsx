@@ -299,6 +299,93 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * Рассчитывает дедлайн для меры оперативного реагирования (дата акта + 2 месяца)
+ * @param measureDate Дата принятия меры в формате YYYY-MM-DD
+ * @returns Дата дедлайна в формате YYYY-MM-DD, или null если measureDate невалидна
+ */
+function calculateMORDeadline(measureDate: string | null): string | null {
+  if (!measureDate) return null;
+
+  const date = new Date(measureDate);
+  if (isNaN(date.getTime())) return null;
+
+  // Добавляем 2 месяца
+  date.setMonth(date.getMonth() + 2);
+
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Определяет статус дедлайна меры и возвращает стили для визуальной индикации
+ * @param measureDate Дата принятия меры
+ * @returns Объект с информацией о статусе, цветом, иконкой и текстом
+ */
+function getMORDeadlineStatus(measureDate: string | null): {
+  status: 'overdue' | 'warning' | 'normal' | 'none';
+  colorClass: string;
+  icon: string;
+  text: string;
+  daysLeft: number | null;
+} {
+  if (!measureDate) {
+    return {
+      status: 'none',
+      colorClass: 'text-slate-500',
+      icon: '—',
+      text: 'Дата не указана',
+      daysLeft: null
+    };
+  }
+
+  const deadline = calculateMORDeadline(measureDate);
+  if (!deadline) {
+    return {
+      status: 'none',
+      colorClass: 'text-slate-500',
+      icon: '—',
+      text: 'Некорректная дата',
+      daysLeft: null
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadlineDate = new Date(deadline);
+  deadlineDate.setHours(0, 0, 0, 0);
+
+  const diffTime = deadlineDate.getTime() - today.getTime();
+  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) {
+    return {
+      status: 'overdue',
+      colorClass: 'text-red-500',
+      icon: '🔴',
+      text: `Просрочено на ${Math.abs(daysLeft)} дн.`,
+      daysLeft
+    };
+  }
+
+  if (daysLeft <= 7) {
+    return {
+      status: 'warning',
+      colorClass: 'text-yellow-500',
+      icon: '⏰',
+      text: `Осталось ${daysLeft} дн.`,
+      daysLeft
+    };
+  }
+
+  return {
+    status: 'normal',
+    colorClass: 'text-green-500',
+    icon: '✅',
+    text: `Осталось ${daysLeft} дн.`,
+    daysLeft
+  };
+}
+
 export default function ControlSupervisionPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("registry");
@@ -1734,6 +1821,222 @@ export default function ControlSupervisionPage() {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </section>
+          </>
+        )}
+
+        {activeTab === "measures" && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+                Всего мер:&nbsp;
+                <span className="font-semibold">
+                  {isLoadingMeasures ? "Загрузка..." : measuresData.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Фильтры для мер */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">Регион</label>
+                  <select
+                    value={measureRegion}
+                    onChange={(e) => { setMeasureRegion(e.target.value); setMeasureDistrict("Все"); }}
+                    disabled={shouldLockRegion}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    {isMchsUser && <option>Все</option>}
+                    {availableRegions.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <select
+                    value={measureDistrict}
+                    onChange={(e) => setMeasureDistrict(e.target.value)}
+                    disabled={shouldLockDistrict}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    {(isMchsUser || isDchsUser) && <option>Все</option>}
+                    {getDistrictOptions(measureRegion).map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Тип меры</label>
+                  <select
+                    value={measureType}
+                    onChange={(e) => setMeasureType(e.target.value)}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option>Все</option>
+                    <option>Приостановление деятельности</option>
+                    <option>Запрет эксплуатации</option>
+                    <option>Эвакуация людей</option>
+                    <option>Отключение энергоснабжения</option>
+                    <option>Другое</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Статус</label>
+                  <select
+                    value={measureStatus}
+                    onChange={(e) => setMeasureStatus(e.target.value)}
+                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  >
+                    <option>Все</option>
+                    <option>Принято</option>
+                    <option>Исполняется</option>
+                    <option>Выполнено</option>
+                    <option>Отменено</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">Дата с</label>
+                  <input
+                    type="date"
+                    value={measureDateFrom}
+                    onChange={(e) => setMeasureDateFrom(e.target.value)}
+                    className="block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">Дата до</label>
+                  <input
+                    type="date"
+                    value={measureDateTo}
+                    onChange={(e) => setMeasureDateTo(e.target.value)}
+                    className="block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400">№ Проверки</label>
+                  <input
+                    type="text"
+                    value={measureInspectionNumber}
+                    onChange={(e) => setMeasureInspectionNumber(e.target.value)}
+                    placeholder="Введите номер..."
+                    className="block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="flex-1 min-w-[200px]">
+                  <label className="text-xs text-slate-400">Поиск</label>
+                  <input
+                    type="text"
+                    value={measureSearch}
+                    onChange={(e) => setMeasureSearch(e.target.value)}
+                    placeholder="Номер, описание..."
+                    className="block w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                  onClick={() => {
+                    setMeasureRegion("Все");
+                    setMeasureDistrict("Все");
+                    setMeasureStatus("Все");
+                    setMeasureType("Все");
+                    setMeasureDateFrom("");
+                    setMeasureDateTo("");
+                    setMeasureSearch("");
+                    setMeasureInspectionNumber("");
+                  }}
+                  type="button"
+                >
+                  Очистить фильтры
+                </button>
+              </div>
+            </section>
+
+            {/* Таблица мер */}
+            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-900/60">
+                  <tr className="text-left text-slate-300">
+                    <th className="px-3 py-3">№</th>
+                    <th className="px-3 py-3">Тип меры</th>
+                    <th className="px-3 py-3">Номер акта</th>
+                    <th className="px-3 py-3">Дата принятия</th>
+                    <th className="px-3 py-3">Дедлайн (2 месяца)</th>
+                    <th className="px-3 py-3">Статус дедлайна</th>
+                    <th className="px-3 py-3">Описание</th>
+                    <th className="px-3 py-3">Статус</th>
+                    <th className="px-3 py-3">№ Проверки</th>
+                    <th className="px-3 py-3">Регион</th>
+                    <th className="px-3 py-3">Район</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingMeasures ? (
+                    <tr>
+                      <td colSpan={11} className="px-3 py-8 text-center text-slate-400">
+                        Загрузка мер...
+                      </td>
+                    </tr>
+                  ) : measuresData.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="px-3 py-8 text-center text-slate-400">
+                        Меры не найдены
+                      </td>
+                    </tr>
+                  ) : (
+                    measuresData.map((measure, index) => {
+                      const deadlineInfo = getMORDeadlineStatus(measure.measureDate);
+                      return (
+                        <tr
+                          key={measure.id || index}
+                          className="border-t border-slate-800 hover:bg-slate-900/40"
+                        >
+                          <td className="px-3 py-2 whitespace-nowrap">{index + 1}</td>
+                          <td className="px-3 py-2">{measure.type || "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">{measure.number || "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {measure.measureDate ? new Date(measure.measureDate).toLocaleDateString('ru-RU') : "—"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {deadlineInfo.deadline
+                              ? new Date(deadlineInfo.deadline).toLocaleDateString('ru-RU')
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <div
+                              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium"
+                              style={{
+                                backgroundColor: `${deadlineInfo.color}20`,
+                                color: deadlineInfo.color,
+                                border: `1px solid ${deadlineInfo.color}40`
+                              }}
+                            >
+                              <span>{deadlineInfo.icon}</span>
+                              <span>{deadlineInfo.text}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 max-w-xs truncate" title={measure.description}>
+                            {measure.description || "—"}
+                          </td>
+                          <td className="px-3 py-2">{measure.status || "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">{measure.inspectionNumber || "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">{measure.region || "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">{measure.district || "—"}</td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </section>
