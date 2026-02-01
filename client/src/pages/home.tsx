@@ -5,7 +5,7 @@ import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
-import { Shield, Building, Activity, Users, FileCheck } from "lucide-react";
+import { Shield, Building, Activity, Users, FileCheck, Scale, BookOpen, Calculator, Bot } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 export default function Home() {
@@ -74,7 +74,7 @@ export default function Home() {
           </div>
 
           {/* Module Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <ModuleCard
               icon={Shield}
               iconBg="bg-primary/20"
@@ -121,6 +121,71 @@ export default function Home() {
               secondaryActions={[
                 { label: "Аудиты", href: "/journals-lists?tab=audits" },
                 { label: "ППС", href: "/journals-lists?tab=pps" }
+              ]}
+            />
+
+            <ModuleCard
+              icon={Scale}
+              iconBg="bg-purple-500/20"
+              iconColor="text-purple-400"
+              title="Административная практика"
+              description="Проверки, предписания, меры воздействия и административные дела"
+              primaryAction={{
+                label: "Открыть модуль",
+                href: "/admin-practice"
+              }}
+              secondaryActions={[
+                { label: "Проверки", href: "/admin-practice?tab=inspections" },
+                { label: "Предписания", href: "/admin-practice?tab=prescriptions" },
+                { label: "Адм. дела", href: "/admin-practice?tab=cases" }
+              ]}
+            />
+
+            <ModuleCard
+              icon={BookOpen}
+              iconBg="bg-blue-500/20"
+              iconColor="text-blue-400"
+              title="Нормативные документы"
+              description="База актуальных нормативно-правовых актов и законодательства РК"
+              primaryAction={{
+                label: "Открыть модуль",
+                href: "/normative-documents"
+              }}
+              secondaryActions={[
+                { label: "Законы РК", href: "/normative-documents?category=laws" },
+                { label: "Приказы МЧС", href: "/normative-documents?category=orders" }
+              ]}
+            />
+
+            <ModuleCard
+              icon={Calculator}
+              iconBg="bg-emerald-500/20"
+              iconColor="text-emerald-400"
+              title="Калькуляторы"
+              description="Инструменты расчета штрафов, категорий риска и других показателей"
+              primaryAction={{
+                label: "Открыть модуль",
+                href: "/calculators"
+              }}
+              secondaryActions={[
+                { label: "Штрафы", href: "/calculators?tool=fines" },
+                { label: "Категория риска", href: "/calculators?tool=risk" }
+              ]}
+            />
+
+            <ModuleCard
+              icon={Bot}
+              iconBg="bg-cyan-500/20"
+              iconColor="text-cyan-400"
+              title="АИ ассистент"
+              description="Интеллектуальный помощник для работы с документами и консультаций"
+              primaryAction={{
+                label: "Открыть модуль",
+                href: "/ai-assistant"
+              }}
+              secondaryActions={[
+                { label: "Чат", href: "/ai-assistant?tab=chat" },
+                { label: "Поиск по документам", href: "/ai-assistant?tab=search" }
               ]}
             />
           </div>
