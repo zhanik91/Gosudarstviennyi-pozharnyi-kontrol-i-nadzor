@@ -42,8 +42,11 @@ export function useReportForm<T>({
       if (region) {
         params.set("region", region);
       }
+      console.log("[useReportForm] Fetching:", `/api/reports?${params.toString()}`);
       const response = await fetch(`/api/reports?${params.toString()}`);
-      return response.json();
+      const json = await response.json();
+      console.log("[useReportForm] Response:", json);
+      return json;
     },
     enabled: Boolean(period),
   });
@@ -55,10 +58,14 @@ export function useReportForm<T>({
   }, [formId, period, region]);
 
   useEffect(() => {
+    console.log("[useReportForm] useEffect data:", data);
     if (!data?.data) {
+      console.log("[useReportForm] No data.data, returning");
       return;
     }
+    console.log("[useReportForm] Extracting data from:", data.data);
     const computed = extractData(data.data);
+    console.log("[useReportForm] Computed data:", computed);
     setReportData(computed);
     setLoaded(true);
     initialLoadRef.current = true;
