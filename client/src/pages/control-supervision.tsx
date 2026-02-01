@@ -1371,7 +1371,7 @@ export default function ControlSupervisionPage() {
               { id: "registry", label: "📋 Реестр объектов" },
               { id: "inspections", label: "📘 Журнал проверок" },
               { id: "preventive", label: "🧾 Списки проверок" },
-              { id: "measures", label: "⚖️ Меры ОР" },
+              { id: "measures", label: "⚖️ МОР" },
               { id: "reports", label: "📊 Отчёты" },
             ].map((tab) => (
               <button
