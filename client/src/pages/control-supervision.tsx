@@ -90,6 +90,20 @@ type InspectionRow = {
   address: string | null;
 };
 
+type ResultTicket = {
+  id: string;
+  inspectionId: string;
+  ticketNumber: string;
+  registrationDate: string;
+  violationsFound: boolean;
+  violationsDescription: string;
+  correctiveActions: string;
+  deadline: string | null;
+  responsible: string;
+  notes: string;
+};
+
+
 /** ===== Постоянные ===== */
 // Данные хранятся в БД через API /api/control-objects
 
@@ -588,6 +602,11 @@ export default function ControlSupervisionPage() {
   const [inspectionErrors, setInspectionErrors] = useState<Record<string, string>>({});
   const [editingInspectionId, setEditingInspectionId] = useState<string | null>(null);
   const [inspectionForm, setInspectionForm] = useState<InspectionRow>({ ...blankInspection });
+
+  //  Result Tickets состояние
+  const [openTicketModal, setOpenTicketModal] = useState(false);
+  const [selectedInspectionIdForTicket, setSelectedInspectionIdForTicket] = useState<string | null>(null);
+  const [ticketsData, setTicketsData] = useState<ResultTicket[]>([]);
 
   // импорт/экспорт
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1569,6 +1588,51 @@ export default function ControlSupervisionPage() {
                               Субъективные
                             </button>
                             {canEdit && (
+                              <button
+                                className="rounded-lg bg-blue-600 px-2 py-1 text-xs hover:bg-blue-500"
+                                title="Создать проверку на основе этого объекта"
+                                onClick={() => {
+                                  // Автозаполнение формы проверки данными из объекта
+                                  setInspectionForm({
+                                    number: "",
+                                    inspectionDate: new Date().toISOString().split("T")[0],
+                                    type: "planned",
+                                    status: "in_progress",
+                                    ukpsisuCheckNumber: "",
+                                    ukpsisuRegistrationDate: "",
+                                    assigningAuthority: "",
+                                    registrationAuthority: "",
+                                    inspectionKind: "",
+                                    inspectedObjects: r.objectName,
+                                    basis: "",
+                                    inspectionPeriod: "",
+                                    extensionPeriod: "",
+                                    suspensionResumptionDates: "",
+                                    actualStartDate: "",
+                                    actualEndDate: "",
+                                    result: "",
+                                    violationsCount: 0,
+                                    violationsDeadline: "",
+                                    ticketRegistrationDate: "",
+                                    region: r.region,
+                                    district: r.district,
+                                    bin: r.subjectBIN,
+                                    iin: "",
+                                    subjectName: r.subjectName,
+                                    address: r.address,
+                                    relatedObjectId: r.id, // Связь с объектом
+                                  });
+                                  setEditingInspectionId(null);
+                                  setInspectionErrors({});
+                                  setOpenInspectionForm(true);
+                                  // Переключаемся на вкладку "Проверки"
+                                  setActiveTab("inspections");
+                                }}
+                              >
+                                🔍 Создать проверку
+                              </button>
+                            )}
+                            {canEdit && (
                               <button className="rounded-lg bg-red-600 px-2 py-1 text-xs hover:bg-red-500"
                                 onClick={() => setConfirmId(r.id)}>Удалить</button>
                             )}
@@ -1759,19 +1823,20 @@ export default function ControlSupervisionPage() {
                     <th className="px-3 py-3">ИИН</th>
                     <th className="px-3 py-3">Субъект</th>
                     <th className="px-3 py-3">Адрес</th>
+                    <th className="px-3 py-3">Связи</th>
                     {canEdit && <th className="px-3 py-3">Действия</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {isLoadingInspections ? (
                     <tr>
-                      <td colSpan={canEdit ? 28 : 27} className="px-3 py-10 text-center text-slate-400">
+                      <td colSpan={canEdit ? 29 : 28} className="px-3 py-10 text-center text-slate-400">
                         Загрузка...
                       </td>
                     </tr>
                   ) : inspectionsRows.length === 0 ? (
                     <tr>
-                      <td colSpan={canEdit ? 28 : 27} className="px-3 py-10 text-center text-slate-400">
+                      <td colSpan={canEdit ? 29 : 28} className="px-3 py-10 text-center text-slate-400">
                         Данных нет
                       </td>
                     </tr>
@@ -1807,15 +1872,78 @@ export default function ControlSupervisionPage() {
                         <td className="px-3 py-2 whitespace-nowrap">{item.iin || "—"}</td>
                         <td className="px-3 py-2">{item.subjectName || "—"}</td>
                         <td className="px-3 py-2">{item.address || "—"}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              // Подсчет связанных предписаний
+                              const linkedPrescriptions = prescriptionsData.filter(
+                                (p) => p.inspectionId === item.id
+                              ).length;
+                              // Подсчет связанных мер
+                              const linkedMeasures = measuresData.filter(
+                                (m) => m.relatedInspectionId === item.id
+                              ).length;
+                              // TODO: Добавить подсчет дел (когда будет API)
+                              const linkedCases = 0;
+
+                              return (
+                                <>
+                                  {linkedPrescriptions > 0 && (
+                                    <span
+                                      className="cursor-help text-lg"
+                                      title={`Предписаний: ${linkedPrescriptions}`}
+                                    >
+                                      📋
+                                    </span>
+                                  )}
+                                  {linkedMeasures > 0 && (
+                                    <span
+                                      className="cursor-help text-lg"
+                                      title={`МОР: ${linkedMeasures}`}
+                                    >
+                                      ⚖️
+                                    </span>
+                                  )}
+                                  {linkedCases > 0 && (
+                                    <span
+                                      className="cursor-help text-lg"
+                                      title={`Админ. дел: ${linkedCases}`}
+                                    >
+                                      📁
+                                    </span>
+                                  )}
+                                  {linkedPrescriptions === 0 && linkedMeasures === 0 && linkedCases === 0 && (
+                                    <span className="text-slate-500 text-xs">—</span>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </td>
                         {canEdit && (
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <button
-                              className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                              onClick={() => onEditInspection(item.id)}
-                              type="button"
-                            >
-                              Редактировать
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                                onClick={() => onEditInspection(item.id)}
+                                type="button"
+                              >
+                                Редактировать
+                              </button>
+                              {item.status === 'completed' && (
+                                <button
+                                  className="rounded-lg bg-blue-600 px-2 py-1 text-xs hover:bg-blue-500"
+                                  onClick={() => {
+                                    setSelectedInspectionIdForTicket(item.id);
+                                    setOpenTicketModal(true);
+                                  }}
+                                  type="button"
+                                  title="Талон о результатах проверки"
+                                >
+                                  📋 Талон
+                                </button>
+                              )}
+                            </div>
                           </td>
                         )}
                       </tr>
@@ -3125,6 +3253,92 @@ export default function ControlSupervisionPage() {
           <div className="mt-5 flex items-center justify-end gap-3">
             <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenMORForm(false)}>Отмена</button>
             <button className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500" onClick={onSaveMOR}>Сохранитьацию МОР</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Модальное окно талона о результатах проверки */}
+      {openTicketModal && (
+        <Modal title="Талон о результатах проверки" onClose={() => setOpenTicketModal(false)}>
+          <div className="space-y-4">
+            <Field label="Номер талона">
+              <input
+                type="text"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                placeholder="Например: Т-123/2024"
+              />
+            </Field>
+            <Field label="Дата регистрации">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={todayISO()}
+              />
+            </Field>
+            <Field label="Выявлены нарушения?">
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="violations" value="yes" className="accent-orange-600" />
+                  <span className="text-sm">Да</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="violations" value="no" className="accent-orange-600" defaultChecked />
+                  <span className="text-sm">Нет</span>
+                </label>
+              </div>
+            </Field>
+            <Field label="Описание нарушений">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                rows={4}
+                placeholder="Опишите выявленные нарушения (если имеются)"
+              />
+            </Field>
+            <Field label="Корректирующие действия">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                rows={3}
+                placeholder="Укажите предписанные корректирующие действия"
+              />
+            </Field>
+            <Field label="Срок устранения">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+              />
+            </Field>
+            <Field label="Ответственное лицо">
+              <input
+                type="text"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                placeholder="ФИО ответственного лица"
+              />
+            </Field>
+            <Field label="Примечания">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                rows={2}
+                placeholder="Дополнительные примечания"
+              />
+            </Field>
+          </div>
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <button
+              className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+              onClick={() => setOpenTicketModal(false)}
+            >
+              Отмена
+            </button>
+            <button
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+              onClick={() => {
+                // TODO: Сохранить талон в базу данных
+                alert('Талон сохранен (функционал в разработке)');
+                setOpenTicketModal(false);
+              }}
+            >
+              💾 Сохранить талон
+            </button>
           </div>
         </Modal>
       )}
