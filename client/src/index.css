@@ -54,46 +54,50 @@
 }
 
 .light {
-  --background: hsl(210, 20%, 98%);
-  --foreground: hsl(220, 28%, 14%);
-  --card: hsl(210, 15%, 98%);
+  --background: hsl(220, 15%, 98%);         /* #FAFBFC - очень светлый, как на Dribbble */
+  --foreground: hsl(220, 30%, 14%);         /* Более контрастный текст */
+  --card: hsl(0, 0%, 100%);                  /* Чистый белый для карточек */
   --card-foreground: hsl(220, 28%, 14%);
-  --popover: hsl(0, 0%, 100%);
+  --popover: hsl(0, 0%, 100%);              /* Белый */
   --popover-foreground: hsl(220, 28%, 14%);
-  --primary: hsl(208, 95%, 61%);
+  --primary: hsl(247, 86%, 63%);           /* #6366F1 - современный фиолетовый */
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(210, 24%, 94%);
+  --secondary: hsl(220, 14%, 96%);         /* #F5F6F8 - очень светлый серый */
   --secondary-foreground: hsl(220, 25%, 20%);
-  --muted: hsl(210, 18%, 90%);
-  --muted-foreground: hsl(220, 18%, 30%);
-  --accent: hsl(210, 25%, 92%);
-  --accent-foreground: hsl(220, 30%, 16%);
-  --destructive: hsl(356, 91%, 54%);
+  --muted: hsl(220, 14%, 96%);             /* #F5F6F8 */
+  --muted-foreground: hsl(220, 18%, 36%);  /* Более читаемый */
+  --accent: hsl(199, 89%, 48%);            /* #06B6D4 - cyan акцент */
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);         /* #EF4444 - яркий красный */
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(210, 16%, 85%);
-  --input: hsl(210, 20%, 95%);
-  --ring: hsl(202, 89%, 53%);
-  --chart-1: hsl(208, 95%, 61%);
-  --chart-2: hsl(159, 100%, 36%);
-  --chart-3: hsl(42, 92%, 56%);
-  --chart-4: hsl(147, 78%, 42%);
-  --chart-5: hsl(341, 75%, 51%);
-  --sidebar: hsl(180, 7%, 97%);
+  --border: hsl(220, 13%, 91%);            /* #E8EAED - мягкие границы */
+  --input: hsl(220, 14%, 96%);             /* #F5F6F8 */
+  --ring: hsl(247, 86%, 63%);              /* Фиолетовый */
+  
+  /* Современные цвета для графиков */
+  --chart-1: hsl(247, 86%, 63%);           /* #6366F1 - purple */
+  --chart-2: hsl(142, 76%, 47%);           /* #22C55E - green */
+  --chart-3: hsl(38, 92%, 50%);            /* #F59E0B - amber */
+  --chart-4: hsl(199, 89%, 48%);           /* #06B6D4 - cyan */
+  --chart-5: hsl(0, 84%, 60%);             /* #EF4444 - red */
+  
+  --sidebar: hsl(0, 0%, 100%);             /* Белый */
   --sidebar-foreground: hsl(220, 25%, 12%);
-  --sidebar-primary: hsl(208, 95%, 61%);
+  --sidebar-primary: hsl(247, 86%, 63%);   /* Фиолетовый */
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
-  --sidebar-accent: hsl(211, 51%, 93%);
+  --sidebar-accent: hsl(220, 14%, 96%);     /* #F5F6F8 */
   --sidebar-accent-foreground: hsl(220, 25%, 18%);
-  --sidebar-border: hsl(205, 25%, 91%);
-  --sidebar-ring: hsl(202, 89%, 53%);
+  --sidebar-border: hsl(220, 13%, 91%);     /* #E8EAED */
+  --sidebar-ring: hsl(247, 86%, 63%);
 
+  /* Красивый градиент для фона */
   --portal-gradient:
-    radial-gradient(1100px 550px at 20% -15%, hsla(208, 95%, 61%, 0.12), transparent 60%),
-    radial-gradient(900px 520px at 80% -10%, hsla(35, 88%, 62%, 0.1), transparent 55%),
-    linear-gradient(180deg, hsl(210, 24%, 92%) 0%, hsl(210, 28%, 96%) 55%, hsl(0, 0%, 100%) 100%);
-  --portal-overlay: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
-    radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-  --portal-overlay-opacity: 0.06;
+    radial-gradient(1200px 600px at 20% -15%, hsla(247, 86%, 63%, 0.08), transparent 55%),
+    radial-gradient(950px 550px at 80% -10%, hsla(199, 89%, 48%, 0.06), transparent 50%),
+    linear-gradient(180deg, hsl(220, 15%, 98%) 0%, hsl(220, 18%, 99%) 50%, hsl(0, 0%, 100%) 100%);
+  --portal-overlay: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    radial-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  --portal-overlay-opacity: 0.4;
 }
 
 /* Decorative effects and helpers */

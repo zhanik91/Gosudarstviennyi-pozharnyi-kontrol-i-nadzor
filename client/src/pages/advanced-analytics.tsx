@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import Footer from '@/components/layout/footer';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
+// Современная палитра как на Dribbble
+const COLORS = ['#6366F1', '#22C55E', '#F59E0B', '#06B6D4', '#EF4444', '#C084FC'];
 
 export default function AdvancedAnalytics() {
   const [period, setPeriod] = useState('2024');
@@ -70,7 +71,7 @@ export default function AdvancedAnalytics() {
               Интерактивные графики и детальный анализ происшествий
             </p>
           </div>
-          
+
           <div className="flex gap-3">
             <div className="space-y-2">
               <Label>Период</Label>
@@ -81,7 +82,7 @@ export default function AdvancedAnalytics() {
                 className="w-36"
               />
             </div>
-            
+
             <Button variant="outline" className="mt-6">
               <Download className="h-4 w-4 mr-2" />
               Экспорт PDF
@@ -91,14 +92,14 @@ export default function AdvancedAnalytics() {
 
         {/* Общая статистика */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="border-red-200 dark:border-red-800">
+          <Card className="border-purple-200 dark:border-red-800 hover:shadow-lg transition-shadow">
             <CardContent className="flex items-center p-6">
-              <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full mr-4">
-                <Activity className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div className="p-3 bg-purple-100 dark:bg-red-900 rounded-full mr-4">
+                <Activity className="h-6 w-6 text-purple-600 dark:text-red-400" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Всего происшествий</p>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <p className="text-2xl font-bold text-purple-600 dark:text-red-400">
                   {summary.totalIncidents || 0}
                 </p>
                 <Badge variant="secondary" className="mt-1">
@@ -109,14 +110,14 @@ export default function AdvancedAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-orange-200 dark:border-orange-800">
+          <Card className="border-amber-200 dark:border-orange-800 hover:shadow-lg transition-shadow">
             <CardContent className="flex items-center p-6">
-              <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full mr-4">
-                <AlertTriangle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <div className="p-3 bg-amber-100 dark:bg-orange-900 rounded-full mr-4">
+                <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-orange-400" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Общий ущерб</p>
-                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                <p className="text-2xl font-bold text-amber-600 dark:text-orange-400">
                   {(summary.totalDamage || 0).toLocaleString()} тг
                 </p>
                 <Badge variant="destructive" className="mt-1">
@@ -127,14 +128,14 @@ export default function AdvancedAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 dark:border-gray-800">
+          <Card className="border-slate-200 dark:border-gray-800 hover:shadow-lg transition-shadow">
             <CardContent className="flex items-center p-6">
-              <div className="p-3 bg-gray-100 dark:bg-gray-900 rounded-full mr-4">
-                <MapPin className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+              <div className="p-3 bg-slate-100 dark:bg-gray-900 rounded-full mr-4">
+                <MapPin className="h-6 w-6 text-slate-600 dark:text-gray-400" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Пострадавших</p>
-                <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                <p className="text-2xl font-bold text-slate-600 dark:text-gray-400">
                   {summary.totalDeaths || 0}
                 </p>
                 <Badge variant="outline" className="mt-1">
@@ -144,14 +145,14 @@ export default function AdvancedAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-blue-200 dark:border-blue-800">
+          <Card className="border-cyan-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
             <CardContent className="flex items-center p-6">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full mr-4">
-                <FileBarChart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-3 bg-cyan-100 dark:bg-blue-900 rounded-full mr-4">
+                <FileBarChart className="h-6 w-6 text-cyan-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Активных регионов</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <p className="text-2xl font-bold text-cyan-600 dark:text-blue-400">
                   {regionStats.length}
                 </p>
                 <Badge variant="secondary" className="mt-1">
@@ -182,16 +183,27 @@ export default function AdvancedAnalytics() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
                   <AreaChart data={monthlyStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area 
-                      type="monotone" 
-                      dataKey="count" 
-                      stroke="#ef4444" 
-                      fill="#fee2e2" 
+                    <defs>
+                      <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E8EAED" />
+                    <XAxis dataKey="month" stroke="#6B7280" />
+                    <YAxis stroke="#6B7280" />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                      cursor={{ stroke: '#6366F1', strokeWidth: 1 }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#6366F1"
+                      strokeWidth={2}
+                      fill="url(#colorCount)"
                       name="Количество"
+                      animationDuration={800}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -205,15 +217,22 @@ export default function AdvancedAnalytics() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={monthlyStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value: number) => [`${value?.toLocaleString()} тг`, 'Ущерб']} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="damage" 
-                      stroke="#f97316" 
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E8EAED" />
+                    <XAxis dataKey="month" stroke="#6B7280" />
+                    <YAxis stroke="#6B7280" />
+                    <Tooltip
+                      formatter={(value: number) => [`${value?.toLocaleString()} тг`, 'Ущерб']}
+                      contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                      cursor={{ stroke: '#F59E0B', strokeWidth: 1 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="damage"
+                      stroke="#F59E0B"
                       strokeWidth={3}
+                      dot={{ fill: '#F59E0B', r: 4 }}
+                      activeDot={{ r: 6 }}
+                      animationDuration={800}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -257,11 +276,19 @@ export default function AdvancedAnalytics() {
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={incidentTypes}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="type" />
-                      <YAxis />
-                      <Tooltip formatter={(value: number) => [`${value?.toLocaleString()} тг`, 'Ущерб']} />
-                      <Bar dataKey="damage" fill="#ef4444" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E8EAED" />
+                      <XAxis dataKey="type" stroke="#6B7280" />
+                      <YAxis stroke="#6B7280" />
+                      <Tooltip
+                        formatter={(value: number) => [`${value?.toLocaleString()} тг`, 'Ущерб']}
+                        contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                      />
+                      <Bar
+                        dataKey="damage"
+                        fill="#6366F1"
+                        radius={[8, 8, 0, 0]}
+                        animationDuration={800}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -280,11 +307,19 @@ export default function AdvancedAnalytics() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={regionStats} margin={{ left: 100 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#3b82f6" name="Количество" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E8EAED" />
+                    <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} stroke="#6B7280" />
+                    <YAxis stroke="#6B7280" />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                    />
+                    <Bar
+                      dataKey="count"
+                      fill="#06B6D4"
+                      name="Количество"
+                      radius={[8, 8, 0, 0]}
+                      animationDuration={800}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -353,7 +388,7 @@ export default function AdvancedAnalytics() {
                           В Алматы рекомендуется увеличить количество проверок на 30%
                         </p>
                       </div>
-                      
+
                       <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <h4 className="font-medium text-blue-800 dark:text-blue-200">Сезонность</h4>
                         <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
