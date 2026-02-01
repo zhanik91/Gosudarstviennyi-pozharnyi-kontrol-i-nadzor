@@ -80,7 +80,7 @@ export default function Home() {
               iconBg="bg-primary/20"
               iconColor="text-primary"
               title="Государственный учёт пожаров"
-              description="Журнал выездов, отчёты, еженедельные сведения и диаграммы"
+              description="Журнал выездов, отчёты и диаграммы"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/fire-module"
@@ -97,7 +97,7 @@ export default function Home() {
               iconBg="bg-accent/20"
               iconColor="text-accent"
               title="Государственный контроль и надзор"
-              description="Реестр объектов контроля, учёт проверок, предписаний и сроков их исполнения"
+              description="Реестр объектов, учёт проверок и предписаний"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/controlled-objects"
@@ -113,7 +113,7 @@ export default function Home() {
               iconBg="bg-orange-500/20"
               iconColor="text-orange-400"
               title="Журналы и списки"
-              description="Аудиты в области пожарной безопасности и профессиональные противопожарные службы"
+              description="Аудиты и противопожарные службы"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/journals-lists",
@@ -129,15 +129,14 @@ export default function Home() {
               iconBg="bg-purple-500/20"
               iconColor="text-purple-400"
               title="Административная практика"
-              description="Проверки, предписания, меры воздействия и административные дела"
+              description="Журнал практики и отчёты с фото"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/admin-practice"
               }}
               secondaryActions={[
-                { label: "Проверки", href: "/admin-practice?tab=inspections" },
-                { label: "Предписания", href: "/admin-practice?tab=prescriptions" },
-                { label: "Адм. дела", href: "/admin-practice?tab=cases" }
+                { label: "Журнал", href: "/admin-practice?tab=journal" },
+                { label: "Отчёты", href: "/admin-practice?tab=reports" }
               ]}
             />
 
@@ -146,14 +145,14 @@ export default function Home() {
               iconBg="bg-blue-500/20"
               iconColor="text-blue-400"
               title="Нормативные документы"
-              description="База актуальных нормативно-правовых актов и законодательства РК"
+              description="База НПА и законодательства РК"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/normative-documents"
               }}
               secondaryActions={[
-                { label: "Законы РК", href: "/normative-documents?category=laws" },
-                { label: "Приказы МЧС", href: "/normative-documents?category=orders" }
+                { label: "Законы", href: "/normative-documents?category=laws" },
+                { label: "Приказы", href: "/normative-documents?category=orders" }
               ]}
             />
 
@@ -162,14 +161,15 @@ export default function Home() {
               iconBg="bg-emerald-500/20"
               iconColor="text-emerald-400"
               title="Калькуляторы"
-              description="Инструменты расчета штрафов, категорий риска и других показателей"
+              description="Расчёты по НПА РК"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/calculators"
               }}
               secondaryActions={[
-                { label: "Штрафы", href: "/calculators?tool=fines" },
-                { label: "Категория риска", href: "/calculators?tool=risk" }
+                { label: "Огнетушители", href: "/calculators/fire-extinguishers" },
+                { label: "ПСС (НГПС)", href: "/calculators/ngps" },
+                { label: "Категория помещения", href: "/calculators/explosion-category" }
               ]}
             />
 
@@ -178,14 +178,13 @@ export default function Home() {
               iconBg="bg-cyan-500/20"
               iconColor="text-cyan-400"
               title="АИ ассистент"
-              description="Интеллектуальный помощник для работы с документами и консультаций"
+              description="Помощник по НПА и консультациям"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/ai-assistant"
               }}
               secondaryActions={[
-                { label: "Чат", href: "/ai-assistant?tab=chat" },
-                { label: "Поиск по документам", href: "/ai-assistant?tab=search" }
+                { label: "Новый чат", href: "/ai-assistant" }
               ]}
             />
           </div>
