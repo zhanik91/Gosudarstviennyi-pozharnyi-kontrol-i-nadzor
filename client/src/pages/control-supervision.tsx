@@ -96,8 +96,8 @@ type InspectionRow = {
 const REGIONS = REGION_NAMES;
 const ADMIN2: Record<string, string[]> = ADMIN2_BY_REGION;
 
-const STATUSES: Status[] = ["Активный","Не функционирует"];
-const BIZ_CATS: BizCat[] = ["Микро","Малый","Средний","Крупный"];
+const STATUSES: Status[] = ["Активный", "Не функционирует"];
+const BIZ_CATS: BizCat[] = ["Микро", "Малый", "Средний", "Крупный"];
 
 const INSPECTION_STATUSES: Array<{ value: InspectionStatus; label: string }> = [
   { value: "planned", label: "Запланирована" },
@@ -164,96 +164,96 @@ const REPORT_PERIODS = [
 /** ===== Объективные категории (краткий label + полный full) ===== */
 // Высокая
 const HIGH: CategoryItem[] = [
-  { id:"H1", label:"Производственные А/Б, В1–В4 ≥2000 м²", full:"производственные предприятия с категорией по взрывопожарной и пожарной опасности зданий и помещений 'А','Б' — независимо от площади; 'В1'-'В4' общей площадью строений 2000+ м²" },
-  { id:"H2", label:"Склады А/Б, В1–В4 ≥2500 м²", full:"объекты хранения с категориями 'А','Б','В1'-'В4' — общей площадью строений 2500+ м²; открытые склады газовых баллонов, лесных материалов, угля, грубых кормов — 2500+ м²" },
-  { id:"H3", label:"Нефтебазы/терминалы/перекачка", full:"нефтебазы, склады нефтепродуктов, нефтетерминалы, нефтеперекачивающие станции" },
-  { id:"H4", label:"Газовые станции", full:"газохранилища, газгольдерные, газоперекачивающие, газонаполнительные и газокомпрессорные станции" },
-  { id:"H5", label:"АЗС/ГАЗС", full:"автомобильные заправочные и газозаправочные станции (стационарные и передвижные)" },
-  { id:"H6", label:"ВВ/утилизация", full:"объекты хранения/ликвидации ВВ, вооружений, военной техники и спецсредств и т. п." },
-  { id:"H7", label:"ТРЦ ≥2000 м² и особые случаи", full:"торговые/развлекательные центры (единый объект) — 2000+ м²; особые случаи для одно-/двухэтажных и ≥3 этажей" },
-  { id:"H8", label:"Встроенные магазины в МКД ≥2000 м²", full:"встроенные (в т. ч. объединённые площадью) — 2000+ м²" },
-  { id:"H9", label:"Мед. стационары и АПП ≥2000 м²", full:"медорганизации стационар — независимо от площади; амбулаторно-поликлиническая помощь — 2000+ м²" },
-  { id:"H10", label:"Интернаты/хосписы", full:"медико-социальные учреждения, интернаты, ДД, ДИ, хосписы и пр." },
-  { id:"H11", label:"Организации образования", full:"организации образования, учебные заведения" },
-  { id:"H12", label:"Общежития/гостиницы ≥2000 м²", full:"—" },
-  { id:"H13", label:"Вахтовые ≥2000 м²", full:"—" },
-  { id:"H14", label:"МКД >28 м", full:"многоквартирные жилые дома высотой более 28 м" },
-  { id:"H15", label:"Адм./МФК ≥2500 м² или >28 м", full:"—" },
-  { id:"H16", label:"Аэропорт/вокзал/порт/метро ≥2000 м²", full:"—" },
-  { id:"H17", label:"Общепит ≥2000 м²", full:"—" },
-  { id:"H18", label:"Объекты ВС и правоохр.", full:"—" },
-  { id:"H19", label:"Культурные/религ. ≥2000 м²", full:"—" },
-  { id:"H20", label:"Спорткомплексы ≥2000 м²", full:"—" },
-  { id:"H21", label:"СТО ≥1500 м²", full:"—" },
-  { id:"H22", label:"Паркинги ≥1500 м²", full:"—" },
-  { id:"H23", label:"Элеваторы/зерно", full:"—" },
-  { id:"H24", label:"СХ/птицефабрики ≥2500 м²", full:"—" },
-  { id:"H25", label:"Бытовые услуги ≥2000 м²", full:"—" },
-  { id:"H26", label:"ТЭС/ГТЭС", full:"—" },
-  { id:"H27", label:"ГЭС ≥250 МВт", full:"—" },
-  { id:"H28", label:"Подстанции ≥220 кВ", full:"—" },
-  { id:"H29", label:"Котельные ≥50 Гкал/ч", full:"—" },
-  { id:"H30", label:"Турбазы/ДОЛ ≥1000 м²", full:"—" },
-  { id:"H31", label:"ЛС/МИ ≥2000 м²", full:"—" },
-  { id:"H32", label:"ЦОД/ДЦ ≥2500 м²", full:"—" },
-  { id:"H33", label:"Архивы/библиотеки ≥1000 м²", full:"—" },
-  { id:"H34", label:"Эксплуатация ВК/ППВ", full:"—" },
-  { id:"H35", label:"Лесохозяйственные учреждения", full:"—" },
-  { id:"H36", label:"Негос. ПС объекта", full:"—" },
+  { id: "H1", label: "Производственные А/Б, В1–В4 ≥2000 м²", full: "производственные предприятия с категорией по взрывопожарной и пожарной опасности зданий и помещений 'А','Б' — независимо от площади; 'В1'-'В4' общей площадью строений 2000+ м²" },
+  { id: "H2", label: "Склады А/Б, В1–В4 ≥2500 м²", full: "объекты хранения с категориями 'А','Б','В1'-'В4' — общей площадью строений 2500+ м²; открытые склады газовых баллонов, лесных материалов, угля, грубых кормов — 2500+ м²" },
+  { id: "H3", label: "Нефтебазы/терминалы/перекачка", full: "нефтебазы, склады нефтепродуктов, нефтетерминалы, нефтеперекачивающие станции" },
+  { id: "H4", label: "Газовые станции", full: "газохранилища, газгольдерные, газоперекачивающие, газонаполнительные и газокомпрессорные станции" },
+  { id: "H5", label: "АЗС/ГАЗС", full: "автомобильные заправочные и газозаправочные станции (стационарные и передвижные)" },
+  { id: "H6", label: "ВВ/утилизация", full: "объекты хранения/ликвидации ВВ, вооружений, военной техники и спецсредств и т. п." },
+  { id: "H7", label: "ТРЦ ≥2000 м² и особые случаи", full: "торговые/развлекательные центры (единый объект) — 2000+ м²; особые случаи для одно-/двухэтажных и ≥3 этажей" },
+  { id: "H8", label: "Встроенные магазины в МКД ≥2000 м²", full: "встроенные (в т. ч. объединённые площадью) — 2000+ м²" },
+  { id: "H9", label: "Мед. стационары и АПП ≥2000 м²", full: "медорганизации стационар — независимо от площади; амбулаторно-поликлиническая помощь — 2000+ м²" },
+  { id: "H10", label: "Интернаты/хосписы", full: "медико-социальные учреждения, интернаты, ДД, ДИ, хосписы и пр." },
+  { id: "H11", label: "Организации образования", full: "организации образования, учебные заведения" },
+  { id: "H12", label: "Общежития/гостиницы ≥2000 м²", full: "—" },
+  { id: "H13", label: "Вахтовые ≥2000 м²", full: "—" },
+  { id: "H14", label: "МКД >28 м", full: "многоквартирные жилые дома высотой более 28 м" },
+  { id: "H15", label: "Адм./МФК ≥2500 м² или >28 м", full: "—" },
+  { id: "H16", label: "Аэропорт/вокзал/порт/метро ≥2000 м²", full: "—" },
+  { id: "H17", label: "Общепит ≥2000 м²", full: "—" },
+  { id: "H18", label: "Объекты ВС и правоохр.", full: "—" },
+  { id: "H19", label: "Культурные/религ. ≥2000 м²", full: "—" },
+  { id: "H20", label: "Спорткомплексы ≥2000 м²", full: "—" },
+  { id: "H21", label: "СТО ≥1500 м²", full: "—" },
+  { id: "H22", label: "Паркинги ≥1500 м²", full: "—" },
+  { id: "H23", label: "Элеваторы/зерно", full: "—" },
+  { id: "H24", label: "СХ/птицефабрики ≥2500 м²", full: "—" },
+  { id: "H25", label: "Бытовые услуги ≥2000 м²", full: "—" },
+  { id: "H26", label: "ТЭС/ГТЭС", full: "—" },
+  { id: "H27", label: "ГЭС ≥250 МВт", full: "—" },
+  { id: "H28", label: "Подстанции ≥220 кВ", full: "—" },
+  { id: "H29", label: "Котельные ≥50 Гкал/ч", full: "—" },
+  { id: "H30", label: "Турбазы/ДОЛ ≥1000 м²", full: "—" },
+  { id: "H31", label: "ЛС/МИ ≥2000 м²", full: "—" },
+  { id: "H32", label: "ЦОД/ДЦ ≥2500 м²", full: "—" },
+  { id: "H33", label: "Архивы/библиотеки ≥1000 м²", full: "—" },
+  { id: "H34", label: "Эксплуатация ВК/ППВ", full: "—" },
+  { id: "H35", label: "Лесохозяйственные учреждения", full: "—" },
+  { id: "H36", label: "Негос. ПС объекта", full: "—" },
 ];
 // Средняя
 const MEDIUM: CategoryItem[] = [
-  { id:"M1", label:"Производственные В1–В4 ≤1999 м²", full:"—" },
-  { id:"M2", label:"Склады А/Б, В1–В4 1000–2499 м²", full:"—" },
-  { id:"M3", label:"ТРЦ 1000–1999 м²", full:"—" },
-  { id:"M4", label:"Встроенные магазины 1000–1999 м²", full:"—" },
-  { id:"M5", label:"Поликлиники 1000–1999 м²", full:"—" },
-  { id:"M6", label:"Общежития/гостиницы 1000–1999 м²", full:"—" },
-  { id:"M7", label:"Вахтовые 1000–1999 м²", full:"—" },
-  { id:"M8", label:"Адм./МФК 1500–2499 м²", full:"—" },
-  { id:"M9", label:"Аэропорт/вокзал/порт/метро 1000–1999 м²", full:"—" },
-  { id:"M10", label:"Общепит 1000–1999 м²", full:"—" },
-  { id:"M11", label:"Культурные/религ. 1000–1999 м²", full:"—" },
-  { id:"M12", label:"Спорткомплексы 1000–1999 м²", full:"—" },
-  { id:"M13", label:"СТО 1000–1499 м²", full:"—" },
-  { id:"M14", label:"Паркинги 1000–1499 м²", full:"—" },
-  { id:"M15", label:"СХ/птицефабрики 1000–2499 м²", full:"—" },
-  { id:"M16", label:"Бытовые услуги 1000–1499 м²", full:"—" },
-  { id:"M17", label:"Подстанции 110–219 кВ", full:"—" },
-  { id:"M18", label:"Котельные <50 Гкал/ч", full:"—" },
-  { id:"M19", label:"Турбазы/отдых ≤999 м²", full:"—" },
-  { id:"M20", label:"ЛС/МИ 1000–1999 м²", full:"—" },
-  { id:"M21", label:"ЦОД/ДЦ 1500–2499 м²", full:"—" },
-  { id:"M22", label:"Архивы/библиотеки 500–999 м²", full:"—" },
-  { id:"M23", label:"Негос. ПС — член СРО", full:"—" },
+  { id: "M1", label: "Производственные В1–В4 ≤1999 м²", full: "—" },
+  { id: "M2", label: "Склады А/Б, В1–В4 1000–2499 м²", full: "—" },
+  { id: "M3", label: "ТРЦ 1000–1999 м²", full: "—" },
+  { id: "M4", label: "Встроенные магазины 1000–1999 м²", full: "—" },
+  { id: "M5", label: "Поликлиники 1000–1999 м²", full: "—" },
+  { id: "M6", label: "Общежития/гостиницы 1000–1999 м²", full: "—" },
+  { id: "M7", label: "Вахтовые 1000–1999 м²", full: "—" },
+  { id: "M8", label: "Адм./МФК 1500–2499 м²", full: "—" },
+  { id: "M9", label: "Аэропорт/вокзал/порт/метро 1000–1999 м²", full: "—" },
+  { id: "M10", label: "Общепит 1000–1999 м²", full: "—" },
+  { id: "M11", label: "Культурные/религ. 1000–1999 м²", full: "—" },
+  { id: "M12", label: "Спорткомплексы 1000–1999 м²", full: "—" },
+  { id: "M13", label: "СТО 1000–1499 м²", full: "—" },
+  { id: "M14", label: "Паркинги 1000–1499 м²", full: "—" },
+  { id: "M15", label: "СХ/птицефабрики 1000–2499 м²", full: "—" },
+  { id: "M16", label: "Бытовые услуги 1000–1499 м²", full: "—" },
+  { id: "M17", label: "Подстанции 110–219 кВ", full: "—" },
+  { id: "M18", label: "Котельные <50 Гкал/ч", full: "—" },
+  { id: "M19", label: "Турбазы/отдых ≤999 м²", full: "—" },
+  { id: "M20", label: "ЛС/МИ 1000–1999 м²", full: "—" },
+  { id: "M21", label: "ЦОД/ДЦ 1500–2499 м²", full: "—" },
+  { id: "M22", label: "Архивы/библиотеки 500–999 м²", full: "—" },
+  { id: "M23", label: "Негос. ПС — член СРО", full: "—" },
 ];
 // Низкая
 const LOW: CategoryItem[] = [
-  { id:"L1", label:"Производственные Г/Д", full:"—" },
-  { id:"L2", label:"Склады А/Б, В1–В4 ≤999 м²", full:"—" },
-  { id:"L3", label:"ГЭС <250 МВт", full:"—" },
-  { id:"L4", label:"Ветровые/солнечные/газопоршневые", full:"—" },
-  { id:"L5", label:"Поликлиники ≤999 м²", full:"—" },
-  { id:"L6", label:"Детско-подростковые клубы", full:"—" },
-  { id:"L7", label:"Общежития/гостиницы ≤999 м²", full:"—" },
-  { id:"L8", label:"Аэропорт/вокзал/порт/метро ≤999 м²", full:"—" },
-  { id:"L9", label:"ТРЦ ≤999 м²", full:"—" },
-  { id:"L10", label:"Встроенные магазины ≤999 м²", full:"—" },
-  { id:"L11", label:"Культурные/религ. ≤999 м²", full:"—" },
-  { id:"L12", label:"Спорткомплексы ≤999 м²", full:"—" },
-  { id:"L13", label:"Архивы/библиотеки ≤499 м²", full:"—" },
-  { id:"L14", label:"МКД <28 м / ИЖД", full:"—" },
-  { id:"L15", label:"ЦОД/ДЦ ≤1499 м²", full:"—" },
-  { id:"L16", label:"СХ/птицефабрики ≤999 м²", full:"—" },
-  { id:"L17", label:"ЛС/МИ ≤999 м²", full:"—" },
-  { id:"L18", label:"Общепит ≤999 м²", full:"—" },
-  { id:"L19", label:"Бытовые услуги ≤999 м²", full:"—" },
-  { id:"L20", label:"Паркинги ≤999 м²", full:"—" },
-  { id:"L21", label:"СТО ≤999 м²", full:"—" },
-  { id:"L22", label:"Адм./МФК ≤1499 м²", full:"—" },
-  { id:"L23", label:"Вахтовые ≤999 м²", full:"—" },
-  { id:"L24", label:"Подстанции <110 кВ", full:"—" },
-  { id:"L25", label:"Экспертные организации по аудиту ПБ", full:"—" },
+  { id: "L1", label: "Производственные Г/Д", full: "—" },
+  { id: "L2", label: "Склады А/Б, В1–В4 ≤999 м²", full: "—" },
+  { id: "L3", label: "ГЭС <250 МВт", full: "—" },
+  { id: "L4", label: "Ветровые/солнечные/газопоршневые", full: "—" },
+  { id: "L5", label: "Поликлиники ≤999 м²", full: "—" },
+  { id: "L6", label: "Детско-подростковые клубы", full: "—" },
+  { id: "L7", label: "Общежития/гостиницы ≤999 м²", full: "—" },
+  { id: "L8", label: "Аэропорт/вокзал/порт/метро ≤999 м²", full: "—" },
+  { id: "L9", label: "ТРЦ ≤999 м²", full: "—" },
+  { id: "L10", label: "Встроенные магазины ≤999 м²", full: "—" },
+  { id: "L11", label: "Культурные/религ. ≤999 м²", full: "—" },
+  { id: "L12", label: "Спорткомплексы ≤999 м²", full: "—" },
+  { id: "L13", label: "Архивы/библиотеки ≤499 м²", full: "—" },
+  { id: "L14", label: "МКД <28 м / ИЖД", full: "—" },
+  { id: "L15", label: "ЦОД/ДЦ ≤1499 м²", full: "—" },
+  { id: "L16", label: "СХ/птицефабрики ≤999 м²", full: "—" },
+  { id: "L17", label: "ЛС/МИ ≤999 м²", full: "—" },
+  { id: "L18", label: "Общепит ≤999 м²", full: "—" },
+  { id: "L19", label: "Бытовые услуги ≤999 м²", full: "—" },
+  { id: "L20", label: "Паркинги ≤999 м²", full: "—" },
+  { id: "L21", label: "СТО ≤999 м²", full: "—" },
+  { id: "L22", label: "Адм./МФК ≤1499 м²", full: "—" },
+  { id: "L23", label: "Вахтовые ≤999 м²", full: "—" },
+  { id: "L24", label: "Подстанции <110 кВ", full: "—" },
+  { id: "L25", label: "Экспертные организации по аудиту ПБ", full: "—" },
 ]; // ← здесь была ошибка: должно быть ];, а не };
 
 const CATS: Record<ObjectiveLevel, CategoryItem[]> = {
@@ -262,7 +262,6 @@ const CATS: Record<ObjectiveLevel, CategoryItem[]> = {
   Низкая: LOW,
 };
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
 const formatDate = (value?: string | null) => {
   if (!value) return "—";
   const date = new Date(value);
@@ -295,6 +294,11 @@ const buildRegistryQuery = (filters: {
 };
 
 /** ===== Компонент страницы ===== */
+/** ===== Helper ===== */
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function ControlSupervisionPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("registry");
@@ -311,7 +315,7 @@ export default function ControlSupervisionPage() {
 
   // данные из API
   const queryClient = useQueryClient();
-  
+
   // Загрузка данных из БД
   const { data: apiRows = [], isLoading: isLoadingData } = useQuery<any[]>({
     queryKey: ['/api/control-objects'],
@@ -321,7 +325,7 @@ export default function ControlSupervisionPage() {
       return res.json();
     }
   });
-  
+
   // Преобразование данных API в формат компонента
   const rows: ControlledObject[] = useMemo(() => {
     return apiRows.map((obj: any) => {
@@ -392,9 +396,9 @@ export default function ControlSupervisionPage() {
   // фильтры
   const [regionFilter, setRegionFilter] = useState("Все");
   const [districtFilter, setDistrictFilter] = useState("Все");
-  const [levelFilter, setLevelFilter] = useState<"Все"|ObjectiveLevel>("Все");
+  const [levelFilter, setLevelFilter] = useState<"Все" | ObjectiveLevel>("Все");
   const [catFilter, setCatFilter] = useState<string>("Все");
-  const [statusFilter, setStatusFilter] = useState<"Все"|Status>("Все");
+  const [statusFilter, setStatusFilter] = useState<"Все" | Status>("Все");
   const [q, setQ] = useState("");
   const [showAdditionalFilters, setShowAdditionalFilters] = useState(false);
 
@@ -433,25 +437,25 @@ export default function ControlSupervisionPage() {
 
   // форма/модалки
   const blankChars = (): ObjectCharacteristics => ({
-    hasPrivateFireService:false, buildingType:"", heightMeters:"", walls:"", partitions:"",
-    heating:"", lighting:"", hasAttic:false, hasBasement:false, hasParking:false,
-    primaryExtinguishing:"", hasAUPT:false, hasAPS:false, apsServiceOrg:"",
-    outsideWater:"", insideWater:""
+    hasPrivateFireService: false, buildingType: "", heightMeters: "", walls: "", partitions: "",
+    heating: "", lighting: "", hasAttic: false, hasBasement: false, hasParking: false,
+    primaryExtinguishing: "", hasAUPT: false, hasAPS: false, apsServiceOrg: "",
+    outsideWater: "", insideWater: ""
   });
-  const blankSubj = (): SubjectiveCriteria => ({ prevViolations:0, incidents12m:0, powerOverload:false, otherRiskNotes:"" });
+  const blankSubj = (): SubjectiveCriteria => ({ prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: "" });
 
   const blank: ControlledObject = {
-    id:"",
+    id: "",
     region: userRegion || REGIONS[0],
     district: userDistrict || "",
-    subjectName:"",
-    subjectBIN:"",
-    objectName:"",
-    address:"",
-    entrepreneurshipCategory:"Микро",
-    status:"Активный",
-    objectiveLevel:"Низкая",
-    objectiveCategoryId:"",
+    subjectName: "",
+    subjectBIN: "",
+    objectName: "",
+    address: "",
+    entrepreneurshipCategory: "Микро",
+    status: "Активный",
+    objectiveLevel: "Низкая",
+    objectiveCategoryId: "",
     characteristics: blankChars(),
     subjective: blankSubj(),
   };
@@ -489,10 +493,10 @@ export default function ControlSupervisionPage() {
   const [openForm, setOpenForm] = useState(false);
   const [openCharacteristics, setOpenCharacteristics] = useState(false);
   const [openSubjective, setOpenSubjective] = useState(false);
-  const [editingId, setEditingId] = useState<string|null>(null);
-  const [form, setForm] = useState<ControlledObject>({...blank});
-  const [errors, setErrors] = useState<Record<string,string>>({});
-  const [confirmId, setConfirmId] = useState<string|null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ControlledObject>({ ...blank });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [openInspectionForm, setOpenInspectionForm] = useState(false);
   const [inspectionErrors, setInspectionErrors] = useState<Record<string, string>>({});
   const [editingInspectionId, setEditingInspectionId] = useState<string | null>(null);
@@ -606,7 +610,7 @@ export default function ControlSupervisionPage() {
       list = list.filter(r => (r.district || "") === userDistrict);
     }
     if (regionFilter !== "Все") list = list.filter(r => r.region === regionFilter);
-    if (districtFilter !== "Все") list = list.filter(r => (r.district||"") === districtFilter);
+    if (districtFilter !== "Все") list = list.filter(r => (r.district || "") === districtFilter);
     if (levelFilter !== "Все") list = list.filter(r => r.objectiveLevel === levelFilter);
     if (catFilter !== "Все") list = list.filter(r => r.objectiveCategoryId === catFilter);
     if (statusFilter !== "Все") list = list.filter(r => r.status === statusFilter);
@@ -826,7 +830,7 @@ export default function ControlSupervisionPage() {
 
   /** ===== CRUD ===== */
   const validate = (v: ControlledObject) => {
-    const e: Record<string,string> = {};
+    const e: Record<string, string> = {};
     if (!v.subjectName.trim()) e.subjectName = "Укажите наименование субъекта";
     if (!/^\d{12}$/.test(v.subjectBIN)) e.subjectBIN = "БИН: 12 цифр";
     if (!v.objectName.trim()) e.objectName = "Укажите наименование объекта";
@@ -874,7 +878,7 @@ export default function ControlSupervisionPage() {
       } else {
         await createMutation.mutateAsync(apiData);
       }
-      setOpenForm(false); setEditingId(null); setErrors({}); setForm({...blank});
+      setOpenForm(false); setEditingId(null); setErrors({}); setForm({ ...blank });
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       setErrors({ general: 'Ошибка сохранения объекта' });
@@ -914,6 +918,85 @@ export default function ControlSupervisionPage() {
     } catch (error) {
       console.error('Ошибка сохранения проверки:', error);
       setInspectionErrors({ general: 'Ошибка сохранения проверки' });
+    }
+  };
+
+  // Генерация проверки из объекта
+  const handleGenerateInspectionFromObject = () => {
+    if (!editingId) return;
+    const obj = rows.find(r => r.id === editingId);
+    if (!obj) return;
+
+    // Автозаполнение формы проверки данными объекта
+    setInspectionForm({
+      ...blankInspection,
+      region: obj.region,
+      district: obj.district || "",
+      bin: obj.subjectBIN,
+      iin: "",
+      subjectName: obj.subjectName,
+      address: obj.address,
+      inspectedObjects: obj.objectName,
+    });
+    setEditingInspectionId(null);
+    setOpenInspectionForm(true);
+    setOpenForm(false); // Закрыть форму объекта
+  };
+
+  // Создание талона (автозаполнение)
+  const handleCreateTicket = () => {
+    setInspectionForm(s => ({
+      ...s,
+      status: 'completed',
+      ticketRegistrationDate: todayISO()
+    }));
+    // Сразу сохраняем
+    setTimeout(() => onSaveInspection(), 100);
+  };
+
+  // Создание меры оперативного реагирования из проверки
+  const [openMORForm, setOpenMORForm] = useState(false);
+  const [morForm, setMORForm] = useState({
+    type: 'suspension' as MeasureType,
+    number: '',
+    measureDate: todayISO(),
+    description: '',
+  });
+
+  const handleCreateMOR = () => {
+    // Автозаполнение МОР из текущей проверки
+    if (editingInspectionId || inspectionForm.id) {
+      setOpenMORForm(true);
+    }
+  };
+
+  const onSaveMOR = async () => {
+    try {
+      const payload = {
+        type: morForm.type,
+        number: morForm.number.trim(),
+        measureDate: morForm.measureDate,
+        description: morForm.description,
+        status: 'issued',
+        relatedInspectionId: editingInspectionId || inspectionForm.id || null,
+        region: inspectionForm.region,
+        district: inspectionForm.district,
+        bin: inspectionForm.bin,
+        iin: inspectionForm.iin,
+        subjectName: inspectionForm.subjectName,
+        address: inspectionForm.address,
+      };
+
+      const res = await apiRequest('POST', '/api/control-supervision/measures', payload);
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ['/api/control-supervision/measures'] });
+        setOpenMORForm(false);
+        setMORForm({ type: 'suspension', number: '', measureDate: todayISO(), description: '' });
+        alert('Мера оперативного реагирования зарегистрирована');
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения МОР:', error);
+      alert('Ошибка сохранения меры');
     }
   };
 
@@ -960,7 +1043,7 @@ export default function ControlSupervisionPage() {
 
   const onEdit = (id: string) => {
     const r = rows.find(x => x.id === id); if (!r) return;
-    setEditingId(id); setForm({...r}); setErrors({}); setOpenForm(true);
+    setEditingId(id); setForm({ ...r }); setErrors({}); setOpenForm(true);
   };
 
   const onEditInspection = (id: string) => {
@@ -1091,7 +1174,7 @@ export default function ControlSupervisionPage() {
         const level = (String(row["Объективный критерий (риск)"] ?? row["Уровень"] ?? "Низкая") as ObjectiveLevel);
         const all = CATS[level];
         const byLabel = all.find(c => c.label === String(row["Наименование объективного критерия"] ?? row["Категория (кратко)"] ?? ""));
-        const byFull  = all.find(c => c.full  === String(row["Полный текст категории"] ?? ""));
+        const byFull = all.find(c => c.full === String(row["Полный текст категории"] ?? ""));
         const catId = byLabel?.id || byFull?.id || "";
 
         return {
@@ -1107,17 +1190,17 @@ export default function ControlSupervisionPage() {
           objectiveLevel: level,
           objectiveCategoryId: catId,
           characteristics: {
-            hasPrivateFireService:false, buildingType:"", heightMeters:"", walls:"", partitions:"",
-            heating:"", lighting:"", hasAttic:false, hasBasement:false, hasParking:false,
-            primaryExtinguishing:"", hasAUPT:false, hasAPS:false, apsServiceOrg:"",
-            outsideWater:"", insideWater:""
+            hasPrivateFireService: false, buildingType: "", heightMeters: "", walls: "", partitions: "",
+            heating: "", lighting: "", hasAttic: false, hasBasement: false, hasParking: false,
+            primaryExtinguishing: "", hasAUPT: false, hasAPS: false, apsServiceOrg: "",
+            outsideWater: "", insideWater: ""
           },
-          subjective: { prevViolations:0, incidents12m:0, powerOverload:false, otherRiskNotes:"" },
+          subjective: { prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: "" },
         };
       });
 
       const nonEmpty = mapped.filter(m => m.subjectName && m.objectName);
-      
+
       // Сохраняем каждый объект в БД через API
       let imported = 0;
       for (const obj of nonEmpty) {
@@ -1147,7 +1230,7 @@ export default function ControlSupervisionPage() {
           console.error('Ошибка импорта объекта:', e);
         }
       }
-      
+
       alert(`Импортировано записей: ${imported}`);
     } catch {
       alert("Не удалось импортировать файл. Попробуйте другой XLSX/CSV.");
@@ -1172,7 +1255,7 @@ export default function ControlSupervisionPage() {
             {canEdit && (
               <button
                 className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium shadow hover:bg-blue-500"
-                onClick={() => { setEditingId(null); setForm({...blank}); setErrors({}); setOpenForm(true); }}
+                onClick={() => { setEditingId(null); setForm({ ...blank }); setErrors({}); setOpenForm(true); }}
               >
                 ➕ Добавить объект
               </button>
@@ -1207,11 +1290,10 @@ export default function ControlSupervisionPage() {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id as TabType)}
-                className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "border-blue-500 text-blue-400"
-                    : "border-transparent text-slate-400 hover:text-slate-100 hover:border-slate-600"
-                }`}
+                className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium transition-colors ${activeTab === tab.id
+                  ? "border-blue-500 text-blue-400"
+                  : "border-transparent text-slate-400 hover:text-slate-100 hover:border-slate-600"
+                  }`}
                 type="button"
               >
                 {tab.label}
@@ -1323,7 +1405,7 @@ export default function ControlSupervisionPage() {
 
               <div className="flex items-end gap-3">
                 <button className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
-                        onClick={() => fileRef.current?.click()}>
+                  onClick={() => fileRef.current?.click()}>
                   ⬆️ Импорт
                 </button>
                 <input
@@ -1334,7 +1416,7 @@ export default function ControlSupervisionPage() {
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.currentTarget.value = ""; }}
                 />
                 <button className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium hover:bg-emerald-500"
-                        onClick={exportXLSX}>
+                  onClick={exportXLSX}>
                   ⬇️ Экспорт ({filtered.length})
                 </button>
               </div>
@@ -1375,9 +1457,9 @@ export default function ControlSupervisionPage() {
                         <td className="px-3 py-2">{r.entrepreneurshipCategory}</td>
                         <td className="px-3 py-2">
                           <span className={
-                            r.status==="Активный" ? "rounded bg-green-500/20 px-2 py-1 text-green-400" :
-                            r.status==="Не функционирует" ? "rounded bg-yellow-500/20 px-2 py-1 text-yellow-400" :
-                                                  "rounded bg-orange-500/20 px-2 py-1 text-orange-400"
+                            r.status === "Активный" ? "rounded bg-green-500/20 px-2 py-1 text-green-400" :
+                              r.status === "Не функционирует" ? "rounded bg-yellow-500/20 px-2 py-1 text-yellow-400" :
+                                "rounded bg-orange-500/20 px-2 py-1 text-orange-400"
                           }>{r.status}</span>
                         </td>
                         <td className="px-3 py-2 max-w-[380px]">
@@ -1389,19 +1471,19 @@ export default function ControlSupervisionPage() {
                           <div className="flex gap-2">
                             {canEdit && (
                               <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                                      onClick={() => onEdit(r.id)}>Редактировать</button>
+                                onClick={() => onEdit(r.id)}>Редактировать</button>
                             )}
                             <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                                    onClick={() => { setForm(r); setEditingId(r.id); setOpenCharacteristics(true); }}>
+                              onClick={() => { setForm(r); setEditingId(r.id); setOpenCharacteristics(true); }}>
                               Характеристика
                             </button>
                             <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
-                                    onClick={() => { setForm(r); setEditingId(r.id); setOpenSubjective(true); }}>
+                              onClick={() => { setForm(r); setEditingId(r.id); setOpenSubjective(true); }}>
                               Субъективные
                             </button>
                             {canEdit && (
                               <button className="rounded-lg bg-red-600 px-2 py-1 text-xs hover:bg-red-500"
-                                      onClick={() => setConfirmId(r.id)}>Удалить</button>
+                                onClick={() => setConfirmId(r.id)}>Удалить</button>
                             )}
                           </div>
                         </td>
@@ -2176,7 +2258,7 @@ export default function ControlSupervisionPage() {
                   <select
                     className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                     value={form.region}
-                    onChange={(e) => setForm(s => ({...s, region: e.target.value, district:""}))}
+                    onChange={(e) => setForm(s => ({ ...s, region: e.target.value, district: "" }))}
                     disabled={shouldLockRegion}
                   >
                     {availableFormRegions.map(r => <option key={r}>{r}</option>)}
@@ -2186,7 +2268,7 @@ export default function ControlSupervisionPage() {
                   <select
                     className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                     value={form.district}
-                    onChange={(e) => setForm(s => ({...s, district: e.target.value}))}
+                    onChange={(e) => setForm(s => ({ ...s, district: e.target.value }))}
                     disabled={shouldLockDistrict}
                   >
                     <option value="">— выберите —</option>
@@ -2194,97 +2276,110 @@ export default function ControlSupervisionPage() {
                   </select>
                 </Field>
 
-            <Field label="Категория предпринимательства">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={form.entrepreneurshipCategory}
-                onChange={(e) => setForm(s => ({...s, entrepreneurshipCategory: e.target.value as BizCat}))}
-              >
-                {BIZ_CATS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
-            <Field label="Статус">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={form.status}
-                onChange={(e) => setForm(s => ({...s, status: e.target.value as Status}))}
-              >
-                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </Field>
+                <Field label="Категория предпринимательства">
+                  <select
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    value={form.entrepreneurshipCategory}
+                    onChange={(e) => setForm(s => ({ ...s, entrepreneurshipCategory: e.target.value as BizCat }))}
+                  >
+                    {BIZ_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="Статус">
+                  <select
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    value={form.status}
+                    onChange={(e) => setForm(s => ({ ...s, status: e.target.value as Status }))}
+                  >
+                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </Field>
 
-            <Field label="Наименование субъекта" error={errors.subjectName}>
-              <input
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectName ? "border-red-600":"border-slate-700"} bg-slate-950`}
-                value={form.subjectName}
-                onChange={(e) => setForm(s => ({...s, subjectName: e.target.value}))}
-              />
-            </Field>
-            <Field label="ИИН/БИН" error={errors.subjectBIN}>
-              <input
-                inputMode="numeric" maxLength={12} placeholder="12 цифр"
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectBIN ? "border-red-600":"border-slate-700"} bg-slate-950`}
-                value={form.subjectBIN}
-                onChange={(e) => setForm(s => ({...s, subjectBIN: e.target.value.replace(/[^0-9]/g,"")}))}
-              />
-            </Field>
+                <Field label="Наименование субъекта" error={errors.subjectName}>
+                  <input
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                    value={form.subjectName}
+                    onChange={(e) => setForm(s => ({ ...s, subjectName: e.target.value }))}
+                  />
+                </Field>
+                <Field label="ИИН/БИН" error={errors.subjectBIN}>
+                  <input
+                    inputMode="numeric" maxLength={12} placeholder="12 цифр"
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectBIN ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                    value={form.subjectBIN}
+                    onChange={(e) => setForm(s => ({ ...s, subjectBIN: e.target.value.replace(/[^0-9]/g, "") }))}
+                  />
+                </Field>
 
-            <Field label="Наименование объекта" error={errors.objectName}>
-              <input
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectName ? "border-red-600":"border-slate-700"} bg-slate-950`}
-                value={form.objectName}
-                onChange={(e) => setForm(s => ({...s, objectName: e.target.value}))}
-              />
-            </Field>
-            <Field label="Адрес" error={errors.address}>
-              <input
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.address ? "border-red-600":"border-slate-700"} bg-slate-950`}
-                value={form.address}
-                onChange={(e) => setForm(s => ({...s, address: e.target.value}))}
-              />
-            </Field>
+                <Field label="Наименование объекта" error={errors.objectName}>
+                  <input
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                    value={form.objectName}
+                    onChange={(e) => setForm(s => ({ ...s, objectName: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Адрес" error={errors.address}>
+                  <input
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.address ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                    value={form.address}
+                    onChange={(e) => setForm(s => ({ ...s, address: e.target.value }))}
+                  />
+                </Field>
 
-            <Field label="Объективный критерий (риск)">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={form.objectiveLevel}
-                onChange={(e) => setForm(s => ({...s, objectiveLevel: e.target.value as ObjectiveLevel, objectiveCategoryId:""}))}
-              >
-                <option value="Высокая">Высокая</option>
-                <option value="Средняя">Средняя</option>
-                <option value="Низкая">Низкая</option>
-              </select>
-            </Field>
-            <Field label="Наименование объективного критерия" error={errors.objectiveCategoryId}>
-              <select
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectiveCategoryId ? "border-red-600":"border-slate-700"} bg-slate-950`}
-                value={form.objectiveCategoryId}
-                onChange={(e) => setForm(s => ({...s, objectiveCategoryId: e.target.value}))}
-              >
-                <option value="">— выберите —</option>
-                {CATS[form.objectiveLevel].map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-              </select>
-            </Field>
+                <Field label="Объективный критерий (риск)">
+                  <select
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    value={form.objectiveLevel}
+                    onChange={(e) => setForm(s => ({ ...s, objectiveLevel: e.target.value as ObjectiveLevel, objectiveCategoryId: "" }))}
+                  >
+                    <option value="Высокая">Высокая</option>
+                    <option value="Средняя">Средняя</option>
+                    <option value="Низкая">Низкая</option>
+                  </select>
+                </Field>
+                <Field label="Наименование объективного критерия" error={errors.objectiveCategoryId}>
+                  <select
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectiveCategoryId ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                    value={form.objectiveCategoryId}
+                    onChange={(e) => setForm(s => ({ ...s, objectiveCategoryId: e.target.value }))}
+                  >
+                    <option value="">— выберите —</option>
+                    {CATS[form.objectiveLevel].map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                </Field>
 
-            <div className="md:col-span-2 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm text-slate-400">
-                  Настроить детально:
-                </div>
-                <div className="flex gap-2">
-                  <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
-                          onClick={() => setOpenCharacteristics(true)}>Характеристика объекта</button>
-                  <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
-                          onClick={() => setOpenSubjective(true)}>Субъективные критерии</button>
+                <div className="md:col-span-2 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm text-slate-400">
+                      Настроить детально:
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
+                        onClick={() => setOpenCharacteristics(true)}>Характеристика объекта</button>
+                      <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
+                        onClick={() => setOpenSubjective(true)}>Субъективные критерии</button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="mt-5 flex items-center justify-end gap-3">
-            <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenForm(false)}>Отмена</button>
-            <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500" onClick={onSave}>Сохранить</button>
-          </div>
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <div>
+                  {editingId && canEdit && (
+                    <button
+                      className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500"
+                      onClick={handleGenerateInspectionFromObject}
+                      type="button"
+                    >
+                      📋 Создать проверку
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenForm(false)}>Отмена</button>
+                  <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500" onClick={onSave}>Сохранить</button>
+                </div>
+              </div>
             </Modal>
           )}
 
@@ -2293,77 +2388,77 @@ export default function ControlSupervisionPage() {
             <Modal title="Характеристика объекта" onClose={() => setOpenCharacteristics(false)}>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <Check label="Наличие негосударственной противопожарной службы"
-                       checked={form.characteristics.hasPrivateFireService}
-                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasPrivateFireService:v}}))}/>
+                  checked={form.characteristics.hasPrivateFireService}
+                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasPrivateFireService: v } }))} />
                 <Field label="Вид сооружения">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.buildingType}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, buildingType:e.target.value}}))}/>
+                    value={form.characteristics.buildingType}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, buildingType: e.target.value } }))} />
                 </Field>
                 <Field label="Этажность (в метрах)">
                   <input inputMode="decimal" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.heightMeters}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, heightMeters: e.target.value===""? "": Number((e.target.value||"").toString().replace(",","."))}}))}/>
+                    value={form.characteristics.heightMeters}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heightMeters: e.target.value === "" ? "" : Number((e.target.value || "").toString().replace(",", ".")) } }))} />
                 </Field>
                 <Field label="Стены">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.walls}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, walls:e.target.value}}))}/>
+                    value={form.characteristics.walls}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, walls: e.target.value } }))} />
                 </Field>
                 <Field label="Перегородки">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.partitions}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, partitions:e.target.value}}))}/>
+                    value={form.characteristics.partitions}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, partitions: e.target.value } }))} />
                 </Field>
                 <Field label="Отопление">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.heating}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, heating:e.target.value}}))}/>
+                    value={form.characteristics.heating}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heating: e.target.value } }))} />
                 </Field>
                 <Field label="Освещение">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.lighting}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, lighting:e.target.value}}))}/>
+                    value={form.characteristics.lighting}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, lighting: e.target.value } }))} />
                 </Field>
                 <Check label="Наличие чердака"
-                       checked={form.characteristics.hasAttic}
-                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAttic:v}}))}/>
+                  checked={form.characteristics.hasAttic}
+                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAttic: v } }))} />
                 <Check label="Наличие подвала"
-                       checked={form.characteristics.hasBasement}
-                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasBasement:v}}))}/>
+                  checked={form.characteristics.hasBasement}
+                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasBasement: v } }))} />
                 <Check label="Наличие паркинга"
-                       checked={form.characteristics.hasParking}
-                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasParking:v}}))}/>
+                  checked={form.characteristics.hasParking}
+                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasParking: v } }))} />
                 <Field label="Первичные средства пожаротушения">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.primaryExtinguishing}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, primaryExtinguishing:e.target.value}}))}/>
+                    value={form.characteristics.primaryExtinguishing}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, primaryExtinguishing: e.target.value } }))} />
                 </Field>
                 <Check label="АУПТ (авт. установки пожаротушения)"
-                       checked={form.characteristics.hasAUPT}
-                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAUPT:v}}))}/>
+                  checked={form.characteristics.hasAUPT}
+                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAUPT: v } }))} />
                 <Check label="АПС (авт. пожарная сигнализация)"
-                       checked={form.characteristics.hasAPS}
-                       onChange={(v)=>setForm(s=>({...s, characteristics:{...s.characteristics, hasAPS:v}}))}/>
+                  checked={form.characteristics.hasAPS}
+                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAPS: v } }))} />
                 <Field label="Обслуживающая организация АПС">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.apsServiceOrg}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, apsServiceOrg:e.target.value}}))}/>
+                    value={form.characteristics.apsServiceOrg}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, apsServiceOrg: e.target.value } }))} />
                 </Field>
                 <Field label="Наружное противопожарное водоснабжение">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.outsideWater}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, outsideWater:e.target.value}}))}/>
+                    value={form.characteristics.outsideWater}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, outsideWater: e.target.value } }))} />
                 </Field>
                 <Field label="Внутреннее противопожарное водоснабжение">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.characteristics.insideWater}
-                         onChange={(e)=>setForm(s=>({...s, characteristics:{...s.characteristics, insideWater:e.target.value}}))}/>
+                    value={form.characteristics.insideWater}
+                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, insideWater: e.target.value } }))} />
                 </Field>
               </div>
               <div className="mt-5 flex justify-end">
                 <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                        onClick={()=>setOpenCharacteristics(false)}>Готово</button>
+                  onClick={() => setOpenCharacteristics(false)}>Готово</button>
               </div>
             </Modal>
           )}
@@ -2374,38 +2469,38 @@ export default function ControlSupervisionPage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <Field label="Нарушения по предыдущей проверке (кол-во)">
                   <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.subjective.prevViolations}
-                         onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, prevViolations: Number(e.target.value||0)}}))}/>
+                    value={form.subjective.prevViolations}
+                    onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, prevViolations: Number(e.target.value || 0) } }))} />
                 </Field>
                 <Field label="Пожары/ЧС за 12 месяцев (кол-во)">
                   <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.subjective.incidents12m}
-                         onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, incidents12m: Number(e.target.value||0)}}))}/>
+                    value={form.subjective.incidents12m}
+                    onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, incidents12m: Number(e.target.value || 0) } }))} />
                 </Field>
                 <Check label="Превышение мощности / перегрузки"
-                       checked={form.subjective.powerOverload}
-                       onChange={(v)=>setForm(s=>({...s, subjective:{...s.subjective, powerOverload:v}}))}/>
+                  checked={form.subjective.powerOverload}
+                  onChange={(v) => setForm(s => ({ ...s, subjective: { ...s.subjective, powerOverload: v } }))} />
                 <Field label="Прочие неблагоприятные факторы">
                   <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                         value={form.subjective.otherRiskNotes}
-                         onChange={(e)=>setForm(s=>({...s, subjective:{...s.subjective, otherRiskNotes:e.target.value}}))}/>
+                    value={form.subjective.otherRiskNotes}
+                    onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, otherRiskNotes: e.target.value } }))} />
                 </Field>
               </div>
               <div className="mt-5 flex justify-end">
                 <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                        onClick={()=>setOpenSubjective(false)}>Готово</button>
+                  onClick={() => setOpenSubjective(false)}>Готово</button>
               </div>
             </Modal>
           )}
 
           {/* Подтверждение удаления */}
           {confirmId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={()=>setConfirmId(null)}>
-              <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e)=>e.stopPropagation()}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setConfirmId(null)}>
+              <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-lg font-semibold">Удалить запись?</h3>
                 <p className="mt-2 text-sm text-slate-300">Действие необратимо.</p>
                 <div className="mt-5 flex justify-end gap-3">
-                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={()=>setConfirmId(null)}>Отмена</button>
+                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setConfirmId(null)}>Отмена</button>
                   <button className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium hover:bg-red-500" onClick={onDelete}>Удалить</button>
                 </div>
               </div>
@@ -2640,21 +2735,93 @@ export default function ControlSupervisionPage() {
             <p className="mt-3 text-sm text-red-400">{inspectionErrors.general}</p>
           )}
 
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <div className="flex gap-2">
+              {canEdit && (
+                <>
+                  <button
+                    className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium hover:bg-purple-500"
+                    onClick={handleCreateTicket}
+                    type="button"
+                  >
+                    🎫 Создать талон
+                  </button>
+                  <button
+                    className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500"
+                    onClick={handleCreateMOR}
+                    type="button"
+                  >
+                    ⚡ Принята МОР
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                onClick={() => setOpenInspectionForm(false)}
+                type="button"
+              >
+                Отмена
+              </button>
+              <button
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                onClick={onSaveInspection}
+                type="button"
+              >
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* МОР диалог */}
+      {openMORForm && (
+        <Modal title="Регистрация меры оперативного реагирования (МОР)" onClose={() => setOpenMORForm(false)}>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Field label="Вид меры">
+              <select
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={morForm.type}
+                onChange={(e) => setMORForm((s: any) => ({ ...s, type: e.target.value as MeasureType }))}
+              >
+                <option value="warning">Предостережение</option>
+                <option value="order">Предписание</option>
+                <option value="fine">Штраф</option>
+                <option value="suspension">Приостановление деятельности</option>
+                <option value="other">Другое</option>
+              </select>
+            </Field>
+            <Field label="Номер акта">
+              <input
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={morForm.number}
+                onChange={(e) => setMORForm((s: any) => ({ ...s, number: e.target.value }))}
+                placeholder="№ акта"
+              />
+            </Field>
+            <Field label="Дата принятия меры">
+              <input
+                type="date"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                value={morForm.measureDate}
+                onChange={(e) => setMORForm((s: any) => ({ ...s, measureDate: e.target.value }))}
+              />
+            </Field>
+            <Field label="Описание">
+              <textarea
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                rows={3}
+                value={morForm.description}
+                onChange={(e) => setMORForm((s: any) => ({ ...s, description: e.target.value }))}
+                placeholder="Описание меры"
+              />
+            </Field>
+          </div>
           <div className="mt-5 flex items-center justify-end gap-3">
-            <button
-              className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-              onClick={() => setOpenInspectionForm(false)}
-              type="button"
-            >
-              Отмена
-            </button>
-            <button
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
-              onClick={onSaveInspection}
-              type="button"
-            >
-              Сохранить
-            </button>
+            <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenMORForm(false)}>Отмена</button>
+            <button className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500" onClick={onSaveMOR}>Сохранитьацию МОР</button>
           </div>
         </Modal>
       )}
@@ -2663,10 +2830,10 @@ export default function ControlSupervisionPage() {
 }
 
 /** ===== Вспомогательные компоненты ===== */
-function Modal({ title, onClose, children }: { title?:string; onClose: ()=>void; children: React.ReactNode }) {
+function Modal({ title, onClose, children }: { title?: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e)=>e.stopPropagation()}>
+      <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         {title ? <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold">{title}</h2>
           <button className="rounded-lg bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700" onClick={onClose}>Закрыть</button></div> : null}
         {children}
@@ -2684,11 +2851,12 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     </label>
   );
 }
-function Check({ label, checked, onChange }: { label:string; checked:boolean; onChange:(v:boolean)=>void }) {
+
+function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex items-center gap-2 text-sm">
       <input type="checkbox" className="h-4 w-4"
-             checked={checked} onChange={(e)=>onChange(e.target.checked)} />
+        checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span className="text-slate-300">{label}</span>
     </label>
   );
