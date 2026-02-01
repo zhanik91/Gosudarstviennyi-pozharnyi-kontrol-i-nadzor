@@ -52,23 +52,23 @@ export default function ModuleCard({
               </Button>
             </Link>
           ) : (
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               disabled={primaryAction.disabled}
               data-testid={`module-${title.toLowerCase().replace(/\s+/g, '-')}`}
             >
               {primaryAction.label}
             </Button>
           )}
-          
+
           {secondaryActions.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {secondaryActions.map((action, index) => (
                 <Link key={index} to={action.href}>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
                     data-testid={`action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     {action.label}

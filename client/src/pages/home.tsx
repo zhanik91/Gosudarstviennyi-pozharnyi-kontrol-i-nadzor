@@ -80,15 +80,14 @@ export default function Home() {
               iconBg="bg-primary/20"
               iconColor="text-primary"
               title="Государственный учёт пожаров"
-              description="Журнал выездов, отчёты и диаграммы"
+              description="Регистрация пожаров, автозаполнение форм 1-7, интерактивная аналитика"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/fire-module"
               }}
               secondaryActions={[
-                { label: "Карты", href: "/fire-module?tab=maps" },
-                { label: "Отчёты", href: "/fire-module?tab=reports" },
-                { label: "Журнал", href: "/fire-module?tab=journal" }
+                { label: "Журнал", href: "/fire-module?tab=journal" },
+                { label: "Отчёты", href: "/fire-module?tab=reports" }
               ]}
             />
 
@@ -97,14 +96,14 @@ export default function Home() {
               iconBg="bg-accent/20"
               iconColor="text-accent"
               title="Государственный контроль и надзор"
-              description="Реестр объектов, учёт проверок и предписаний"
+              description="Реестр объектов, проверки, МОР с контролем сроков, талоны"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/controlled-objects"
               }}
               secondaryActions={[
-                { label: "Реестр объектов", href: "/controlled-objects?tab=registry" },
-                { label: "Списки проверок", href: "/controlled-objects?tab=preventive" }
+                { label: "Реестр", href: "/controlled-objects?tab=registry" },
+                { label: "Проверки", href: "/controlled-objects?tab=inspections" }
               ]}
             />
 
@@ -113,14 +112,13 @@ export default function Home() {
               iconBg="bg-orange-500/20"
               iconColor="text-orange-400"
               title="Журналы и списки"
-              description="Аудиты и противопожарные службы"
+              description="Ведомственные и объектовые журналы, учёт ППС и инструктажей"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/journals-lists",
               }}
               secondaryActions={[
-                { label: "Аудиты", href: "/journals-lists?tab=audits" },
-                { label: "ППС", href: "/journals-lists?tab=pps" }
+                { label: "Ведомственный", href: "/journals-lists?tab=audits" }
               ]}
             />
 
@@ -129,14 +127,13 @@ export default function Home() {
               iconBg="bg-purple-500/20"
               iconColor="text-purple-400"
               title="Административная практика"
-              description="Журнал практики и отчёты с фото"
+              description="Регистрация админ. дел, протоколы, постановления, фотофиксация"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/admin-practice"
               }}
               secondaryActions={[
-                { label: "Журнал", href: "/admin-practice?tab=journal" },
-                { label: "Отчёты", href: "/admin-practice?tab=reports" }
+                { label: "Журнал", href: "/admin-practice?tab=journal" }
               ]}
             />
 
@@ -145,14 +142,13 @@ export default function Home() {
               iconBg="bg-blue-500/20"
               iconColor="text-blue-400"
               title="Нормативные документы"
-              description="База НПА и законодательства РК"
+              description="Полная база НПА, законов, приказов и техрегламентов РК"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/normative-documents"
               }}
               secondaryActions={[
-                { label: "Законы", href: "/normative-documents?category=laws" },
-                { label: "Приказы", href: "/normative-documents?category=orders" }
+                { label: "Законы", href: "/normative-documents?category=laws" }
               ]}
             />
 
@@ -161,15 +157,14 @@ export default function Home() {
               iconBg="bg-emerald-500/20"
               iconColor="text-emerald-400"
               title="Калькуляторы"
-              description="Расчёты по НПА РК"
+              description="Расчёт огнетушителей, ПСС (НГПС), категорий взрывопожароопасности"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/calculators"
               }}
               secondaryActions={[
                 { label: "Огнетушители", href: "/calculators/fire-extinguishers" },
-                { label: "ПСС (НГПС)", href: "/calculators/ngps" },
-                { label: "Категория помещения", href: "/calculators/explosion-category" }
+                { label: "ПСС", href: "/calculators/ngps" }
               ]}
             />
 
@@ -178,14 +173,11 @@ export default function Home() {
               iconBg="bg-cyan-500/20"
               iconColor="text-cyan-400"
               title="АИ ассистент"
-              description="Помощник по НПА и консультациям"
+              description="Умный помощник с базой знаний НПА, консультации в реальном времени"
               primaryAction={{
                 label: "Открыть модуль",
                 href: "/ai-assistant"
               }}
-              secondaryActions={[
-                { label: "Новый чат", href: "/ai-assistant" }
-              ]}
             />
           </div>
 
