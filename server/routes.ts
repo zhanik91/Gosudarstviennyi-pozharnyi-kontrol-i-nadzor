@@ -16,6 +16,7 @@ import { adminController } from "./controllers/admin.controller";
 import { statsController } from "./controllers/stats.controller";
 import { auditController } from "./controllers/audit.controller";
 import { analyticsController } from "./controllers/analytics.controller";
+import { generateController } from "./controllers/generate.controller";
 import { toScopeUser, applyScopeCondition } from "./services/authz";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -123,6 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/incidents', isAuthenticated, canWriteRegistry, checkIncidentWriteScope, incidentController.createIncident);
   app.put('/api/incidents/:id', isAuthenticated, canWriteRegistry, checkIncidentWriteScope, incidentController.updateIncident);
   app.delete('/api/incidents/:id', isAuthenticated, canWriteRegistry, checkIncidentWriteScope, incidentController.deleteIncident);
+
+  // === Генерация тестовых инцидентов ===
+  app.post('/api/generate/incidents', isAuthenticated, generateController.generateIncidents);
 
   // === Пакеты ===
   app.get('/api/packages', isAuthenticated, packageController.getPackages);
@@ -298,17 +302,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orgUnitId: region,
         scopeUser: toScopeUser(req.user),
       });
-      
+
       // Get incidents with coordinates
       const incidentsResult = await storage.getIncidents({
         scopeUser: toScopeUser(req.user),
       });
-      
+
       // Handle both array and paginated response
-      const incidents = Array.isArray(incidentsResult) 
-        ? incidentsResult 
+      const incidents = Array.isArray(incidentsResult)
+        ? incidentsResult
         : (incidentsResult as any).items || [];
-      
+
       const regionFilter = typeof region === 'string' && region !== 'all' ? region : null;
       const districtFilter = typeof district === 'string' && district !== 'all' ? district : null;
 
@@ -338,8 +342,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             district: inc.city,
           }
         }));
-      
-      res.json({ 
+
+      res.json({
         regions: analyticsData.regionStats || [],
         incidents: incidentsWithCoords,
         heatmapData: [],
@@ -356,14 +360,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { latitude, longitude } = req.body;
       const [incident] = await db.update(incidents)
-        .set({ 
-          latitude: latitude || null, 
+        .set({
+          latitude: latitude || null,
           longitude: longitude || null,
-          updatedAt: new Date() 
+          updatedAt: new Date()
         })
         .where(eq(incidents.id, req.params.id))
         .returning();
-      
+
       if (!incident) return res.status(404).json({ message: 'Инцидент не найден' });
       res.json(incident);
     } catch (error) {
@@ -1053,17 +1057,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { region, status, format } = req.query;
       const scopeUser = toScopeUser(req.user);
-      
+
       const result = await db.query.controlObjects.findMany({
         where: (fields, { and, eq }) => {
           const conditions = [];
-          
+
           // Применяем ролевую фильтрацию
           const scopeCondition = applyScopeCondition(scopeUser, fields.region, fields.district);
           if (scopeCondition) {
             conditions.push(scopeCondition);
           }
-          
+
           // Дополнительные фильтры из запроса
           if (region && region !== 'all') {
             conditions.push(eq(fields.region, region as string));
@@ -1075,7 +1079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         orderBy: (fields, { desc }) => [desc(fields.createdAt)]
       });
-      
+
       // Формат для карты или полный формат для реестра
       if (format === 'map') {
         const objects = result.map((obj: any) => ({
@@ -1096,7 +1100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
         return res.json(objects);
       }
-      
+
       // Полный формат для реестра
       res.json(result);
     } catch (error) {
@@ -1113,7 +1117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
-  
+
   // Проверка scope при записи - DCHS может писать только в свой регион, OCHS - в свой район
   const checkWriteScope = buildScopeWriteCheck({
     table: controlObjects,
@@ -1125,14 +1129,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { latitude, longitude } = req.body;
       const [obj] = await db.update(controlObjects)
-        .set({ 
-          latitude: latitude || null, 
+        .set({
+          latitude: latitude || null,
           longitude: longitude || null,
-          updatedAt: new Date() 
+          updatedAt: new Date()
         })
         .where(eq(controlObjects.id, req.params.id))
         .returning();
-      
+
       if (!obj) return res.status(404).json({ message: 'Объект не найден' });
       res.json(obj);
     } catch (error) {
@@ -1145,14 +1149,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id || req.user?.username;
       const orgUnitId = req.user?.orgUnitId || null;
-      
+
       const data = req.body;
       const result = await db.insert(controlObjects).values({
         ...data,
         orgUnitId,
         createdBy: userId,
       }).returning();
-      
+
       res.json(result[0]);
     } catch (error) {
       console.error('Error creating control object:', error);
@@ -1164,16 +1168,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const data = req.body;
-      
+
       const result = await db.update(controlObjects)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(controlObjects.id, id))
         .returning();
-      
+
       if (result.length === 0) {
         return res.status(404).json({ message: 'Объект не найден' });
       }
-      
+
       res.json(result[0]);
     } catch (error) {
       console.error('Error updating control object:', error);
@@ -1184,9 +1188,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/control-objects/:id', isAuthenticated, canWriteControlObjects, checkWriteScope, async (req: any, res) => {
     try {
       const { id } = req.params;
-      
+
       await db.delete(controlObjects).where(eq(controlObjects.id, id));
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error('Error deleting control object:', error);
