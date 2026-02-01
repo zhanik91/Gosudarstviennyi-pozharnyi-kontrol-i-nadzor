@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FORM_1_OSP_ROWS, Form1OSPRow } from "@shared/fire-forms-data";
-import { Download, FileText, Send, Printer, AlertCircle, CheckCircle } from "lucide-react";
+import { Download, FileText, Send, Printer, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface RowData {
   total: number;
@@ -29,6 +30,7 @@ export default function Form1OSP() {
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
   const period = periodKey || undefined;
+  const queryClient = useQueryClient();
 
   const { reportData, isLoading, saveReport } = useReportForm<RowData>({
     formId: "1-osp",
@@ -56,9 +58,26 @@ export default function Form1OSP() {
     return reportData[rowId] || { total: 0, urban: 0, rural: 0 };
   };
 
+  const handleRefresh = async () => {
+    if (!period) {
+      toast({
+        title: "Ошибка",
+        description: "Выберите отчётный период",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["/api/reports", "1-osp", period, region] });
+    toast({
+      title: "Данные обновлены",
+      description: "Форма заполнена из журнала инцидентов"
+    });
+  };
+
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
-    
+
     const flattenRows = (rows: Form1OSPRow[]): Form1OSPRow[] => {
       return rows.reduce((acc, row) => {
         acc.push(row);
@@ -70,7 +89,7 @@ export default function Form1OSP() {
     };
 
     const allRows = flattenRows(FORM_1_OSP_ROWS);
-    
+
     allRows.forEach(row => {
       const data = getRowData(row.id);
       if (data.total !== data.urban + data.rural && (data.total > 0 || data.urban > 0 || data.rural > 0)) {
@@ -111,7 +130,7 @@ export default function Form1OSP() {
   const handleValidate = () => {
     const errors = validateForm();
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       toast({
         title: "Валидация пройдена",
@@ -128,7 +147,7 @@ export default function Form1OSP() {
 
   const handleExport = () => {
     const csvHeader = "Код строки,Наименование показателя,Всего,В городах,В сельской местности\n";
-    
+
     const flattenRows = (rows: Form1OSPRow[], indent = 0): string[] => {
       return rows.reduce((acc, row) => {
         const data = getRowData(row.id);
@@ -143,7 +162,7 @@ export default function Form1OSP() {
 
     const csvData = flattenRows(FORM_1_OSP_ROWS).join('\n');
     const csvContent = csvHeader + csvData;
-    
+
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -151,7 +170,7 @@ export default function Form1OSP() {
     link.download = `form_1_osp_${reportMonth}_${reportYear}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    
+
     toast({
       title: "Экспорт завершен",
       description: "Форма 1-ОСП экспортирована в CSV"
@@ -201,7 +220,7 @@ export default function Form1OSP() {
     const data = getRowData(row.id);
     const hasError = validationErrors.some(e => e.rowId === row.id);
     const isDecimal = row.valueType === 'decimal';
-    
+
     return (
       <tr key={row.id} className={`hover:bg-secondary/30 ${hasError ? 'bg-red-50 dark:bg-red-900/10' : ''} ${isChild ? 'bg-secondary/20' : ''}`}>
         <td className="border border-border p-2 text-center font-medium w-16">
@@ -292,10 +311,22 @@ export default function Form1OSP() {
     <div className="space-y-6 print:space-y-2" ref={printRef}>
       <Card className="print:shadow-none print:border-none">
         <CardHeader className="print:pb-2">
-          <CardTitle className="flex items-center gap-2 print:text-lg">
-            <FileText className="h-5 w-5 print:hidden" />
-            Форма 1-ОСП: Общие сведения о пожарах и гибели людей
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 print:text-lg">
+              <FileText className="h-5 w-5 print:hidden" />
+              Форма 1-ОСП: Общие сведения о пожарах и гибели людей
+            </CardTitle>
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              className="print:hidden"
+              disabled={isLoading || !period}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Обновить из журнала
+            </Button>
+          </div>
           <div className="text-sm text-muted-foreground print:text-xs">
             Приложение 1 к приказу Министра по чрезвычайным ситуациям Республики Казахстан от 28 августа 2025 года № 377
           </div>
@@ -305,7 +336,7 @@ export default function Form1OSP() {
             <div className="text-sm text-muted-foreground">Загрузка данных...</div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-2">
-                      <div className="flex gap-2">
+            <div className="flex gap-2">
               <div className="flex-1">
                 <Label>Отчетный период</Label>
                 <Select value={reportMonth} onValueChange={setReportMonth}>
@@ -335,10 +366,10 @@ export default function Form1OSP() {
             </div>
             <div>
               <Label>Регион</Label>
-                <Select value={region} onValueChange={setRegion}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {regions.map(r => (
                     <SelectItem key={r} value={r}>{r}</SelectItem>
@@ -406,7 +437,7 @@ export default function Form1OSP() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Наименование организации</Label>
-                <Input 
+                <Input
                   placeholder="Наименование ДЧС / ОГПС"
                   className="mt-1"
                   readOnly
@@ -414,7 +445,7 @@ export default function Form1OSP() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">БИН организации</Label>
-                <Input 
+                <Input
                   placeholder="XXXXXXXXXXXX"
                   maxLength={12}
                   className="mt-1"
@@ -422,11 +453,11 @@ export default function Form1OSP() {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель</Label>
-                <Input 
+                <Input
                   placeholder="Фамилия И.О., должность"
                   className="mt-1"
                   readOnly
@@ -434,7 +465,7 @@ export default function Form1OSP() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Телефон исполнителя</Label>
-                <Input 
+                <Input
                   placeholder="+7 (___) ___-__-__"
                   className="mt-1"
                   readOnly
@@ -450,7 +481,7 @@ export default function Form1OSP() {
                 <Label className="text-xs">Руководитель</Label>
               </div>
               <div className="text-center">
-                <Input 
+                <Input
                   placeholder="Фамилия И.О."
                   className="text-center"
                   readOnly
@@ -458,7 +489,7 @@ export default function Form1OSP() {
                 <Label className="text-xs text-muted-foreground">расшифровка подписи</Label>
               </div>
               <div className="text-center">
-                <Input 
+                <Input
                   type="date"
                   defaultValue={new Date().toISOString().split('T')[0]}
                   className="text-center"
