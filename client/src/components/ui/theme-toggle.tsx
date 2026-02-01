@@ -18,7 +18,7 @@ export function ThemeToggle() {
       aria-label="Переключить тему"
       aria-pressed={theme === "light"}
       onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
-      className="text-slate-100 transition duration-200 hover:bg-primary/20 hover:text-white"
+      className="text-foreground border border-border/50 transition duration-200 hover:bg-primary/20 hover:text-primary hover:border-primary/50"
     >
       {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
     </Button>
