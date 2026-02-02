@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ClipboardList, FileText } from "lucide-react";
+import { ArrowLeft, ClipboardList, FileText, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -8,10 +8,12 @@ import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
 import { Button } from "@/components/ui/button";
 import AdminPracticesPage from "@/pages/admin-practices";
 import AdminCasesReports from "@/components/admin-practices/admin-cases-reports";
+import AdminPracticeReport from "@/components/admin-practices/admin-practice-report";
 
 const tabs = [
   { id: "journal", label: "📋 Журнал административной практики", icon: ClipboardList },
   { id: "reports", label: "📷 Отчёты (фото)", icon: FileText },
+  { id: "practice-report", label: "📊 Отчет адм. практики", icon: BarChart3 },
 ] as const;
 
 type TabType = (typeof tabs)[number]["id"];
@@ -84,11 +86,10 @@ export default function AdminPracticesModule() {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-                }`}
+                className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium transition-colors ${activeTab === tab.id
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                  }`}
                 data-testid={`tab-${tab.id}`}
               >
                 {tab.label}
@@ -100,6 +101,7 @@ export default function AdminPracticesModule() {
         <div className="fade-in">
           {activeTab === "journal" && <AdminPracticesPage />}
           {activeTab === "reports" && <AdminCasesReports />}
+          {activeTab === "practice-report" && <AdminPracticeReport />}
         </div>
         <Footer />
       </div>

@@ -18,6 +18,7 @@ import { auditController } from "./controllers/audit.controller";
 import { analyticsController } from "./controllers/analytics.controller";
 import { generateController } from "./controllers/generate.controller";
 import { form13KpsController } from "./controllers/form-13-kps.controller";
+import { adminPracticeReportController } from "./controllers/admin-practice-report.controller";
 import { toScopeUser, applyScopeCondition } from "./services/authz";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -159,6 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/stats/dashboard', reportController.getDashboardStats);
   app.get('/api/reports/validate', isAuthenticated, reportController.validateReports);
   app.get('/api/reports/form-13-kps', isAuthenticated, form13KpsController.getReport);
+  app.get('/api/reports/admin-practice', isAuthenticated, adminPracticeReportController.getReport);
   app.get('/api/reports/admin-cases', isAuthenticated, async (req: any, res) => {
     try {
       const { period, dateFrom, dateTo, region, district, article } = req.query;
