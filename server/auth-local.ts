@@ -45,7 +45,7 @@ export function setupLocalAuth(app: Express) {
     resave: false,
     saveUninitialized: false,
     store: new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
+      conString: process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL,
       createTableIfMissing: true,
       tableName: 'sessions'
     }),

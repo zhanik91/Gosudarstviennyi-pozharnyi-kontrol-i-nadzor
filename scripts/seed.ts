@@ -1,10 +1,15 @@
 import { db } from "../server/storage/db";
 import { users } from "@shared/schema";
-import bcrypt from "bcryptjs";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 import { eq } from "drizzle-orm";
 
-async function hashPassword(password: string) {
-  return bcrypt.hash(password, 12);
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
 }
 
 async function seed() {
@@ -29,7 +34,7 @@ async function seed() {
         username,
         passwordHash: hashedPassword,
         fullName: "System Administrator",
-        role: "MCHS",
+        role: "admin",
         region: "system",
         district: "",
         isActive: true,
