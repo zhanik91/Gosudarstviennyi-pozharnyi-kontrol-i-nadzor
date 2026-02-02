@@ -19,8 +19,12 @@ export class ReportController {
   async getReports(req: Request, res: Response) {
     try {
       const orgUnits = await storage.getOrganizations();
-      const orgId = (req.query.orgId as string) || req.user?.orgUnitId;
-      const includeChildren = req.query.includeChildren === 'true';
+      const userRole = req.user?.role;
+      const isGlobalAccess = userRole === 'admin' || userRole === 'MCHS';
+      
+      // Для admin/MCHS используем корневую организацию и includeChildren по умолчанию
+      const orgId = (req.query.orgId as string) || req.user?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : undefined);
+      const includeChildren = req.query.includeChildren === 'true' || isGlobalAccess;
       const period = req.query.period as string;
       const form = req.query.form as string;
       const region = req.query.region as string | undefined;
@@ -33,23 +37,26 @@ export class ReportController {
       const { assertOrgScope, assertTreeAccess } = await import('../services/authz');
 
       try {
-        // Use orgUnitId from the authenticated user object
-        const userOrgId = req.user?.orgUnitId;
-        if (!userOrgId) {
+        // Для admin/MCHS пропускаем проверку org scope
+        const userOrgId = req.user?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : undefined);
+        if (!userOrgId && !isGlobalAccess) {
           return res.status(400).json({ ok: false, msg: 'org unit required' });
         }
         const resolvedOrgId = orgId || userOrgId;
-        assertOrgScope(orgUnits, userOrgId, resolvedOrgId);
+        
+        if (!isGlobalAccess && resolvedOrgId) {
+          assertOrgScope(orgUnits, userOrgId!, resolvedOrgId);
+        }
 
-        if (includeChildren) {
+        if (includeChildren && !isGlobalAccess) {
           assertTreeAccess(req.user?.role || 'DISTRICT');
         }
       } catch (error: any) {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
       }
 
-      const resolvedOrgId = orgId || req.user?.orgUnitId;
-      if (!resolvedOrgId) {
+      const resolvedOrgId = orgId || req.user?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : undefined);
+      if (!resolvedOrgId && !isGlobalAccess) {
         return res.status(400).json({ ok: false, msg: 'org unit required' });
       }
 
