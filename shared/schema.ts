@@ -120,6 +120,7 @@ export const users = pgTable("users", {
   orgUnitId: varchar("org_unit_id"),
   mustChangeOnFirstLogin: boolean("must_change_on_first_login").notNull().default(true),
   isActive: boolean("is_active").notNull().default(true),
+  isInspector: boolean("is_inspector").default(false),
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -143,6 +144,25 @@ export const orgUnits = pgTable("org_units", {
   index("org_units_parent_id_idx").on(table.parentId),
   index("org_units_region_name_idx").on(table.regionName),
 ]));
+
+// Organizations Registry (Реестр организаций для формы 13-КПС)
+export const organizationsRegistry = pgTable("organizations_registry", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bin: varchar("bin").notNull().unique(),
+  iin: varchar("iin"),
+  name: varchar("name").notNull(),
+  type: organizationTypeEnum("type").notNull(),
+  isGovernment: boolean("is_government").notNull().default(false),
+  region: varchar("region"),
+  district: varchar("district"),
+  address: text("address"),
+  autoDetected: boolean("auto_detected").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("organizations_registry_bin_idx").on(table.bin),
+  index("organizations_registry_type_idx").on(table.type),
+]);
 
 // Fire incidents table (согласно форме 1-ОСП)
 export const incidents = pgTable("incidents", {
@@ -333,7 +353,10 @@ export const controlObjects = pgTable("control_objects", {
   description: text("description"),
   contactPerson: varchar("contact_person"),
   contactPhone: varchar("contact_phone"),
-  details: jsonb("details"), // Дополнительные параметры
+  details: jsonb("details"),
+
+  // Связь с реестром организаций (Форма 13-КПС)
+  organizationBin: varchar("organization_bin"),
 
   // Система управления
   orgUnitId: varchar("org_unit_id").notNull(),
@@ -345,6 +368,7 @@ export const controlObjects = pgTable("control_objects", {
   index("control_objects_org_unit_id_idx").on(table.orgUnitId),
   index("control_objects_region_idx").on(table.region),
   index("control_objects_status_idx").on(table.status),
+  index("control_objects_organization_bin_idx").on(table.organizationBin),
 ]);
 
 export const inspections = pgTable("inspections", {
@@ -377,6 +401,16 @@ export const inspections = pgTable("inspections", {
   address: text("address"),
   orgUnitId: varchar("org_unit_id"),
   createdBy: varchar("created_by"),
+
+  // Новые поля для формы 13-КПС
+  controlObjectId: varchar("control_object_id"),
+  organizationBin: varchar("organization_bin"),
+  inspectionBasis: inspectionBasisEnum("inspection_basis").default('plan'),
+  riskLevel: varchar("risk_level", { enum: ["low", "medium", "high"] }),
+  parentInspectionId: varchar("parent_inspection_id"),
+  isFollowUpInspection: boolean("is_follow_up_inspection").default(false),
+  adminResponsibilityApplied: boolean("admin_responsibility_applied").default(false),
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -387,6 +421,10 @@ export const inspections = pgTable("inspections", {
   index("inspections_bin_idx").on(table.bin),
   index("inspections_iin_idx").on(table.iin),
   index("inspections_number_idx").on(table.number),
+  index("inspections_control_object_id_idx").on(table.controlObjectId),
+  index("inspections_organization_bin_idx").on(table.organizationBin),
+  index("inspections_inspection_basis_idx").on(table.inspectionBasis),
+  index("inspections_parent_inspection_id_idx").on(table.parentInspectionId),
 ]);
 
 export const prescriptions = pgTable("prescriptions", {
@@ -427,6 +465,15 @@ export const measures = pgTable("measures", {
   bin: varchar("bin"),
   iin: varchar("iin"),
   description: text("description"),
+
+  // Новые поля для формы 13-КПС
+  parentMeasureId: varchar("parent_measure_id"),
+  isRepeat: boolean("is_repeat").default(false),
+  openedAt: timestamp("opened_at"),
+  dueDate: timestamp("due_date"),
+  closedAt: timestamp("closed_at"),
+  followUpInspectionId: varchar("follow_up_inspection_id"),
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -438,6 +485,9 @@ export const measures = pgTable("measures", {
   index("measures_bin_idx").on(table.bin),
   index("measures_iin_idx").on(table.iin),
   index("measures_number_idx").on(table.number),
+  index("measures_parent_measure_id_idx").on(table.parentMeasureId),
+  index("measures_opened_at_idx").on(table.openedAt),
+  index("measures_due_date_idx").on(table.dueDate),
 ]);
 
 export const adminCases = pgTable("admin_cases", {
@@ -447,7 +497,6 @@ export const adminCases = pgTable("admin_cases", {
   caseDate: timestamp("case_date").notNull(),
   type: adminCaseTypeEnum("type").notNull().default('protocol'),
   status: adminCaseStatusEnum("status").notNull().default('opened'),
-  fineAmount: decimal("fine_amount", { precision: 15, scale: 2 }).default('0'),
   paymentType: adminCasePaymentTypeEnum("payment_type"),
   outcome: adminCaseOutcomeEnum("outcome").default('other'),
   region: varchar("region"),
