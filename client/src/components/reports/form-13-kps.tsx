@@ -326,286 +326,214 @@ export default function Form13KPS() {
                         </div>
                     )}
 
-                    {/* Данные формы */}
-                    {(() => {
-                        const defaultData: Form13KPSData = {
-                            period: period || "",
-                            region: region || "Все",
-                            district: "Все",
-                            inspections: {
-                                total: 0,
-                                byType: { scheduled: 0, unscheduled: 0, preventive_control: 0, monitoring: 0 },
-                                byBasis: { plan: 0, prescription: 0, prosecutor: 0, complaint: 0, pnsem: 0, fire_incident: 0, other: 0 },
-                                byRiskLevel: { high: 0, medium: 0, low: 0 },
-                                withViolations: 0,
-                                withAdminResponsibility: 0,
-                                followUp: 0
-                            },
-                            measures: {
-                                total: 0,
-                                primary: 0,
-                                repeat: 0,
-                                byStatus: { issued: 0, in_progress: 0, completed: 0 }
-                            },
-                            organizations: {
-                                total: 0,
-                                byType: { government: 0, small_business: 0, medium_business: 0, large_business: 0, individual: 0 }
-                            },
-                            generatedAt: new Date().toISOString()
-                        };
+                    {/* Шапка таблицы в стиле Excel */}
+                    <div className="overflow-x-auto border-t border-l border-r border-black">
+                        <table className="w-full border-collapse text-[10px] leading-tight font-sans">
+                            <thead>
+                                <tr className="bg-white">
+                                    <th rowSpan={3} className="border border-black p-1 w-6">№</th>
+                                    <th rowSpan={3} className="border border-black p-1 min-w-[200px]">Показатели</th>
+                                    <th rowSpan={3} className="border border-black p-1 w-12 text-center">Ед. изм.</th>
+                                    <th rowSpan={3} className="border border-black p-1 w-16 text-center">Всего за отчетный период</th>
+                                    <th colSpan={6} className="border border-black p-1 text-center">из них по частному сектору</th>
+                                </tr>
+                                <tr className="bg-white">
+                                    <th rowSpan={2} className="border border-black p-1 w-16 text-center">Гос. организации</th>
+                                    <th colSpan={5} className="border border-black p-1 text-center">субъекты частного предпринимательства</th>
+                                </tr>
+                                <tr className="bg-white">
+                                    <th className="border border-black p-1 w-14 text-center">всего</th>
+                                    <th className="border border-black p-1 w-12 text-center">микро</th>
+                                    <th className="border border-black p-1 w-12 text-center">малый</th>
+                                    <th className="border border-black p-1 w-12 text-center">средний</th>
+                                    <th className="border border-black p-1 w-12 text-center">крупный</th>
+                                </tr>
+                                <tr className="bg-gray-100 text-[8px]">
+                                    <th className="border border-black p-0.5">А</th>
+                                    <th className="border border-black p-0.5">Б</th>
+                                    <th className="border border-black p-0.5">В</th>
+                                    <th className="border border-black p-0.5">1</th>
+                                    <th className="border border-black p-0.5">2</th>
+                                    <th className="border border-black p-0.5">3</th>
+                                    <th className="border border-black p-0.5">4</th>
+                                    <th className="border border-black p-0.5">5</th>
+                                    <th className="border border-black p-0.5">6</th>
+                                    <th className="border border-black p-0.5">7</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {/* ОБЩИЙ РАЗДЕЛ */}
+                                <tr className="bg-white font-bold h-6">
+                                    <td className="border border-black text-center">1</td>
+                                    <td className="border border-black px-2">Количество подконтрольных объектов, ВСЕГО</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
 
-                        const displayData = reportData || defaultData;
-                        const isPlaceholder = !reportData && !isLoading;
+                                {/* I. РАЗДЕЛ: Профилактический контроль */}
+                                <tr className="bg-[#FFCC00] font-bold h-6 text-center italic">
+                                    <td colSpan={10} className="border border-black">
+                                        I. СВЕДЕНИЯ ПО ПРОФИЛАКТИЧЕСКОМУ КОНТРОЛЮ БЕЗ ПОСЕЩЕНИЯ (МОР)
+                                    </td>
+                                </tr>
+                                <tr className="bg-[#FFE599] font-bold h-6">
+                                    <td className="border border-black text-center">2</td>
+                                    <td className="border border-black px-2">Количество выданных МОР по проверкам</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
+                                <tr className="bg-white h-6">
+                                    <td className="border border-black text-center">3</td>
+                                    <td className="border border-black px-2">Из них первичных МОР</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
+                                <tr className="bg-white h-6">
+                                    <td className="border border-black text-center">4</td>
+                                    <td className="border border-black px-2">Количество выданных повторных МОР</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
 
-                        return (
-                            <>
-                                {isError && (
-                                    <div className="bg-destructive/10 text-destructive p-3 rounded-lg flex items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <span className="text-sm font-medium">Ошибка загрузки актуальных данных. Отображаются пустые поля.</span>
-                                    </div>
-                                )}
+                                {/* II. РАЗДЕЛ: ПРОВЕРКИ */}
+                                <tr className="bg-[#FFCC00] font-bold h-6 text-center italic">
+                                    <td colSpan={10} className="border border-black">
+                                        II. СВЕДЕНИЯ О ПРОВЕРЕННЫХ ОБЪЕКТАХ И ВЫЯВЛЕННЫХ НА ПРОВЕРКАХ НАРУШЕНИЯХ
+                                    </td>
+                                </tr>
+                                <tr className="bg-[#FFE599] font-bold h-6">
+                                    <td className="border border-black text-center">5</td>
+                                    <td className="border border-black px-2">Количество проверенных объектов, ВСЕГО</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
+                                <tr className="bg-[#FAFAFA] h-6">
+                                    <td className="border border-black text-center">6</td>
+                                    <td className="border border-black px-2 pl-4">из них по основаниям МОР по проверкам</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
+                                <tr className="bg-white h-6">
+                                    <td className="border border-black text-center">7</td>
+                                    <td className="border border-black px-2 pl-4">Количество выявленных нарушений</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
+                                <tr className="bg-white h-6">
+                                    <td className="border border-black text-center">8</td>
+                                    <td className="border border-black px-2 pl-4">Количество выполненных предписаний</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
 
-                                {/* РАЗДЕЛ I: Проверки */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold border-b pb-2">
-                                        РАЗДЕЛ I. ПРОВЕРКИ
-                                    </h3>
+                                {/* Ш. РАЗДЕЛ: АДМИН ПРАКТИКА */}
+                                <tr className="bg-[#92D050] font-bold h-6 text-center italic">
+                                    <td colSpan={10} className="border border-black">
+                                        III. СВЕДЕНИЯ О ПРИМЕНЕННЫХ МЕРАХ АДМИНИСТРАТИВНОГО ВОЗДЕЙСТВИЯ
+                                    </td>
+                                </tr>
+                                <tr className="bg-[#D9EAD3] font-bold h-6">
+                                    <td className="border border-black text-center">9</td>
+                                    <td className="border border-black px-2">Количество возбужденных адм. дел</td>
+                                    <td className="border border-black text-center">ед.</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
+                                <tr className="bg-white h-6">
+                                    <td className="border border-black text-center">10</td>
+                                    <td className="border border-black px-2">Сумма наложенных штрафов (тыс. тенге)</td>
+                                    <td className="border border-black text-center">тыс. тнг</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                    <td className="border border-black text-center">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                                    {/* Общая статистика */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <StatCell value={displayData.inspections.total} label="Всего проверок" />
-                                        <StatCell value={displayData.inspections.withViolations} label="С нарушениями" />
-                                        <StatCell value={displayData.inspections.withAdminResponsibility} label="С админ. отв." />
-                                        <StatCell value={displayData.inspections.followUp} label="Контрольные" />
-                                    </div>
-
-                                    {/* По типам проверок */}
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse border border-border text-sm">
-                                            <thead>
-                                                <tr className="bg-secondary">
-                                                    <th className="border border-border p-2 text-left">Тип проверки</th>
-                                                    <th className="border border-border p-2 text-center w-24">Кол-во</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Плановые</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byType.scheduled}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Внеплановые</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byType.unscheduled}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Профилактический контроль</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byType.preventive_control}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Мониторинг</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byType.monitoring}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* По основаниям */}
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse border border-border text-sm">
-                                            <thead>
-                                                <tr className="bg-secondary">
-                                                    <th className="border border-border p-2 text-left">Основание проверки</th>
-                                                    <th className="border border-border p-2 text-center w-24">Кол-во</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">По плану</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byBasis.plan}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">По контролю исполнения предписаний</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byBasis.prescription}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">По поручению прокуратуры</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byBasis.prosecutor}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">По жалобам (обращения физ/юр лиц)</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byBasis.complaint}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">По письмам ПНСЕМ (ст.152 ПК РК)</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byBasis.pnsem}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">По факту пожара</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byBasis.fire_incident}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Прочие</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byBasis.other}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* По степени риска */}
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse border border-border text-sm">
-                                            <thead>
-                                                <tr className="bg-secondary">
-                                                    <th className="border border-border p-2 text-left">Степень риска</th>
-                                                    <th className="border border-border p-2 text-center w-24">Кол-во</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">
-                                                        <span className="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
-                                                        Высокий риск
-                                                    </td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byRiskLevel.high}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">
-                                                        <span className="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
-                                                        Средний риск
-                                                    </td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byRiskLevel.medium}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">
-                                                        <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                                                        Низкий риск
-                                                    </td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.inspections.byRiskLevel.low}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                    {/* Подписи и прочее */}
+                    <div className="mt-8 text-[10px] space-y-6">
+                        <div className="grid grid-cols-2 gap-20">
+                            <div>
+                                <p className="font-bold">Руководитель (или лицо, исполняющее его обязанности)</p>
+                                <div className="mt-4 border-b border-black w-full flex justify-between">
+                                    <span>__________________________</span>
+                                    <span>(Ф.И.О.)</span>
                                 </div>
-
-                                {/* РАЗДЕЛ II: МОР */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold border-b pb-2">
-                                        РАЗДЕЛ II. МЕРЫ ОПЕРАТИВНОГО РЕАГИРОВАНИЯ (МОР)
-                                    </h3>
-
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                        <StatCell value={displayData.measures.total} label="Всего МОР" />
-                                        <StatCell value={displayData.measures.primary} label="Первичные" />
-                                        <StatCell value={displayData.measures.repeat} label="Повторные" />
-                                    </div>
-
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse border border-border text-sm">
-                                            <thead>
-                                                <tr className="bg-secondary">
-                                                    <th className="border border-border p-2 text-left">Статус МОР</th>
-                                                    <th className="border border-border p-2 text-center w-24">Кол-во</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Выдано</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.measures.byStatus.issued}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">В работе</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.measures.byStatus.in_progress}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Завершено</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.measures.byStatus.completed}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-bold">Исполнитель:</p>
+                                <div className="mt-4 border-b border-black w-full inline-block text-left italic">
+                                    (Ф.И.О., должность, телефон)
                                 </div>
-
-                                {/* РАЗДЕЛ III: Организации */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold border-b pb-2">
-                                        РАЗДЕЛ III. СУБЪЕКТЫ ПРОВЕРОК
-                                    </h3>
-
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse border border-border text-sm">
-                                            <thead>
-                                                <tr className="bg-secondary">
-                                                    <th className="border border-border p-2 text-left">Тип организации</th>
-                                                    <th className="border border-border p-2 text-center w-24">Кол-во</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Государственные организации</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.organizations.byType.government}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Малый бизнес</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.organizations.byType.small_business}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Средний бизнес</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.organizations.byType.medium_business}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Крупный бизнес</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.organizations.byType.large_business}</td>
-                                                </tr>
-                                                <tr className="hover:bg-secondary/30">
-                                                    <td className="border border-border p-2">Физические лица</td>
-                                                    <td className="border border-border p-2 text-center font-medium">{displayData.organizations.byType.individual}</td>
-                                                </tr>
-                                                <tr className="bg-secondary/50 font-semibold">
-                                                    <td className="border border-border p-2">ИТОГО</td>
-                                                    <td className="border border-border p-2 text-center">{displayData.organizations.total}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                {/* Подписи и печать */}
-                                <div className="border border-border rounded-lg p-4 mt-6 space-y-4 print:mt-8 print:border-black">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
-                                        <div className="text-center">
-                                            <div className="border-b border-border pb-6 mb-1">
-                                                <span className="text-muted-foreground text-xs">подпись</span>
-                                            </div>
-                                            <Label className="text-xs">Руководитель</Label>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="border-b border-border pb-6 mb-1">
-                                                <span className="text-muted-foreground text-xs">расшифровка подписи</span>
-                                            </div>
-                                            <Label className="text-xs">Фамилия И.О.</Label>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="border-b border-border pb-6 mb-1">
-                                                <span className="text-muted-foreground text-xs">дата</span>
-                                            </div>
-                                            <Label className="text-xs">{new Date().toLocaleDateString('ru-RU')}</Label>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-4 border-t border-border print:pt-6">
-                                        <div className="text-center w-24 h-24 border border-dashed border-border rounded-lg flex items-center justify-center">
-                                            <span className="text-xs text-muted-foreground">М.П.</span>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground text-right">
-                                            <p>Форма представляется ежемесячно</p>
-                                            <p>до 5 числа месяца, следующего за отчетным</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </>
-                        );
-                    })()}
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <div className="w-16 h-16 border border-black rounded-full flex items-center justify-center text-[8px] font-bold">
+                                М.П.
+                            </div>
+                            <div className="font-bold">
+                                "____" _______________ 202___ г.
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Кнопки действий */}
                     <div className="flex flex-wrap gap-4 pt-4 print:hidden">
