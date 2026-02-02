@@ -46,3 +46,4 @@ expertMode = true
 [userenv]
 
 [userenv.shared]
+SUPABASE_DATABASE_URL = "postgresql://postgres:AA2711rr%21%21%21@db.qwygjzaulhhrhpsbovjy.supabase.co:5432/postgres"
