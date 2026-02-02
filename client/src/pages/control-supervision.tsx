@@ -4,9 +4,85 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ADMIN2_BY_REGION, REGION_NAMES } from "@/data/kazakhstan-data";
 import { apiRequest } from "@/lib/queryClient";
+import Form13KPS from "@/components/reports/form-13-kps";
 
 /** ===== Типы ===== */
 type TabType = "registry" | "inspections" | "preventive" | "measures" | "reports";
+type ObjectiveLevel = "Высокая" | "Средняя" | "Низкая" | "Без категории";
+type Status = "Активный" | "Не функционирует";
+type BizCat = "Микро" | "Малый" | "Средний" | "Крупный";
+
+type CategoryItem = {
+  id: string;
+  label: string;
+  full: string;
+};
+
+type ObjectCharacteristics = {
+  isHighRise: boolean;
+  isMassGathering: boolean;
+  hasDisabled: boolean;
+  hasExplosives: boolean;
+  hasRadioactive: boolean;
+  hasChemicals: boolean;
+  hasGas: boolean;
+  isUnique: boolean;
+  isMonitored: boolean;
+  hasPrivateFireService: boolean;
+  buildingType: string;
+  heightMeters: string | number;
+  walls: string;
+  partitions: string;
+  heating: string;
+  lighting: string;
+  hasAttic: boolean;
+  hasBasement: boolean;
+  hasParking: boolean;
+  primaryExtinguishing: string;
+  hasAUPT: boolean;
+  hasAPS: boolean;
+  apsServiceOrg: string;
+  outsideWater: string;
+  insideWater: string;
+};
+
+type SubjectiveCriteria = {
+  violationsFound: boolean;
+  hasFireSquad: boolean;
+  hasFireSystem: boolean;
+  hasWaterSupply: boolean;
+  hasAccessRoads: boolean;
+  hasTraining: boolean;
+  hasInsurance: boolean;
+  prevViolations: number;
+  incidents12m: number;
+  powerOverload: boolean;
+  otherRiskNotes: string;
+};
+
+type ControlledObject = {
+  id: string;
+  region: string;
+  district: string;
+  bin: string;
+  iin: string;
+  subjectBIN: string;
+  subjectName: string;
+  objectName: string;
+  address: string;
+  objectiveLevel: ObjectiveLevel;
+  objectiveCategoryId: string;
+  subjectiveLevel: ObjectiveLevel;
+  totalLevel: ObjectiveLevel;
+  entrepreneurshipCategory: BizCat;
+  status: Status;
+  isInspected: boolean;
+  lastInspectionDate: string | null;
+  nextInspectionDate: string | null;
+  characteristics: ObjectCharacteristics;
+  subjective: SubjectiveCriteria;
+};
+
 type InspectionType = "scheduled" | "unscheduled" | "preventive" | "monitoring";
 type InspectionStatus = "planned" | "in_progress" | "completed" | "canceled";
 type PrescriptionStatus = "issued" | "in_progress" | "fulfilled" | "overdue" | "canceled";
@@ -88,6 +164,7 @@ type InspectionRow = {
   iin: string | null;
   subjectName: string | null;
   address: string | null;
+  relatedObjectId?: string;
 };
 
 type ResultTicket = {
@@ -274,6 +351,7 @@ const CATS: Record<ObjectiveLevel, CategoryItem[]> = {
   Высокая: HIGH,
   Средняя: MEDIUM,
   Низкая: LOW,
+  "Без категории": [],
 };
 
 const formatDate = (value?: string | null) => {
@@ -338,17 +416,21 @@ function calculateMORDeadline(measureDate: string | null): string | null {
 function getMORDeadlineStatus(measureDate: string | null): {
   status: 'overdue' | 'warning' | 'normal' | 'none';
   colorClass: string;
+  color: string;
   icon: string;
   text: string;
   daysLeft: number | null;
+  deadline: string | null;
 } {
   if (!measureDate) {
     return {
       status: 'none',
       colorClass: 'text-slate-500',
+      color: '#64748b',
       icon: '—',
       text: 'Дата не указана',
-      daysLeft: null
+      daysLeft: null,
+      deadline: null
     };
   }
 
@@ -357,9 +439,11 @@ function getMORDeadlineStatus(measureDate: string | null): {
     return {
       status: 'none',
       colorClass: 'text-slate-500',
+      color: '#64748b',
       icon: '—',
       text: 'Некорректная дата',
-      daysLeft: null
+      daysLeft: null,
+      deadline: null
     };
   }
 
@@ -375,34 +459,41 @@ function getMORDeadlineStatus(measureDate: string | null): {
     return {
       status: 'overdue',
       colorClass: 'text-red-500',
-      icon: '🔴',
+      color: '#ef4444',
+      icon: '⚠️',
       text: `Просрочено на ${Math.abs(daysLeft)} дн.`,
-      daysLeft
+      daysLeft,
+      deadline
     };
   }
 
-  if (daysLeft <= 7) {
+  if (daysLeft <= 14) {
     return {
       status: 'warning',
       colorClass: 'text-yellow-500',
-      icon: '⏰',
+      color: '#eab308',
+      icon: '⏳',
       text: `Осталось ${daysLeft} дн.`,
-      daysLeft
+      daysLeft,
+      deadline
     };
   }
 
   return {
     status: 'normal',
-    colorClass: 'text-green-500',
+    colorClass: 'text-emerald-500',
+    color: '#10b981',
     icon: '✅',
-    text: `Осталось ${daysLeft} дн.`,
-    daysLeft
+    text: `В срок (${daysLeft} дн.)`,
+    daysLeft,
+    deadline
   };
 }
 
 export default function ControlSupervisionPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("registry");
+  const [reportType, setReportType] = useState<"general" | "form-13-kps">("general");
   const userRole = (user as any)?.role;
   const isMchsUser = userRole === "MCHS" || userRole === "admin";
   const isDchsUser = userRole === "DCHS";
@@ -435,21 +526,34 @@ export default function ControlSupervisionPage() {
         id: obj.id,
         region: obj.region || '',
         district: obj.district || '',
+        bin: obj.bin || details.bin || '',
+        iin: obj.iin || details.iin || '',
         subjectName: details.subjectName || obj.name || '',
-        subjectBIN: details.subjectBIN || '',
+        subjectBIN: details.subjectBIN || obj.bin || '',
         objectName: obj.name || '',
         address: obj.address || '',
         entrepreneurshipCategory: details.entrepreneurshipCategory || 'Микро',
         status: obj.status === 'active' ? 'Активный' : 'Не функционирует',
         objectiveLevel: details.objectiveLevel || obj.category || 'Низкая',
         objectiveCategoryId: details.objectiveCategoryId || obj.subcategory || '',
+        subjectiveLevel: details.subjectiveLevel || 'Низкая',
+        totalLevel: details.totalLevel || 'Низкая',
+        isInspected: !!obj.lastInspectionDate,
+        lastInspectionDate: obj.lastInspectionDate || null,
+        nextInspectionDate: obj.nextInspectionDate || null,
         characteristics: details.characteristics || {
+          isHighRise: false, isMassGathering: false, hasDisabled: false, hasExplosives: false,
+          hasRadioactive: false, hasChemicals: false, hasGas: false, isUnique: false, isMonitored: false,
           hasPrivateFireService: false, buildingType: '', heightMeters: '', walls: '', partitions: '',
           heating: '', lighting: '', hasAttic: false, hasBasement: false, hasParking: false,
           primaryExtinguishing: '', hasAUPT: false, hasAPS: false, apsServiceOrg: '',
           outsideWater: '', insideWater: ''
         },
-        subjective: details.subjective || { prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: '' },
+        subjective: details.subjective || {
+          violationsFound: false, hasFireSquad: false, hasFireSystem: false, hasWaterSupply: false,
+          hasAccessRoads: false, hasTraining: false, hasInsurance: false,
+          prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: ''
+        },
       };
     });
   }, [apiRows]);
@@ -538,25 +642,38 @@ export default function ControlSupervisionPage() {
 
   // форма/модалки
   const blankChars = (): ObjectCharacteristics => ({
+    isHighRise: false, isMassGathering: false, hasDisabled: false, hasExplosives: false,
+    hasRadioactive: false, hasChemicals: false, hasGas: false, isUnique: false, isMonitored: false,
     hasPrivateFireService: false, buildingType: "", heightMeters: "", walls: "", partitions: "",
     heating: "", lighting: "", hasAttic: false, hasBasement: false, hasParking: false,
     primaryExtinguishing: "", hasAUPT: false, hasAPS: false, apsServiceOrg: "",
     outsideWater: "", insideWater: ""
   });
-  const blankSubj = (): SubjectiveCriteria => ({ prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: "" });
+  const blankSubj = (): SubjectiveCriteria => ({
+    violationsFound: false, hasFireSquad: false, hasFireSystem: false, hasWaterSupply: false,
+    hasAccessRoads: false, hasTraining: false, hasInsurance: false,
+    prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: ""
+  });
 
   const blank: ControlledObject = {
     id: "",
     region: userRegion || REGIONS[0],
     district: userDistrict || "",
-    subjectName: "",
+    bin: "",
+    iin: "",
     subjectBIN: "",
+    subjectName: "",
     objectName: "",
     address: "",
     entrepreneurshipCategory: "Микро",
     status: "Активный",
     objectiveLevel: "Низкая",
     objectiveCategoryId: "",
+    subjectiveLevel: "Низкая",
+    totalLevel: "Низкая",
+    isInspected: false,
+    lastInspectionDate: null,
+    nextInspectionDate: null,
     characteristics: blankChars(),
     subjective: blankSubj(),
   };
@@ -836,10 +953,11 @@ export default function ControlSupervisionPage() {
       iin: item.iin ?? "",
       subjectName: item.subjectName ?? "",
       address: item.address ?? "",
+      relatedObjectId: item.relatedObjectId || "",
     }));
   }, [inspectionsData]);
 
-  const { data: prescriptions = [], isLoading: isLoadingPrescriptions } = useQuery<PrescriptionItem[]>({
+  const { data: prescriptionsData = [], isLoading: isLoadingPrescriptions } = useQuery<PrescriptionItem[]>({
     queryKey: ['/api/control-supervision/prescriptions', prescriptionQuery],
     queryFn: async () => {
       const res = await fetch(`/api/control-supervision/prescriptions${prescriptionQuery ? `?${prescriptionQuery}` : ""}`, {
@@ -1278,7 +1396,7 @@ export default function ControlSupervisionPage() {
 
       const mapped: ControlledObject[] = json.map((row) => {
         const level = (String(row["Объективный критерий (риск)"] ?? row["Уровень"] ?? "Низкая") as ObjectiveLevel);
-        const all = CATS[level];
+        const all = CATS[level] || [];
         const byLabel = all.find(c => c.label === String(row["Наименование объективного критерия"] ?? row["Категория (кратко)"] ?? ""));
         const byFull = all.find(c => c.full === String(row["Полный текст категории"] ?? ""));
         const catId = byLabel?.id || byFull?.id || "";
@@ -1287,21 +1405,34 @@ export default function ControlSupervisionPage() {
           id: crypto.randomUUID(),
           region: String(row["Регион"] ?? REGIONS[0]),
           district: String(row["Район/город"] ?? ""),
-          subjectName: String(row["Наименование субъекта"] ?? ""),
+          bin: String(row["ИИН/БИН"] ?? ""),
+          iin: String(row["ИИН/БИН"] ?? ""),
           subjectBIN: String(row["ИИН/БИН"] ?? ""),
+          subjectName: String(row["Наименование субъекта"] ?? ""),
           objectName: String(row["Наименование объекта"] ?? ""),
           address: String(row["Адрес"] ?? ""),
           entrepreneurshipCategory: (String(row["Категория предпринимательства"] ?? "Микро") as BizCat),
           status: (String(row["Статус"] ?? "Активный") as Status),
           objectiveLevel: level,
           objectiveCategoryId: catId,
+          subjectiveLevel: "Низкая",
+          totalLevel: "Низкая",
+          isInspected: false,
+          lastInspectionDate: null,
+          nextInspectionDate: null,
           characteristics: {
+            isHighRise: false, isMassGathering: false, hasDisabled: false, hasExplosives: false,
+            hasRadioactive: false, hasChemicals: false, hasGas: false, isUnique: false, isMonitored: false,
             hasPrivateFireService: false, buildingType: "", heightMeters: "", walls: "", partitions: "",
             heating: "", lighting: "", hasAttic: false, hasBasement: false, hasParking: false,
             primaryExtinguishing: "", hasAUPT: false, hasAPS: false, apsServiceOrg: "",
             outsideWater: "", insideWater: ""
           },
-          subjective: { prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: "" },
+          subjective: {
+            violationsFound: false, hasFireSquad: false, hasFireSystem: false, hasWaterSupply: false,
+            hasAccessRoads: false, hasTraining: false, hasInsurance: false,
+            prevViolations: 0, incidents12m: 0, powerOverload: false, otherRiskNotes: ""
+          },
         };
       });
 
@@ -1594,9 +1725,10 @@ export default function ControlSupervisionPage() {
                                 onClick={() => {
                                   // Автозаполнение формы проверки данными из объекта
                                   setInspectionForm({
+                                    id: "",
                                     number: "",
                                     inspectionDate: new Date().toISOString().split("T")[0],
-                                    type: "planned",
+                                    type: "scheduled",
                                     status: "in_progress",
                                     ukpsisuCheckNumber: "",
                                     ukpsisuRegistrationDate: "",
@@ -2200,7 +2332,7 @@ export default function ControlSupervisionPage() {
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
                 Всего предписаний:&nbsp;
                 <span className="font-semibold">
-                  {isLoadingPrescriptions ? "Загрузка..." : prescriptions.length}
+                  {isLoadingPrescriptions ? "Загрузка..." : prescriptionsData.length}
                 </span>
               </div>
             </div>
@@ -2321,9 +2453,9 @@ export default function ControlSupervisionPage() {
                 <tbody>
                   {isLoadingPrescriptions ? (
                     <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
-                  ) : prescriptions.length === 0 ? (
+                  ) : prescriptionsData.length === 0 ? (
                     <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
-                  ) : prescriptions.map((item, idx) => {
+                  ) : prescriptionsData.map((item, idx) => {
                     const statusLabel = PRESCRIPTION_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
                     return (
                       <tr key={item.id} className="border-t border-slate-800 hover:bg-slate-900/40">
@@ -2517,831 +2649,860 @@ export default function ControlSupervisionPage() {
         )}
 
         {activeTab === "reports" && (
-          <>
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
-              <div className="flex flex-wrap items-end gap-3">
-                <div>
-                  <label className="text-xs text-slate-400">Период агрегации</label>
-                  <select
-                    value={reportPeriod}
-                    onChange={(e) => setReportPeriod(e.target.value)}
-                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  >
-                    {REPORT_PERIODS.map((period) => (
-                      <option key={period.value} value={period.value}>{period.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-400">Регион</label>
-                  <select
-                    value={reportRegion}
-                    onChange={(e) => { setReportRegion(e.target.value); setReportDistrict("Все"); }}
-                    disabled={shouldLockRegion}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  >
-                    {isMchsUser && <option>Все</option>}
-                    {availableRegions.map(r => <option key={r}>{r}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-400">Район / ГОС</label>
-                  <select
-                    value={reportDistrict}
-                    onChange={(e) => setReportDistrict(e.target.value)}
-                    disabled={shouldLockDistrict}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  >
-                    {(isMchsUser || isDchsUser) && <option>Все</option>}
-                    {getDistrictOptions(reportRegion).map(d => <option key={d}>{d}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-400">Статус проверок</label>
-                  <select
-                    value={reportStatus}
-                    onChange={(e) => setReportStatus(e.target.value)}
-                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  >
-                    <option value="Все">Все</option>
-                    {INSPECTION_STATUSES.map((status) => (
-                      <option key={status.value} value={status.value}>{status.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-400">Период дат</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={reportDateFrom}
-                      onChange={(e) => setReportDateFrom(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    />
-                    <span className="text-slate-500">—</span>
-                    <input
-                      type="date"
-                      value={reportDateTo}
-                      onChange={(e) => setReportDateTo(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex space-x-4">
                 <button
-                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
-                  onClick={resetReportFilters}
-                  type="button"
+                  onClick={() => setReportType("general")}
+                  className={`px-3 py-1 text-sm font-medium transition-colors ${reportType === "general"
+                    ? "text-blue-400 border-b-2 border-blue-500"
+                    : "text-slate-400 hover:text-slate-200"
+                    }`}
                 >
-                  Очистить фильтры
+                  Общая статистика
+                </button>
+                <button
+                  onClick={() => setReportType("form-13-kps")}
+                  className={`px-3 py-1 text-sm font-medium transition-colors ${reportType === "form-13-kps"
+                    ? "text-blue-400 border-b-2 border-blue-500"
+                    : "text-slate-400 hover:text-slate-200"
+                    }`}
+                >
+                  Форма №13-КПС
                 </button>
               </div>
-            </section>
-
-            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-7">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <p className="text-xs uppercase text-slate-400">Всего проверок</p>
-                <p className="text-2xl font-semibold">{reportTotals.totalCount}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <p className="text-xs uppercase text-slate-400">Запланировано</p>
-                <p className="text-2xl font-semibold">{reportTotals.plannedCount}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <p className="text-xs uppercase text-slate-400">Завершено</p>
-                <p className="text-2xl font-semibold">{reportTotals.completedCount}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <p className="text-xs uppercase text-slate-400">Плановые</p>
-                <p className="text-2xl font-semibold">{reportTotals.scheduledCount}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <p className="text-xs uppercase text-slate-400">Внеплановые</p>
-                <p className="text-2xl font-semibold">{reportTotals.unscheduledCount}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <p className="text-xs uppercase text-slate-400">С нарушениями</p>
-                <p className="text-2xl font-semibold">{reportTotals.withViolationsCount}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <p className="text-xs uppercase text-slate-400">С предписаниями</p>
-                <p className="text-2xl font-semibold">{reportTotals.withPrescriptionsCount}</p>
-              </div>
             </div>
 
-            <section className="overflow-x-auto rounded-2xl border border-slate-800">
-              <table className="min-w-[1200px] text-sm">
-                <thead className="bg-slate-900/60">
-                  <tr className="text-left text-slate-300">
-                    <th className="px-3 py-3">Период</th>
-                    <th className="px-3 py-3">Всего</th>
-                    <th className="px-3 py-3">Запланировано</th>
-                    <th className="px-3 py-3">Завершено</th>
-                    <th className="px-3 py-3">Плановые</th>
-                    <th className="px-3 py-3">Внеплановые</th>
-                    <th className="px-3 py-3">Профилактические</th>
-                    <th className="px-3 py-3">Мониторинг</th>
-                    <th className="px-3 py-3">С нарушениями</th>
-                    <th className="px-3 py-3">С предписаниями</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoadingReports ? (
-                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
-                  ) : reportRows.length === 0 ? (
-                    <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
-                  ) : reportRows.map((row) => (
-                    <tr key={row.period} className="border-t border-slate-800 hover:bg-slate-900/40">
-                      <td className="px-3 py-2 whitespace-nowrap">{formatDate(row.period)}</td>
-                      <td className="px-3 py-2">{row.totalCount}</td>
-                      <td className="px-3 py-2">{row.plannedCount}</td>
-                      <td className="px-3 py-2">{row.completedCount}</td>
-                      <td className="px-3 py-2">{row.scheduledCount}</td>
-                      <td className="px-3 py-2">{row.unscheduledCount}</td>
-                      <td className="px-3 py-2">{row.preventiveCount}</td>
-                      <td className="px-3 py-2">{row.monitoringCount}</td>
-                      <td className="px-3 py-2">{row.withViolationsCount}</td>
-                      <td className="px-3 py-2">{row.withPrescriptionsCount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          </>
-        )}
-      </div>
-
-      {/* ===== МОДАЛКИ ===== */}
-
-      {activeTab === "registry" && (
-        <>
-          {/* Основная форма */}
-          {openForm && (
-            <Modal title={editingId ? "Редактировать объект" : "Добавить объект"} onClose={() => setOpenForm(false)}>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Field label="Регион">
-                  <select
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.region}
-                    onChange={(e) => setForm(s => ({ ...s, region: e.target.value, district: "" }))}
-                    disabled={shouldLockRegion}
-                  >
-                    {availableFormRegions.map(r => <option key={r}>{r}</option>)}
-                  </select>
-                </Field>
-                <Field label="Район / ГОС">
-                  <select
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.district}
-                    onChange={(e) => setForm(s => ({ ...s, district: e.target.value }))}
-                    disabled={shouldLockDistrict}
-                  >
-                    <option value="">— выберите —</option>
-                    {availableFormDistricts.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </Field>
-
-                <Field label="Категория предпринимательства">
-                  <select
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.entrepreneurshipCategory}
-                    onChange={(e) => setForm(s => ({ ...s, entrepreneurshipCategory: e.target.value as BizCat }))}
-                  >
-                    {BIZ_CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </Field>
-                <Field label="Статус">
-                  <select
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.status}
-                    onChange={(e) => setForm(s => ({ ...s, status: e.target.value as Status }))}
-                  >
-                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </Field>
-
-                <Field label="Наименование субъекта" error={errors.subjectName}>
-                  <input
-                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
-                    value={form.subjectName}
-                    onChange={(e) => setForm(s => ({ ...s, subjectName: e.target.value }))}
-                  />
-                </Field>
-                <Field label="ИИН/БИН" error={errors.subjectBIN}>
-                  <input
-                    inputMode="numeric" maxLength={12} placeholder="12 цифр"
-                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectBIN ? "border-red-600" : "border-slate-700"} bg-slate-950`}
-                    value={form.subjectBIN}
-                    onChange={(e) => setForm(s => ({ ...s, subjectBIN: e.target.value.replace(/[^0-9]/g, "") }))}
-                  />
-                </Field>
-
-                <Field label="Наименование объекта" error={errors.objectName}>
-                  <input
-                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
-                    value={form.objectName}
-                    onChange={(e) => setForm(s => ({ ...s, objectName: e.target.value }))}
-                  />
-                </Field>
-                <Field label="Адрес" error={errors.address}>
-                  <input
-                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.address ? "border-red-600" : "border-slate-700"} bg-slate-950`}
-                    value={form.address}
-                    onChange={(e) => setForm(s => ({ ...s, address: e.target.value }))}
-                  />
-                </Field>
-
-                <Field label="Объективный критерий (риск)">
-                  <select
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.objectiveLevel}
-                    onChange={(e) => setForm(s => ({ ...s, objectiveLevel: e.target.value as ObjectiveLevel, objectiveCategoryId: "" }))}
-                  >
-                    <option value="Высокая">Высокая</option>
-                    <option value="Средняя">Средняя</option>
-                    <option value="Низкая">Низкая</option>
-                  </select>
-                </Field>
-                <Field label="Наименование объективного критерия" error={errors.objectiveCategoryId}>
-                  <select
-                    className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectiveCategoryId ? "border-red-600" : "border-slate-700"} bg-slate-950`}
-                    value={form.objectiveCategoryId}
-                    onChange={(e) => setForm(s => ({ ...s, objectiveCategoryId: e.target.value }))}
-                  >
-                    <option value="">— выберите —</option>
-                    {CATS[form.objectiveLevel].map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
-                </Field>
-
-                <div className="md:col-span-2 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm text-slate-400">
-                      Настроить детально:
+            {reportType === "form-13-kps" ? (
+              <Form13KPS />
+            ) : (
+              <>
+                <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                      <label className="text-xs text-slate-400">Период агрегации</label>
+                      <select
+                        value={reportPeriod}
+                        onChange={(e) => setReportPeriod(e.target.value)}
+                        className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      >
+                        {REPORT_PERIODS.map((period) => (
+                          <option key={period.value} value={period.value}>{period.label}</option>
+                        ))}
+                      </select>
                     </div>
-                    <div className="flex gap-2">
-                      <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
-                        onClick={() => setOpenCharacteristics(true)}>Характеристика объекта</button>
-                      <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
-                        onClick={() => setOpenSubjective(true)}>Субъективные критерии</button>
+
+                    <div>
+                      <label className="text-xs text-slate-400">Регион</label>
+                      <select
+                        value={reportRegion}
+                        onChange={(e) => { setReportRegion(e.target.value); setReportDistrict("Все"); }}
+                        disabled={shouldLockRegion}
+                        className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      >
+                        {isMchsUser && <option>Все</option>}
+                        {availableRegions.map(r => <option key={r}>{r}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-slate-400">Район / ГОС</label>
+                      <select
+                        value={reportDistrict}
+                        onChange={(e) => setReportDistrict(e.target.value)}
+                        disabled={shouldLockDistrict}
+                        className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      >
+                        {(isMchsUser || isDchsUser) && <option>Все</option>}
+                        {getDistrictOptions(reportRegion).map(d => <option key={d}>{d}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-slate-400">Статус проверок</label>
+                      <select
+                        value={reportStatus}
+                        onChange={(e) => setReportStatus(e.target.value)}
+                        className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      >
+                        <option value="Все">Все</option>
+                        {INSPECTION_STATUSES.map((status) => (
+                          <option key={status.value} value={status.value}>{status.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-slate-400">Период дат</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="date"
+                          value={reportDateFrom}
+                          onChange={(e) => setReportDateFrom(e.target.value)}
+                          className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        />
+                        <span className="text-slate-500">—</span>
+                        <input
+                          type="date"
+                          value={reportDateTo}
+                          onChange={(e) => setReportDateTo(e.target.value)}
+                          className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                      onClick={resetReportFilters}
+                      type="button"
+                    >
+                      Очистить фильтры
+                    </button>
+                  </div>
+                </section>
+
+                <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-7">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                    <p className="text-xs uppercase text-slate-400">Всего проверок</p>
+                    <p className="text-2xl font-semibold">{reportTotals.totalCount}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                    <p className="text-xs uppercase text-slate-400">Запланировано</p>
+                    <p className="text-2xl font-semibold">{reportTotals.plannedCount}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                    <p className="text-xs uppercase text-slate-400">Завершено</p>
+                    <p className="text-2xl font-semibold">{reportTotals.completedCount}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                    <p className="text-xs uppercase text-slate-400">Плановые</p>
+                    <p className="text-2xl font-semibold">{reportTotals.scheduledCount}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                    <p className="text-xs uppercase text-slate-400">Внеплановые</p>
+                    <p className="text-2xl font-semibold">{reportTotals.unscheduledCount}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                    <p className="text-xs uppercase text-slate-400">С нарушениями</p>
+                    <p className="text-2xl font-semibold">{reportTotals.withViolationsCount}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+                    <p className="text-xs uppercase text-slate-400">С предписаниями</p>
+                    <p className="text-2xl font-semibold">{reportTotals.withPrescriptionsCount}</p>
+                  </div>
+                </div>
+
+                <section className="overflow-x-auto rounded-2xl border border-slate-800">
+                  <table className="min-w-[1200px] text-sm">
+                    <thead className="bg-slate-900/60">
+                      <tr className="text-left text-slate-300">
+                        <th className="px-3 py-3">Период</th>
+                        <th className="px-3 py-3">Всего</th>
+                        <th className="px-3 py-3">Запланировано</th>
+                        <th className="px-3 py-3">Завершено</th>
+                        <th className="px-3 py-3">Плановые</th>
+                        <th className="px-3 py-3">Внеплановые</th>
+                        <th className="px-3 py-3">Профилактические</th>
+                        <th className="px-3 py-3">Мониторинг</th>
+                        <th className="px-3 py-3">С нарушениями</th>
+                        <th className="px-3 py-3">С предписаниями</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoadingReports ? (
+                        <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                      ) : reportRows.length === 0 ? (
+                        <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                      ) : reportRows.map((row) => (
+                        <tr key={row.period} className="border-t border-slate-800 hover:bg-slate-900/40">
+                          <td className="px-3 py-2 whitespace-nowrap">{formatDate(row.period)}</td>
+                          <td className="px-3 py-2">{row.totalCount}</td>
+                          <td className="px-3 py-2">{row.plannedCount}</td>
+                          <td className="px-3 py-2">{row.completedCount}</td>
+                          <td className="px-3 py-2">{row.scheduledCount}</td>
+                          <td className="px-3 py-2">{row.unscheduledCount}</td>
+                          <td className="px-3 py-2">{row.preventiveCount}</td>
+                          <td className="px-3 py-2">{row.monitoringCount}</td>
+                          <td className="px-3 py-2">{row.withViolationsCount}</td>
+                          <td className="px-3 py-2">{row.withPrescriptionsCount}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ===== МОДАЛКИ ===== */}
+
+        {activeTab === "registry" && (
+          <>
+            {/* Основная форма */}
+            {openForm && (
+              <Modal title={editingId ? "Редактировать объект" : "Добавить объект"} onClose={() => setOpenForm(false)}>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <Field label="Регион">
+                    <select
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.region}
+                      onChange={(e) => setForm(s => ({ ...s, region: e.target.value, district: "" }))}
+                      disabled={shouldLockRegion}
+                    >
+                      {availableFormRegions.map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Район / ГОС">
+                    <select
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.district}
+                      onChange={(e) => setForm(s => ({ ...s, district: e.target.value }))}
+                      disabled={shouldLockDistrict}
+                    >
+                      <option value="">— выберите —</option>
+                      {availableFormDistricts.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </Field>
+
+                  <Field label="Категория предпринимательства">
+                    <select
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.entrepreneurshipCategory}
+                      onChange={(e) => setForm(s => ({ ...s, entrepreneurshipCategory: e.target.value as BizCat }))}
+                    >
+                      {BIZ_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Статус">
+                    <select
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.status}
+                      onChange={(e) => setForm(s => ({ ...s, status: e.target.value as Status }))}
+                    >
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </Field>
+
+                  <Field label="Наименование субъекта" error={errors.subjectName}>
+                    <input
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      value={form.subjectName}
+                      onChange={(e) => setForm(s => ({ ...s, subjectName: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label="ИИН/БИН" error={errors.subjectBIN}>
+                    <input
+                      inputMode="numeric" maxLength={12} placeholder="12 цифр"
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectBIN ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      value={form.subjectBIN}
+                      onChange={(e) => setForm(s => ({ ...s, subjectBIN: e.target.value.replace(/[^0-9]/g, "") }))}
+                    />
+                  </Field>
+
+                  <Field label="Наименование объекта" error={errors.objectName}>
+                    <input
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      value={form.objectName}
+                      onChange={(e) => setForm(s => ({ ...s, objectName: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label="Адрес" error={errors.address}>
+                    <input
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.address ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      value={form.address}
+                      onChange={(e) => setForm(s => ({ ...s, address: e.target.value }))}
+                    />
+                  </Field>
+
+                  <Field label="Объективный критерий (риск)">
+                    <select
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.objectiveLevel}
+                      onChange={(e) => setForm(s => ({ ...s, objectiveLevel: e.target.value as ObjectiveLevel, objectiveCategoryId: "" }))}
+                    >
+                      <option value="Высокая">Высокая</option>
+                      <option value="Средняя">Средняя</option>
+                      <option value="Низкая">Низкая</option>
+                    </select>
+                  </Field>
+                  <Field label="Наименование объективного критерия" error={errors.objectiveCategoryId}>
+                    <select
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectiveCategoryId ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      value={form.objectiveCategoryId}
+                      onChange={(e) => setForm(s => ({ ...s, objectiveCategoryId: e.target.value }))}
+                    >
+                      <option value="">— выберите —</option>
+                      {CATS[form.objectiveLevel].map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    </select>
+                  </Field>
+
+                  <div className="md:col-span-2 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-sm text-slate-400">
+                        Настроить детально:
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
+                          onClick={() => setOpenCharacteristics(true)}>Характеристика объекта</button>
+                        <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
+                          onClick={() => setOpenSubjective(true)}>Субъективные критерии</button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-5 flex items-center justify-between gap-3">
-                <div>
-                  {editingId && canEdit && (
+                <div className="mt-5 flex items-center justify-between gap-3">
+                  <div>
+                    {editingId && canEdit && (
+                      <button
+                        className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500"
+                        onClick={handleGenerateInspectionFromObject}
+                        type="button"
+                      >
+                        📋 Создать проверку
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenForm(false)}>Отмена</button>
+                    <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500" onClick={onSave}>Сохранить</button>
+                  </div>
+                </div>
+              </Modal>
+            )}
+
+            {/* Характеристика объекта */}
+            {openCharacteristics && (
+              <Modal title="Характеристика объекта" onClose={() => setOpenCharacteristics(false)}>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <Check label="Наличие негосударственной противопожарной службы"
+                    checked={form.characteristics.hasPrivateFireService}
+                    onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasPrivateFireService: v } }))} />
+                  <Field label="Вид сооружения">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.buildingType}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, buildingType: e.target.value } }))} />
+                  </Field>
+                  <Field label="Этажность (в метрах)">
+                    <input inputMode="decimal" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.heightMeters}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heightMeters: e.target.value === "" ? "" : Number((e.target.value || "").toString().replace(",", ".")) } }))} />
+                  </Field>
+                  <Field label="Стены">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.walls}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, walls: e.target.value } }))} />
+                  </Field>
+                  <Field label="Перегородки">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.partitions}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, partitions: e.target.value } }))} />
+                  </Field>
+                  <Field label="Отопление">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.heating}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heating: e.target.value } }))} />
+                  </Field>
+                  <Field label="Освещение">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.lighting}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, lighting: e.target.value } }))} />
+                  </Field>
+                  <Check label="Наличие чердака"
+                    checked={form.characteristics.hasAttic}
+                    onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAttic: v } }))} />
+                  <Check label="Наличие подвала"
+                    checked={form.characteristics.hasBasement}
+                    onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasBasement: v } }))} />
+                  <Check label="Наличие паркинга"
+                    checked={form.characteristics.hasParking}
+                    onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasParking: v } }))} />
+                  <Field label="Первичные средства пожаротушения">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.primaryExtinguishing}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, primaryExtinguishing: e.target.value } }))} />
+                  </Field>
+                  <Check label="АУПТ (авт. установки пожаротушения)"
+                    checked={form.characteristics.hasAUPT}
+                    onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAUPT: v } }))} />
+                  <Check label="АПС (авт. пожарная сигнализация)"
+                    checked={form.characteristics.hasAPS}
+                    onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAPS: v } }))} />
+                  <Field label="Обслуживающая организация АПС">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.apsServiceOrg}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, apsServiceOrg: e.target.value } }))} />
+                  </Field>
+                  <Field label="Наружное противопожарное водоснабжение">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.outsideWater}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, outsideWater: e.target.value } }))} />
+                  </Field>
+                  <Field label="Внутреннее противопожарное водоснабжение">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.characteristics.insideWater}
+                      onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, insideWater: e.target.value } }))} />
+                  </Field>
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                    onClick={() => setOpenCharacteristics(false)}>Готово</button>
+                </div>
+              </Modal>
+            )}
+
+            {/* Субъективные критерии */}
+            {openSubjective && (
+              <Modal title="Субъективные критерии" onClose={() => setOpenSubjective(false)}>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <Field label="Нарушения по предыдущей проверке (кол-во)">
+                    <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.subjective.prevViolations}
+                      onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, prevViolations: Number(e.target.value || 0) } }))} />
+                  </Field>
+                  <Field label="Пожары/ЧС за 12 месяцев (кол-во)">
+                    <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.subjective.incidents12m}
+                      onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, incidents12m: Number(e.target.value || 0) } }))} />
+                  </Field>
+                  <Check label="Превышение мощности / перегрузки"
+                    checked={form.subjective.powerOverload}
+                    onChange={(v) => setForm(s => ({ ...s, subjective: { ...s.subjective, powerOverload: v } }))} />
+                  <Field label="Прочие неблагоприятные факторы">
+                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      value={form.subjective.otherRiskNotes}
+                      onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, otherRiskNotes: e.target.value } }))} />
+                  </Field>
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                    onClick={() => setOpenSubjective(false)}>Готово</button>
+                </div>
+              </Modal>
+            )}
+
+            {/* Подтверждение удаления */}
+            {confirmId && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setConfirmId(null)}>
+                <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="text-lg font-semibold">Удалить запись?</h3>
+                  <p className="mt-2 text-sm text-slate-300">Действие необратимо.</p>
+                  <div className="mt-5 flex justify-end gap-3">
+                    <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setConfirmId(null)}>Отмена</button>
+                    <button className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium hover:bg-red-500" onClick={onDelete}>Удалить</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "inspections" && openInspectionForm && (
+          <Modal
+            title={editingInspectionId ? "Редактировать проверку" : "Добавить проверку"}
+            onClose={() => setOpenInspectionForm(false)}
+          >
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <Field label="Номер проверки" error={inspectionErrors.number}>
+                <input
+                  className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.number ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                  value={inspectionForm.number}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, number: e.target.value }))}
+                />
+              </Field>
+              <Field label="Дата проверки" error={inspectionErrors.inspectionDate}>
+                <input
+                  type="date"
+                  className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.inspectionDate ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                  value={inspectionForm.inspectionDate}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionDate: e.target.value }))}
+                />
+              </Field>
+              <Field label="Тип проверки">
+                <select
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.type}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, type: e.target.value as InspectionType }))}
+                >
+                  {INSPECTION_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Статус">
+                <select
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.status}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, status: e.target.value as InspectionStatus }))}
+                >
+                  {INSPECTION_STATUSES.map((status) => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Регион">
+                <select
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.region || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, region: e.target.value, district: "" }))}
+                  disabled={shouldLockRegion}
+                >
+                  <option value="">— выберите —</option>
+                  {availableInspectionRegions.map((r) => <option key={r}>{r}</option>)}
+                </select>
+              </Field>
+              <Field label="Район / ГОС">
+                <select
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.district || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, district: e.target.value }))}
+                  disabled={shouldLockDistrict}
+                >
+                  <option value="">— выберите —</option>
+                  {availableInspectionDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </Field>
+
+              <Field label="БИН">
+                <input
+                  inputMode="numeric"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.bin || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, bin: e.target.value.replace(/[^0-9]/g, "") }))}
+                />
+              </Field>
+              <Field label="ИИН">
+                <input
+                  inputMode="numeric"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.iin || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, iin: e.target.value.replace(/[^0-9]/g, "") }))}
+                />
+              </Field>
+              <Field label="Субъект">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.subjectName || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, subjectName: e.target.value }))}
+                />
+              </Field>
+              <Field label="Адрес">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.address || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, address: e.target.value }))}
+                />
+              </Field>
+
+              <Field label="№ проверки УКПСиСУ">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.ukpsisuCheckNumber || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuCheckNumber: e.target.value }))}
+                />
+              </Field>
+              <Field label="Дата регистрации УКПСиСУ">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.ukpsisuRegistrationDate || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuRegistrationDate: e.target.value }))}
+                />
+              </Field>
+              <Field label="Назначивший орган">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.assigningAuthority || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, assigningAuthority: e.target.value }))}
+                />
+              </Field>
+              <Field label="Орган регистрации">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.registrationAuthority || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, registrationAuthority: e.target.value }))}
+                />
+              </Field>
+              <Field label="Вид проверки">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.inspectionKind || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionKind: e.target.value }))}
+                />
+              </Field>
+              <Field label="Проверяемые объекты">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.inspectedObjects || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, inspectedObjects: e.target.value }))}
+                />
+              </Field>
+              <Field label="Основание">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.basis || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, basis: e.target.value }))}
+                />
+              </Field>
+              <Field label="Сроки проведения">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.inspectionPeriod || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionPeriod: e.target.value }))}
+                />
+              </Field>
+              <Field label="Сроки продления">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.extensionPeriod || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, extensionPeriod: e.target.value }))}
+                />
+              </Field>
+              <Field label="Даты приостановления/возобновления">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.suspensionResumptionDates || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, suspensionResumptionDates: e.target.value }))}
+                />
+              </Field>
+              <Field label="Фактическая дата начала">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.actualStartDate || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, actualStartDate: e.target.value }))}
+                />
+              </Field>
+              <Field label="Фактическая дата завершения">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.actualEndDate || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, actualEndDate: e.target.value }))}
+                />
+              </Field>
+              <Field label="Результат">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.result || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, result: e.target.value }))}
+                />
+              </Field>
+              <Field label="Кол-во нарушений">
+                <input
+                  type="number"
+                  min={0}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.violationsCount ?? ""}
+                  onChange={(e) => setInspectionForm((s) => ({
+                    ...s,
+                    violationsCount: e.target.value === "" ? null : Number(e.target.value),
+                  }))}
+                />
+              </Field>
+              <Field label="Крайний срок устранения">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.violationsDeadline || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, violationsDeadline: e.target.value }))}
+                />
+              </Field>
+              <Field label="Дата регистрации талона">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={inspectionForm.ticketRegistrationDate || ""}
+                  onChange={(e) => setInspectionForm((s) => ({ ...s, ticketRegistrationDate: e.target.value }))}
+                />
+              </Field>
+            </div>
+
+            {inspectionErrors.general && (
+              <p className="mt-3 text-sm text-red-400">{inspectionErrors.general}</p>
+            )}
+
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <div className="flex gap-2">
+                {canEdit && (
+                  <>
                     <button
-                      className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500"
-                      onClick={handleGenerateInspectionFromObject}
+                      className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium hover:bg-purple-500"
+                      onClick={handleCreateTicket}
                       type="button"
                     >
-                      📋 Создать проверку
+                      🎫 Создать талон
                     </button>
-                  )}
-                </div>
-                <div className="flex gap-3">
-                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenForm(false)}>Отмена</button>
-                  <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500" onClick={onSave}>Сохранить</button>
-                </div>
+                    <button
+                      className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500"
+                      onClick={handleCreateMOR}
+                      type="button"
+                    >
+                      ⚡ Принята МОР
+                    </button>
+                  </>
+                )}
               </div>
-            </Modal>
-          )}
-
-          {/* Характеристика объекта */}
-          {openCharacteristics && (
-            <Modal title="Характеристика объекта" onClose={() => setOpenCharacteristics(false)}>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Check label="Наличие негосударственной противопожарной службы"
-                  checked={form.characteristics.hasPrivateFireService}
-                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasPrivateFireService: v } }))} />
-                <Field label="Вид сооружения">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.buildingType}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, buildingType: e.target.value } }))} />
-                </Field>
-                <Field label="Этажность (в метрах)">
-                  <input inputMode="decimal" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.heightMeters}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heightMeters: e.target.value === "" ? "" : Number((e.target.value || "").toString().replace(",", ".")) } }))} />
-                </Field>
-                <Field label="Стены">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.walls}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, walls: e.target.value } }))} />
-                </Field>
-                <Field label="Перегородки">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.partitions}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, partitions: e.target.value } }))} />
-                </Field>
-                <Field label="Отопление">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.heating}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heating: e.target.value } }))} />
-                </Field>
-                <Field label="Освещение">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.lighting}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, lighting: e.target.value } }))} />
-                </Field>
-                <Check label="Наличие чердака"
-                  checked={form.characteristics.hasAttic}
-                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAttic: v } }))} />
-                <Check label="Наличие подвала"
-                  checked={form.characteristics.hasBasement}
-                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasBasement: v } }))} />
-                <Check label="Наличие паркинга"
-                  checked={form.characteristics.hasParking}
-                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasParking: v } }))} />
-                <Field label="Первичные средства пожаротушения">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.primaryExtinguishing}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, primaryExtinguishing: e.target.value } }))} />
-                </Field>
-                <Check label="АУПТ (авт. установки пожаротушения)"
-                  checked={form.characteristics.hasAUPT}
-                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAUPT: v } }))} />
-                <Check label="АПС (авт. пожарная сигнализация)"
-                  checked={form.characteristics.hasAPS}
-                  onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAPS: v } }))} />
-                <Field label="Обслуживающая организация АПС">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.apsServiceOrg}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, apsServiceOrg: e.target.value } }))} />
-                </Field>
-                <Field label="Наружное противопожарное водоснабжение">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.outsideWater}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, outsideWater: e.target.value } }))} />
-                </Field>
-                <Field label="Внутреннее противопожарное водоснабжение">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.characteristics.insideWater}
-                    onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, insideWater: e.target.value } }))} />
-                </Field>
-              </div>
-              <div className="mt-5 flex justify-end">
-                <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                  onClick={() => setOpenCharacteristics(false)}>Готово</button>
-              </div>
-            </Modal>
-          )}
-
-          {/* Субъективные критерии */}
-          {openSubjective && (
-            <Modal title="Субъективные критерии" onClose={() => setOpenSubjective(false)}>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Field label="Нарушения по предыдущей проверке (кол-во)">
-                  <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.subjective.prevViolations}
-                    onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, prevViolations: Number(e.target.value || 0) } }))} />
-                </Field>
-                <Field label="Пожары/ЧС за 12 месяцев (кол-во)">
-                  <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.subjective.incidents12m}
-                    onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, incidents12m: Number(e.target.value || 0) } }))} />
-                </Field>
-                <Check label="Превышение мощности / перегрузки"
-                  checked={form.subjective.powerOverload}
-                  onChange={(v) => setForm(s => ({ ...s, subjective: { ...s.subjective, powerOverload: v } }))} />
-                <Field label="Прочие неблагоприятные факторы">
-                  <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                    value={form.subjective.otherRiskNotes}
-                    onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, otherRiskNotes: e.target.value } }))} />
-                </Field>
-              </div>
-              <div className="mt-5 flex justify-end">
-                <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                  onClick={() => setOpenSubjective(false)}>Готово</button>
-              </div>
-            </Modal>
-          )}
-
-          {/* Подтверждение удаления */}
-          {confirmId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setConfirmId(null)}>
-              <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <h3 className="text-lg font-semibold">Удалить запись?</h3>
-                <p className="mt-2 text-sm text-slate-300">Действие необратимо.</p>
-                <div className="mt-5 flex justify-end gap-3">
-                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setConfirmId(null)}>Отмена</button>
-                  <button className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium hover:bg-red-500" onClick={onDelete}>Удалить</button>
-                </div>
+              <div className="flex gap-3">
+                <button
+                  className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                  onClick={() => setOpenInspectionForm(false)}
+                  type="button"
+                >
+                  Отмена
+                </button>
+                <button
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                  onClick={onSaveInspection}
+                  type="button"
+                >
+                  Сохранить
+                </button>
               </div>
             </div>
-          )}
-        </>
-      )}
+          </Modal>
+        )}
 
-      {activeTab === "inspections" && openInspectionForm && (
-        <Modal
-          title={editingInspectionId ? "Редактировать проверку" : "Добавить проверку"}
-          onClose={() => setOpenInspectionForm(false)}
-        >
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Field label="Номер проверки" error={inspectionErrors.number}>
-              <input
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.number ? "border-red-600" : "border-slate-700"} bg-slate-950`}
-                value={inspectionForm.number}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, number: e.target.value }))}
-              />
-            </Field>
-            <Field label="Дата проверки" error={inspectionErrors.inspectionDate}>
-              <input
-                type="date"
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.inspectionDate ? "border-red-600" : "border-slate-700"} bg-slate-950`}
-                value={inspectionForm.inspectionDate}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionDate: e.target.value }))}
-              />
-            </Field>
-            <Field label="Тип проверки">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.type}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, type: e.target.value as InspectionType }))}
-              >
-                {INSPECTION_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Статус">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.status}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, status: e.target.value as InspectionStatus }))}
-              >
-                {INSPECTION_STATUSES.map((status) => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Регион">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.region || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, region: e.target.value, district: "" }))}
-                disabled={shouldLockRegion}
-              >
-                <option value="">— выберите —</option>
-                {availableInspectionRegions.map((r) => <option key={r}>{r}</option>)}
-              </select>
-            </Field>
-            <Field label="Район / ГОС">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.district || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, district: e.target.value }))}
-                disabled={shouldLockDistrict}
-              >
-                <option value="">— выберите —</option>
-                {availableInspectionDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </Field>
-
-            <Field label="БИН">
-              <input
-                inputMode="numeric"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.bin || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, bin: e.target.value.replace(/[^0-9]/g, "") }))}
-              />
-            </Field>
-            <Field label="ИИН">
-              <input
-                inputMode="numeric"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.iin || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, iin: e.target.value.replace(/[^0-9]/g, "") }))}
-              />
-            </Field>
-            <Field label="Субъект">
-              <input
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.subjectName || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, subjectName: e.target.value }))}
-              />
-            </Field>
-            <Field label="Адрес">
-              <input
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.address || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, address: e.target.value }))}
-              />
-            </Field>
-
-            <Field label="№ проверки УКПСиСУ">
-              <input
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.ukpsisuCheckNumber || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuCheckNumber: e.target.value }))}
-              />
-            </Field>
-            <Field label="Дата регистрации УКПСиСУ">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.ukpsisuRegistrationDate || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuRegistrationDate: e.target.value }))}
-              />
-            </Field>
-            <Field label="Назначивший орган">
-              <input
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.assigningAuthority || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, assigningAuthority: e.target.value }))}
-              />
-            </Field>
-            <Field label="Орган регистрации">
-              <input
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.registrationAuthority || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, registrationAuthority: e.target.value }))}
-              />
-            </Field>
-            <Field label="Вид проверки">
-              <input
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.inspectionKind || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionKind: e.target.value }))}
-              />
-            </Field>
-            <Field label="Проверяемые объекты">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.inspectedObjects || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectedObjects: e.target.value }))}
-              />
-            </Field>
-            <Field label="Основание">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.basis || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, basis: e.target.value }))}
-              />
-            </Field>
-            <Field label="Сроки проведения">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.inspectionPeriod || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionPeriod: e.target.value }))}
-              />
-            </Field>
-            <Field label="Сроки продления">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.extensionPeriod || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, extensionPeriod: e.target.value }))}
-              />
-            </Field>
-            <Field label="Даты приостановления/возобновления">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.suspensionResumptionDates || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, suspensionResumptionDates: e.target.value }))}
-              />
-            </Field>
-            <Field label="Фактическая дата начала">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.actualStartDate || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, actualStartDate: e.target.value }))}
-              />
-            </Field>
-            <Field label="Фактическая дата завершения">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.actualEndDate || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, actualEndDate: e.target.value }))}
-              />
-            </Field>
-            <Field label="Результат">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.result || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, result: e.target.value }))}
-              />
-            </Field>
-            <Field label="Кол-во нарушений">
-              <input
-                type="number"
-                min={0}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.violationsCount ?? ""}
-                onChange={(e) => setInspectionForm((s) => ({
-                  ...s,
-                  violationsCount: e.target.value === "" ? null : Number(e.target.value),
-                }))}
-              />
-            </Field>
-            <Field label="Крайний срок устранения">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.violationsDeadline || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, violationsDeadline: e.target.value }))}
-              />
-            </Field>
-            <Field label="Дата регистрации талона">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={inspectionForm.ticketRegistrationDate || ""}
-                onChange={(e) => setInspectionForm((s) => ({ ...s, ticketRegistrationDate: e.target.value }))}
-              />
-            </Field>
-          </div>
-
-          {inspectionErrors.general && (
-            <p className="mt-3 text-sm text-red-400">{inspectionErrors.general}</p>
-          )}
-
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <div className="flex gap-2">
-              {canEdit && (
-                <>
-                  <button
-                    className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium hover:bg-purple-500"
-                    onClick={handleCreateTicket}
-                    type="button"
-                  >
-                    🎫 Создать талон
-                  </button>
-                  <button
-                    className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500"
-                    onClick={handleCreateMOR}
-                    type="button"
-                  >
-                    ⚡ Принята МОР
-                  </button>
-                </>
-              )}
+        {/* МОР диалог */}
+        {openMORForm && (
+          <Modal title="Регистрация меры оперативного реагирования (МОР)" onClose={() => setOpenMORForm(false)}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <Field label="Вид меры">
+                <select
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={morForm.type}
+                  onChange={(e) => setMORForm((s: any) => ({ ...s, type: e.target.value as MeasureType }))}
+                >
+                  <option value="warning">Предостережение</option>
+                  <option value="order">Предписание</option>
+                  <option value="fine">Штраф</option>
+                  <option value="suspension">Приостановление деятельности</option>
+                  <option value="other">Другое</option>
+                </select>
+              </Field>
+              <Field label="Номер акта">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={morForm.number}
+                  onChange={(e) => setMORForm((s: any) => ({ ...s, number: e.target.value }))}
+                  placeholder="№ акта"
+                />
+              </Field>
+              <Field label="Дата принятия меры">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={morForm.measureDate}
+                  onChange={(e) => setMORForm((s: any) => ({ ...s, measureDate: e.target.value }))}
+                />
+              </Field>
+              <Field label="Описание">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  rows={3}
+                  value={morForm.description}
+                  onChange={(e) => setMORForm((s: any) => ({ ...s, description: e.target.value }))}
+                  placeholder="Описание меры"
+                />
+              </Field>
             </div>
-            <div className="flex gap-3">
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenMORForm(false)}>Отмена</button>
+              <button className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500" onClick={onSaveMOR}>Сохранитьацию МОР</button>
+            </div>
+          </Modal>
+        )}
+
+        {/* Модальное окно талона о результатах проверки */}
+        {openTicketModal && (
+          <Modal title="Талон о результатах проверки" onClose={() => setOpenTicketModal(false)}>
+            <div className="space-y-4">
+              <Field label="Номер талона">
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  placeholder="Например: Т-123/2024"
+                />
+              </Field>
+              <Field label="Дата регистрации">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={todayISO()}
+                />
+              </Field>
+              <Field label="Выявлены нарушения?">
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="violations" value="yes" className="accent-orange-600" />
+                    <span className="text-sm">Да</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="violations" value="no" className="accent-orange-600" defaultChecked />
+                    <span className="text-sm">Нет</span>
+                  </label>
+                </div>
+              </Field>
+              <Field label="Описание нарушений">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  rows={4}
+                  placeholder="Опишите выявленные нарушения (если имеются)"
+                />
+              </Field>
+              <Field label="Корректирующие действия">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  rows={3}
+                  placeholder="Укажите предписанные корректирующие действия"
+                />
+              </Field>
+              <Field label="Срок устранения">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                />
+              </Field>
+              <Field label="Ответственное лицо">
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  placeholder="ФИО ответственного лица"
+                />
+              </Field>
+              <Field label="Примечания">
+                <textarea
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  rows={2}
+                  placeholder="Дополнительные примечания"
+                />
+              </Field>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                onClick={() => setOpenInspectionForm(false)}
-                type="button"
+                onClick={() => setOpenTicketModal(false)}
               >
                 Отмена
               </button>
               <button
                 className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
-                onClick={onSaveInspection}
-                type="button"
+                onClick={() => {
+                  // TODO: Сохранить талон в базу данных
+                  alert('Талон сохранен (функционал в разработке)');
+                  setOpenTicketModal(false);
+                }}
               >
-                Сохранить
+                💾 Сохранить талон
               </button>
             </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* МОР диалог */}
-      {openMORForm && (
-        <Modal title="Регистрация меры оперативного реагирования (МОР)" onClose={() => setOpenMORForm(false)}>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Field label="Вид меры">
-              <select
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={morForm.type}
-                onChange={(e) => setMORForm((s: any) => ({ ...s, type: e.target.value as MeasureType }))}
-              >
-                <option value="warning">Предостережение</option>
-                <option value="order">Предписание</option>
-                <option value="fine">Штраф</option>
-                <option value="suspension">Приостановление деятельности</option>
-                <option value="other">Другое</option>
-              </select>
-            </Field>
-            <Field label="Номер акта">
-              <input
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={morForm.number}
-                onChange={(e) => setMORForm((s: any) => ({ ...s, number: e.target.value }))}
-                placeholder="№ акта"
-              />
-            </Field>
-            <Field label="Дата принятия меры">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={morForm.measureDate}
-                onChange={(e) => setMORForm((s: any) => ({ ...s, measureDate: e.target.value }))}
-              />
-            </Field>
-            <Field label="Описание">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                rows={3}
-                value={morForm.description}
-                onChange={(e) => setMORForm((s: any) => ({ ...s, description: e.target.value }))}
-                placeholder="Описание меры"
-              />
-            </Field>
-          </div>
-          <div className="mt-5 flex items-center justify-end gap-3">
-            <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenMORForm(false)}>Отмена</button>
-            <button className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500" onClick={onSaveMOR}>Сохранитьацию МОР</button>
-          </div>
-        </Modal>
-      )}
-
-      {/* Модальное окно талона о результатах проверки */}
-      {openTicketModal && (
-        <Modal title="Талон о результатах проверки" onClose={() => setOpenTicketModal(false)}>
-          <div className="space-y-4">
-            <Field label="Номер талона">
-              <input
-                type="text"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                placeholder="Например: Т-123/2024"
-              />
-            </Field>
-            <Field label="Дата регистрации">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                value={todayISO()}
-              />
-            </Field>
-            <Field label="Выявлены нарушения?">
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="violations" value="yes" className="accent-orange-600" />
-                  <span className="text-sm">Да</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="violations" value="no" className="accent-orange-600" defaultChecked />
-                  <span className="text-sm">Нет</span>
-                </label>
-              </div>
-            </Field>
-            <Field label="Описание нарушений">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                rows={4}
-                placeholder="Опишите выявленные нарушения (если имеются)"
-              />
-            </Field>
-            <Field label="Корректирующие действия">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                rows={3}
-                placeholder="Укажите предписанные корректирующие действия"
-              />
-            </Field>
-            <Field label="Срок устранения">
-              <input
-                type="date"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-              />
-            </Field>
-            <Field label="Ответственное лицо">
-              <input
-                type="text"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                placeholder="ФИО ответственного лица"
-              />
-            </Field>
-            <Field label="Примечания">
-              <textarea
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                rows={2}
-                placeholder="Дополнительные примечания"
-              />
-            </Field>
-          </div>
-          <div className="mt-5 flex items-center justify-end gap-3">
-            <button
-              className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-              onClick={() => setOpenTicketModal(false)}
-            >
-              Отмена
-            </button>
-            <button
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
-              onClick={() => {
-                // TODO: Сохранить талон в базу данных
-                alert('Талон сохранен (функционал в разработке)');
-                setOpenTicketModal(false);
-              }}
-            >
-              💾 Сохранить талон
-            </button>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        )}
+      </div>
     </div>
   );
 }
@@ -3351,8 +3512,14 @@ function Modal({ title, onClose, children }: { title?: string; onClose: () => vo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        {title ? <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold">{title}</h2>
-          <button className="rounded-lg bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700" onClick={onClose}>Закрыть</button></div> : null}
+        {title ? (
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button className="rounded-lg bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700" onClick={onClose}>
+              Закрыть
+            </button>
+          </div>
+        ) : null}
         {children}
       </div>
     </div>
@@ -3371,10 +3538,14 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 
 function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <input type="checkbox" className="h-4 w-4"
-        checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      <span className="text-slate-300">{label}</span>
+    <label className="flex items-center gap-2 text-sm cursor-pointer">
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-blue-600"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="text-slate-300 select-none">{label}</span>
     </label>
   );
 }
