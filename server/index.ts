@@ -1,14 +1,12 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
-import path from "path";
 import { createServer } from "http";
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Статические файлы
-app.use(express.static(path.join(process.cwd(), 'public')));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -24,27 +22,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Временный тестовый роут
-app.get("/", (req, res) => {
-  res.json({
-    message: "МЧС РК - Информационная система государственного пожарного контроля",
-    status: "running",
-    database: process.env.SUPABASE_DATABASE_URL ? "connected" : "not configured"
-  });
-});
-
-app.get("/api/test", (req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString()
-  });
-});
-
 (async () => {
-  // TODO: Restore after debugging
-  // const server = await registerRoutes(app);
-
-  const server = createServer(app);
+  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -54,12 +33,12 @@ app.get("/api/test", (req, res) => {
     console.error(err);
   });
 
-  // TODO: Restore Vite setup after debugging
-  // if (app.get("env") === "development") {
-  //   await setupVite(app, server);
-  // } else {
-  //   serveStatic(app);
-  // }
+  // Vite для разработки, статические файлы для продакшена
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen(port, "0.0.0.0", () => {
