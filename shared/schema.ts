@@ -48,7 +48,7 @@ export const reportFormStatusEnum = pgEnum('report_form_status', [
 ]);
 
 export const inspectionTypeEnum = pgEnum('inspection_type', [
-  'scheduled', 'unscheduled', 'preventive', 'monitoring'
+  'scheduled', 'unscheduled', 'preventive_control', 'monitoring'
 ]);
 
 export const inspectionStatusEnum = pgEnum('inspection_status', [
@@ -85,6 +85,26 @@ export const adminCasePaymentTypeEnum = pgEnum('admin_case_payment_type', [
 
 export const adminCaseOutcomeEnum = pgEnum('admin_case_outcome', [
   'warning', 'termination', 'other'
+]);
+
+// Organization types enum (для формы 13-КПС)
+export const organizationTypeEnum = pgEnum('organization_type', [
+  'government',        // Государственная
+  'small_business',    // Малый бизнес
+  'medium_business',   // Средний бизнес
+  'large_business',    // Крупный бизнес
+  'individual'         // Физическое лицо
+]);
+
+// Inspection basis enum (основание проверки для формы 13-КПС)
+export const inspectionBasisEnum = pgEnum('inspection_basis', [
+  'plan',              // По плану
+  'prescription',      // По контролю исполнения предписаний
+  'prosecutor',        // По поручению прокуратуры
+  'complaint',         // По жалобам (обращения физ/юр лиц)
+  'pnsem',            // По письмам (ПНСЕМ - ст.152 ПК РК)
+  'fire_incident',    // По факту пожара
+  'other'
 ]);
 
 // Users table for local authentication (МЧС РК)
@@ -127,30 +147,30 @@ export const orgUnits = pgTable("org_units", {
 // Fire incidents table (согласно форме 1-ОСП)
 export const incidents = pgTable("incidents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  
+
   // Основная информация
   dateTime: timestamp("date_time").notNull(),
   locality: varchar("locality").notNull(), // cities, rural
   incidentType: incidentTypeEnum("incident_type").notNull(),
-  
+
   // Адрес и описание
   address: text("address").notNull(),
   description: text("description"),
-  
+
   // Причина пожара (согласно форме 3-СПВП)
   cause: varchar("cause"),
   causeCode: varchar("cause_code"), // Код причины согласно классификации МЧС РК
   causeDetailed: varchar("cause_detailed"), // Детальный код причины (6.1, 6.2 и т.д.)
-  
+
   // Объект пожара (согласно форме 4-СОВП) 
   objectType: varchar("object_type"), // Тип объекта (жилой, производственный и т.д.)
   objectCode: varchar("object_code"), // Код объекта
   objectDetailed: varchar("object_detailed"), // Детальный код объекта
-  
+
   // Географические данные РК
   region: varchar("region"), // Область
   city: varchar("city"), // Город/район
-  
+
   // Ущерб (тысячи тенге)
   damage: decimal("damage", { precision: 15, scale: 2 }).default('0'),
 
@@ -170,7 +190,7 @@ export const incidents = pgTable("incidents", {
   steppeGarrisonUnits: integer("steppe_garrison_units").default(0),
   steppeMchsPeople: integer("steppe_mchs_people").default(0),
   steppeMchsUnits: integer("steppe_mchs_units").default(0),
-  
+
   // Детали здания
   floor: integer("floor"),
   totalFloors: integer("total_floors"),
@@ -184,26 +204,26 @@ export const incidents = pgTable("incidents", {
   deathsTotal: integer("deaths_total").default(0),
   deathsChildren: integer("deaths_children").default(0),
   deathsDrunk: integer("deaths_drunk").default(0), // лица в нетрезвом состоянии
-  
+
   // Погибшие от угарного газа без пожара
   deathsCOTotal: integer("deaths_co_total").default(0),
   deathsCOChildren: integer("deaths_co_children").default(0),
-  
+
   // Травмированные на пожарах
   injuredTotal: integer("injured_total").default(0),
   injuredChildren: integer("injured_children").default(0),
-  
+
   // Травмированные от угарного газа без пожара
   injuredCOTotal: integer("injured_co_total").default(0),
   injuredCOChildren: integer("injured_co_children").default(0),
-  
+
   // Спасенные люди
   savedPeopleTotal: integer("saved_people_total").default(0),
   savedPeopleChildren: integer("saved_people_children").default(0),
-  
+
   // Спасенные материальные ценности (тысячи тенге)
   savedProperty: decimal("saved_property", { precision: 15, scale: 2 }).default('0'),
-  
+
   // Система управления
   orgUnitId: varchar("org_unit_id").notNull(),
   createdBy: varchar("created_by").notNull(),
@@ -212,14 +232,14 @@ export const incidents = pgTable("incidents", {
     .notNull()
     .default("pending"),
   archivedAt: timestamp("archived_at"),
-  
+
   // Метки времени
   timeOfDay: varchar("time_of_day"), // 00:00-06:00, etc. (Can be derived but useful for explicit Form 5/7 stats)
-  
+
   // Геолокация для карты
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -290,35 +310,35 @@ export const controlObjectStatusEnum = pgEnum('control_object_status', [
 
 export const controlObjects = pgTable("control_objects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  
+
   // Основная информация
   name: varchar("name").notNull(),
   category: varchar("category").notNull(), // Категория объекта (жилой, производственный и т.д.)
   subcategory: varchar("subcategory"),
-  
+
   // Адрес и геолокация
   address: text("address").notNull(),
   region: varchar("region"),
   district: varchar("district"),
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
-  
+
   // Статус и характеристики
   status: controlObjectStatusEnum("status").notNull().default('active'),
   riskLevel: varchar("risk_level", { enum: ["low", "medium", "high", "critical"] }).default('medium'),
   lastInspectionDate: timestamp("last_inspection_date"),
   nextInspectionDate: timestamp("next_inspection_date"),
-  
+
   // Дополнительные данные
   description: text("description"),
   contactPerson: varchar("contact_person"),
   contactPhone: varchar("contact_phone"),
   details: jsonb("details"), // Дополнительные параметры
-  
+
   // Система управления
   orgUnitId: varchar("org_unit_id").notNull(),
   createdBy: varchar("created_by").notNull(),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
