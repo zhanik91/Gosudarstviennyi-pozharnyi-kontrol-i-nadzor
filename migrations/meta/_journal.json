@@ -8,6 +8,13 @@
       "when": 1733265150000,
       "tag": "0000_add_email_to_users",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770023374995,
+      "tag": "0001_flimsy_ken_ellis",
+      "breakpoints": true
     }
   ]
 }
