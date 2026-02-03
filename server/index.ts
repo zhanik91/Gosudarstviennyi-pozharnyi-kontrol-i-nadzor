@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
+import { deadlineNotificationService } from "./services/deadline-notification.service";
 
 const app = express();
 app.use(express.json());
@@ -45,5 +46,8 @@ app.use((req, res, next) => {
     console.log(`\n✅ МЧС РК Server is running on http://localhost:${port}`);
     console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✅ Database: ${process.env.SUPABASE_DATABASE_URL ? 'Supabase Connected' : 'Not configured'}\n`);
+
+    // Запустить планировщик уведомлений о дедлайнах
+    deadlineNotificationService.startScheduler();
   });
 })();

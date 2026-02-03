@@ -297,6 +297,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, message: 'Документ отклонен' });
   });
 
+  // === СИСТЕМА УВЕДОМЛЕНИЙ О ДЕДЛАЙНАХ ===
+  // Ручной запуск проверки дедлайнов (для тестирования / администраторов)
+  app.post('/api/notifications/check-deadlines', isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user?.role?.toUpperCase?.() ?? req.user?.role;
+      if (userRole !== 'ADMIN' && userRole !== 'MCHS') {
+        return res.status(403).json({ message: 'Доступ только для администраторов' });
+      }
+
+      const { deadlineNotificationService } = await import('./services/deadline-notification.service');
+      await deadlineNotificationService.checkAllDeadlines();
+      res.json({ success: true, message: 'Проверка дедлайнов выполнена' });
+    } catch (error) {
+      console.error('Error checking deadlines:', error);
+      res.status(500).json({ message: 'Ошибка проверки дедлайнов' });
+    }
+  });
+
   // === ИНТЕРАКТИВНЫЕ КАРТЫ & Forecasts (Stub/Logic) ===
   app.get('/api/maps/data', isAuthenticated, async (req: any, res) => {
     try {
