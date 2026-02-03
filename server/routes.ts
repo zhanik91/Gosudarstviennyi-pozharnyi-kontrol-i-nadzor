@@ -3,7 +3,7 @@ import { Router } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { adminCases, controlObjects, incidents, inspections, measures, prescriptions } from "@shared/schema";
+import { adminCases, controlObjects, incidents, inspections, measures, prescriptions, tickets } from "@shared/schema";
 import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { setupLocalAuth, isAuthenticated } from "./auth-local";
 import { incidentController } from "./controllers/incident.controller";
@@ -788,6 +788,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error loading measures overview:', error);
       res.status(500).json({ message: 'Ошибка загрузки мер реагирования' });
+    }
+  });
+
+  // === Талоны о результатах проверки ===
+  app.get('/api/tickets', isAuthenticated, async (req: any, res) => {
+    try {
+      const { inspectionId, region, district } = req.query;
+      const scopeUser = toScopeUser(req.user);
+      const scopeCondition = applyScopeCondition(scopeUser, tickets.region, tickets.district);
+      const conditions = [];
+      if (scopeCondition) conditions.push(scopeCondition);
+      if (inspectionId) conditions.push(eq(tickets.inspectionId, inspectionId as string));
+      if (region) conditions.push(eq(tickets.region, region as string));
+      if (district) conditions.push(eq(tickets.district, district as string));
+      let query = db.select().from(tickets);
+      if (conditions.length > 0) query = query.where(and(...conditions));
+      const result = await query.orderBy(desc(tickets.registrationDate));
+      res.json(result);
+    } catch (error) {
+      console.error('Error loading tickets:', error);
+      res.status(500).json({ message: 'Ошибка загрузки талонов' });
+    }
+  });
+
+  app.post('/api/tickets', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: tickets,
+    regionColumn: tickets.region,
+    districtColumn: tickets.district,
+  }), async (req: any, res) => {
+    try {
+      const { inspectionId, ticketNumber, registrationDate, violationsFound, violationsDescription, correctiveActions, deadline, responsible, notes, region, district } = req.body;
+      if (!inspectionId || !ticketNumber) {
+        return res.status(400).json({ message: 'Обязательные поля: inspectionId, ticketNumber' });
+      }
+      const [ticket] = await db.insert(tickets).values({
+        inspectionId,
+        ticketNumber,
+        registrationDate: registrationDate ? new Date(registrationDate) : null,
+        violationsFound: Boolean(violationsFound),
+        violationsDescription,
+        correctiveActions,
+        deadline: deadline ? new Date(deadline) : null,
+        responsible,
+        notes,
+        region,
+        district,
+        createdBy: req.user?.id,
+      }).returning();
+      res.json(ticket);
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      res.status(500).json({ message: 'Ошибка создания талона' });
+    }
+  });
+
+  app.put('/api/tickets/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: tickets,
+    regionColumn: tickets.region,
+    districtColumn: tickets.district,
+  }), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { ticketNumber, registrationDate, violationsFound, violationsDescription, correctiveActions, deadline, responsible, notes } = req.body;
+      const [ticket] = await db.update(tickets)
+        .set({
+          ticketNumber,
+          registrationDate: registrationDate ? new Date(registrationDate) : null,
+          violationsFound: Boolean(violationsFound),
+          violationsDescription,
+          correctiveActions,
+          deadline: deadline ? new Date(deadline) : null,
+          responsible,
+          notes,
+          updatedAt: new Date(),
+        })
+        .where(eq(tickets.id, id))
+        .returning();
+      if (!ticket) return res.status(404).json({ message: 'Талон не найден' });
+      res.json(ticket);
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      res.status(500).json({ message: 'Ошибка обновления талона' });
+    }
+  });
+
+  app.delete('/api/tickets/:id', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
+    table: tickets,
+    regionColumn: tickets.region,
+    districtColumn: tickets.district,
+  }), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await db.delete(tickets).where(eq(tickets.id, id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting ticket:', error);
+      res.status(500).json({ message: 'Ошибка удаления талона' });
     }
   });
 

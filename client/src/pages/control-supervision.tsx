@@ -724,6 +724,37 @@ export default function ControlSupervisionPage() {
   const [openTicketModal, setOpenTicketModal] = useState(false);
   const [selectedInspectionIdForTicket, setSelectedInspectionIdForTicket] = useState<string | null>(null);
   const [ticketsData, setTicketsData] = useState<ResultTicket[]>([]);
+  const [ticketForm, setTicketForm] = useState({
+    ticketNumber: '',
+    registrationDate: todayISO(),
+    violationsFound: false,
+    violationsDescription: '',
+    correctiveActions: '',
+    deadline: '',
+    responsible: '',
+    notes: '',
+  });
+
+  const saveTicketMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/tickets', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+      setOpenTicketModal(false);
+      setTicketForm({
+        ticketNumber: '',
+        registrationDate: todayISO(),
+        violationsFound: false,
+        violationsDescription: '',
+        correctiveActions: '',
+        deadline: '',
+        responsible: '',
+        notes: '',
+      });
+    },
+  });
 
   // импорт/экспорт
   const fileRef = useRef<HTMLInputElement>(null);
@@ -3440,23 +3471,40 @@ export default function ControlSupervisionPage() {
                   type="text"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   placeholder="Например: Т-123/2024"
+                  value={ticketForm.ticketNumber}
+                  onChange={(e) => setTicketForm((s) => ({ ...s, ticketNumber: e.target.value }))}
                 />
               </Field>
               <Field label="Дата регистрации">
                 <input
                   type="date"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  value={todayISO()}
+                  value={ticketForm.registrationDate}
+                  onChange={(e) => setTicketForm((s) => ({ ...s, registrationDate: e.target.value }))}
                 />
               </Field>
               <Field label="Выявлены нарушения?">
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2">
-                    <input type="radio" name="violations" value="yes" className="accent-orange-600" />
+                    <input
+                      type="radio"
+                      name="violations"
+                      value="yes"
+                      className="accent-orange-600"
+                      checked={ticketForm.violationsFound === true}
+                      onChange={() => setTicketForm((s) => ({ ...s, violationsFound: true }))}
+                    />
                     <span className="text-sm">Да</span>
                   </label>
                   <label className="flex items-center gap-2">
-                    <input type="radio" name="violations" value="no" className="accent-orange-600" defaultChecked />
+                    <input
+                      type="radio"
+                      name="violations"
+                      value="no"
+                      className="accent-orange-600"
+                      checked={ticketForm.violationsFound === false}
+                      onChange={() => setTicketForm((s) => ({ ...s, violationsFound: false }))}
+                    />
                     <span className="text-sm">Нет</span>
                   </label>
                 </div>
@@ -3466,6 +3514,8 @@ export default function ControlSupervisionPage() {
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   rows={4}
                   placeholder="Опишите выявленные нарушения (если имеются)"
+                  value={ticketForm.violationsDescription}
+                  onChange={(e) => setTicketForm((s) => ({ ...s, violationsDescription: e.target.value }))}
                 />
               </Field>
               <Field label="Корректирующие действия">
@@ -3473,12 +3523,16 @@ export default function ControlSupervisionPage() {
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   rows={3}
                   placeholder="Укажите предписанные корректирующие действия"
+                  value={ticketForm.correctiveActions}
+                  onChange={(e) => setTicketForm((s) => ({ ...s, correctiveActions: e.target.value }))}
                 />
               </Field>
               <Field label="Срок устранения">
                 <input
                   type="date"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={ticketForm.deadline}
+                  onChange={(e) => setTicketForm((s) => ({ ...s, deadline: e.target.value }))}
                 />
               </Field>
               <Field label="Ответственное лицо">
@@ -3486,6 +3540,8 @@ export default function ControlSupervisionPage() {
                   type="text"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   placeholder="ФИО ответственного лица"
+                  value={ticketForm.responsible}
+                  onChange={(e) => setTicketForm((s) => ({ ...s, responsible: e.target.value }))}
                 />
               </Field>
               <Field label="Примечания">
@@ -3493,6 +3549,8 @@ export default function ControlSupervisionPage() {
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
                   rows={2}
                   placeholder="Дополнительные примечания"
+                  value={ticketForm.notes}
+                  onChange={(e) => setTicketForm((s) => ({ ...s, notes: e.target.value }))}
                 />
               </Field>
             </div>
@@ -3505,13 +3563,20 @@ export default function ControlSupervisionPage() {
               </button>
               <button
                 className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                disabled={saveTicketMutation.isPending}
                 onClick={() => {
-                  // TODO: Сохранить талон в базу данных
-                  alert('Талон сохранен (функционал в разработке)');
-                  setOpenTicketModal(false);
+                  const inspection = inspectionsData.find((i: any) => i.id === selectedInspectionIdForTicket);
+                  saveTicketMutation.mutate({
+                    inspectionId: selectedInspectionIdForTicket,
+                    region: inspection?.region || userRegion,
+                    district: inspection?.district || userDistrict,
+                    ...ticketForm,
+                    registrationDate: ticketForm.registrationDate ? new Date(ticketForm.registrationDate) : null,
+                    deadline: ticketForm.deadline ? new Date(ticketForm.deadline) : null,
+                  });
                 }}
               >
-                💾 Сохранить талон
+                {saveTicketMutation.isPending ? 'Сохранение...' : 'Сохранить талон'}
               </button>
             </div>
           </Modal>

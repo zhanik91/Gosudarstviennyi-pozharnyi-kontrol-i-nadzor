@@ -843,6 +843,34 @@ export type InsertIncidentVictim = z.infer<typeof insertIncidentVictimSchema>;
 export type Package = typeof packages.$inferSelect;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
 
+// Result tickets (Талоны о результатах проверки)
+export const tickets = pgTable('tickets', {
+  id: varchar('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  inspectionId: varchar('inspection_id').references(() => inspections.id),
+  ticketNumber: varchar('ticket_number', { length: 50 }).notNull(),
+  registrationDate: timestamp('registration_date'),
+  violationsFound: boolean('violations_found').default(false),
+  violationsDescription: text('violations_description'),
+  correctiveActions: text('corrective_actions'),
+  deadline: timestamp('deadline'),
+  responsible: varchar('responsible', { length: 255 }),
+  notes: text('notes'),
+  region: varchar('region', { length: 100 }),
+  district: varchar('district', { length: 100 }),
+  createdBy: varchar('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const insertTicketSchema = createInsertSchema(tickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+
 // Export document schemas
 export * from './document-schema';
 
