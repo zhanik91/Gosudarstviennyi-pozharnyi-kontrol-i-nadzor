@@ -30,6 +30,7 @@ import NGPSCalculator from "@/pages/calculators/ngps";
 import ExplosionCategoryCalculator from "@/pages/calculators/explosion-category";
 import AIAssistantPage from "@/pages/ai-assistant";
 import NormativeDocumentsPage from "@/pages/normative-documents";
+import ExtinguisherMethodology from "@/pages/calculators/methodology";
 
 type ProtectedRouteProps = {
   component: ComponentType;
