@@ -189,7 +189,8 @@ export const incidents = pgTable("incidents", {
 
   // Географические данные РК
   region: varchar("region"), // Область
-  city: varchar("city"), // Город/район
+  district: varchar("district"), // Район
+  city: varchar("city"), // Город/район (legacy)
 
   // Ущерб (тысячи тенге)
   damage: decimal("damage", { precision: 15, scale: 2 }).default('0'),

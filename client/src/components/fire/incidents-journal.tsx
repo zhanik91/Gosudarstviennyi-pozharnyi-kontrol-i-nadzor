@@ -20,7 +20,7 @@ import { ErrorDisplay } from "@/components/ui/error-boundary";
 import { DateRangeField } from "@/components/ui/date-range-field";
 import { usePeriodStore } from "@/hooks/use-period-store";
 import { useAuth } from "@/hooks/useAuth";
-import { REGION_NAMES, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
+import { REGION_NAMES, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES, ADMIN2_BY_REGION } from "@/data/kazakhstan-data";
 import type { Incident } from "@shared/schema";
 import * as XLSX from "xlsx";
 import IncidentFormOSP from "./incident-form-osp";
@@ -443,9 +443,12 @@ export default function IncidentsJournal() {
   const queryClient = useQueryClient();
   const { store, updatePreset } = usePeriodStore();
   const { user } = useAuth();
-  const userRole = (user as any)?.role;
-  const isMchsUser = userRole === "MCHS" || userRole === "admin";
+  const userRole = (user as any)?.role?.toUpperCase?.() || (user as any)?.role || "";
+  const isMchsUser = userRole === "MCHS" || userRole === "ADMIN";
+  const isDchsUser = userRole === "DCHS";
+  const isDistrictUser = userRole === "OCHS" || userRole === "DISTRICT";
   const userRegion = (user as any)?.region || "";
+  const userDistrict = (user as any)?.district || "";
 
   const [filters, setFilters] = useState({
     searchQuery: "",
@@ -453,6 +456,7 @@ export default function IncidentsJournal() {
     dateTo: store.journal.to,
     incidentType: "",
     region: "",
+    district: "",
   });
   const [page, setPage] = useState(1);
   const [pageInput, setPageInput] = useState("1");
@@ -507,12 +511,13 @@ export default function IncidentsJournal() {
   }, [filters.dateFrom, filters.dateTo, updatePreset]);
 
   useEffect(() => {
-    if (!userRegion || isMchsUser) return;
+    if (isMchsUser) return;
     setFilters((prev) => ({
       ...prev,
-      region: userRegion,
+      region: userRegion || prev.region,
+      district: isDistrictUser ? (userDistrict || prev.district) : prev.district,
     }));
-  }, [isMchsUser, userRegion]);
+  }, [isMchsUser, isDistrictUser, userRegion, userDistrict]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -526,7 +531,8 @@ export default function IncidentsJournal() {
     !!filters.dateFrom ||
     !!filters.dateTo ||
     !!filters.incidentType ||
-    !!filters.region;
+    !!filters.region ||
+    !!filters.district;
 
   const endpoint = hasFilters ? "/api/incidents/search" : "/api/incidents";
 
@@ -540,6 +546,7 @@ export default function IncidentsJournal() {
     filters.dateTo,
     filters.incidentType,
     filters.region,
+    filters.district,
     pageSize,
   ]);
 
@@ -553,6 +560,7 @@ export default function IncidentsJournal() {
       filters.dateTo,
       filters.incidentType,
       filters.region,
+      filters.district,
       page,
       pageSize,
     ],
@@ -564,9 +572,10 @@ export default function IncidentsJournal() {
         dateTo,
         incidentType,
         region,
+        district,
         pageValue,
         pageSizeValue,
-      ] = queryKey as [string, string, string, string, string, string, number, number];
+      ] = queryKey as [string, string, string, string, string, string, string, number, number];
 
       const params = new URLSearchParams();
       const limitValue = Number(pageSizeValue) || pageSize;
@@ -579,6 +588,7 @@ export default function IncidentsJournal() {
         if (dateTo) params.set("dateTo", dateTo);
         if (incidentType) params.set("incidentType", incidentType);
         if (region) params.set("region", region);
+        if (district) params.set("district", district);
       }
 
       params.set("limit", String(limitValue));
@@ -1299,7 +1309,7 @@ export default function IncidentsJournal() {
                                 <select
                                   id="region-filter"
                                   value={filters.region}
-                                  onChange={(e) => setFilters({ ...filters, region: e.target.value })}
+                                  onChange={(e) => setFilters({ ...filters, region: e.target.value, district: "" })}
                                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                   disabled={!isMchsUser && Boolean(userRegion)}
                                   data-testid="select-region"
@@ -1308,6 +1318,28 @@ export default function IncidentsJournal() {
                                   {(isMchsUser ? REGION_NAMES : userRegion ? [userRegion] : REGION_NAMES).map((region) => (
                                     <option key={region} value={region}>
                                       {region}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="flex flex-col gap-1">
+                                <Label htmlFor="district-filter" className="text-sm">Район</Label>
+                                <select
+                                  id="district-filter"
+                                  value={filters.district}
+                                  onChange={(e) => setFilters({ ...filters, district: e.target.value })}
+                                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                  disabled={isDistrictUser && Boolean(userDistrict)}
+                                  data-testid="select-district"
+                                >
+                                  <option value="">Все районы</option>
+                                  {(isDistrictUser && userDistrict 
+                                    ? [userDistrict] 
+                                    : (ADMIN2_BY_REGION[filters.region || userRegion] || [])
+                                  ).map((district) => (
+                                    <option key={district} value={district}>
+                                      {district}
                                     </option>
                                   ))}
                                 </select>
@@ -1324,6 +1356,7 @@ export default function IncidentsJournal() {
                                         dateTo: "",
                                         incidentType: "",
                                         region: isMchsUser ? "" : userRegion,
+                                        district: isDistrictUser ? userDistrict : "",
                                       })
                                     }
                                   >

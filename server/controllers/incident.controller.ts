@@ -136,7 +136,7 @@ export class IncidentController {
       const filters: any = {};
       const scopeUser = toScopeUser(user);
 
-      const { q, dateFrom, dateTo, incidentType, region, includeSubOrgs } = req.query;
+      const { q, dateFrom, dateTo, incidentType, region, district, includeSubOrgs } = req.query;
       const limit = Number.parseInt(req.query.limit as string, 10);
       const offset = Number.parseInt(req.query.offset as string, 10);
 
@@ -155,6 +155,9 @@ export class IncidentController {
       }
       if (region) {
         filters.region = region as string;
+      }
+      if (district) {
+        filters.district = district as string;
       }
 
       if (includeSubOrgs === "true") {

@@ -1137,6 +1137,7 @@ export class IncidentStorage {
       orgUnitId?: string;
       includeSubOrgs?: boolean;
       region?: string;
+      district?: string;
       incidentType?: string;
       dateFrom?: string | Date;
       dateTo?: string | Date;
@@ -1180,6 +1181,7 @@ export class IncidentStorage {
     }
 
     if (filters.region) conditions.push(eq(incidents.region, filters.region));
+    if (filters.district) conditions.push(eq(incidents.district, filters.district));
     if (filters.incidentType) conditions.push(eq(incidents.incidentType, filters.incidentType));
     if (filters.dateFrom) {
       const startDate = new Date(filters.dateFrom);
