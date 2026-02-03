@@ -8,8 +8,8 @@ packages = ["jq", "ffmpeg"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm ci && npm run build"]
-run = ["bash", "-c", "cd /home/runner/${REPL_SLUG} && node dist/index.js"]
+build = ["npm run build"]
+run = ["node dist/index.js"]
 
 [[ports]]
 localPort = 5000
