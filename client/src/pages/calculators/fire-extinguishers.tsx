@@ -16,6 +16,8 @@ interface CalculationResult {
   mobileCount: number;
   reserveCount: number;
   totalCount: number;
+  totalPortable: number;
+  perFloor: number[];
   recommendations: string[];
   warnings: string[];
 }
@@ -28,12 +30,31 @@ const CATEGORY_NORMS: Record<string, { area: number; powder: number; co2: number
   "D": { area: 1800, powder: 2, co2: 2 },
 };
 
+const MIN_PER_FLOOR = 2;
+const AUPT_REDUCTION = 0.5;
+const MOBILE_THRESHOLD = 500;
+const DEFAULT_RESERVE = 10;
+
+const splitByFloors = (total: number, floors: number) => {
+  const safeFloors = Math.max(1, floors);
+  const distribution = Array.from({ length: safeFloors }, () => 0);
+
+  for (let i = 0; i < total; i += 1) {
+    distribution[i % safeFloors] += 1;
+  }
+
+  return distribution;
+};
+
 export default function FireExtinguisherCalculator() {
   const [area, setArea] = useState("");
   const [category, setCategory] = useState("");
   const [floors, setFloors] = useState("1");
   const [hasAUPT, setHasAUPT] = useState(false);
   const [hasElectrical, setHasElectrical] = useState(false);
+  const [hasCabinets, setHasCabinets] = useState(false);
+  const [reservePercent, setReservePercent] = useState(String(DEFAULT_RESERVE));
+  const [buildingType, setBuildingType] = useState("production");
   const [result, setResult] = useState<CalculationResult | null>(null);
 
   const calculate = () => {
@@ -42,12 +63,12 @@ export default function FireExtinguisherCalculator() {
     const areaNum = parseFloat(area);
     const floorsNum = parseInt(floors) || 1;
     const norm = CATEGORY_NORMS[category];
+    const reservePercentNum = Math.max(0, parseFloat(reservePercent) || 0);
     
     if (!norm) return;
 
     let baseCount = Math.ceil(areaNum / norm.area) * norm.powder;
-    const minPerFloor = 2;
-    const minTotal = minPerFloor * floorsNum;
+    const minTotal = MIN_PER_FLOOR * floorsNum;
     
     if (category === "D" && areaNum <= 100) {
       setResult({
@@ -57,6 +78,8 @@ export default function FireExtinguisherCalculator() {
         mobileCount: 0,
         reserveCount: 0,
         totalCount: 0,
+        totalPortable: 0,
+        perFloor: [],
         recommendations: ["Помещение категории Д площадью до 100 м² допускается не оснащать огнетушителями (ППБ РК, Прил. 3, п. 9)"],
         warnings: [],
       });
@@ -64,7 +87,7 @@ export default function FireExtinguisherCalculator() {
     }
 
     if (hasAUPT) {
-      baseCount = Math.ceil(baseCount * 0.5);
+      baseCount = Math.ceil(baseCount * AUPT_REDUCTION);
     }
 
     baseCount = Math.max(baseCount, minTotal);
@@ -73,27 +96,36 @@ export default function FireExtinguisherCalculator() {
     let co2Count = 0;
 
     if (hasElectrical) {
-      co2Count = Math.ceil(baseCount * 0.3);
+      const recommendedCo2 = Math.round(baseCount * 0.15);
+      co2Count = baseCount >= 2 ? Math.max(2, recommendedCo2) : 1;
+      co2Count = Math.min(co2Count, baseCount);
       powderCount = baseCount - co2Count;
     }
 
-    const mobileCount = areaNum > 500 ? Math.ceil(areaNum / 1000) : 0;
-    const reserveCount = Math.ceil((powderCount + co2Count) * 0.1);
+    const mobileCount = areaNum > MOBILE_THRESHOLD ? 1 + Math.ceil((areaNum - MOBILE_THRESHOLD) / 1000) : 0;
+    const totalPortable = powderCount + co2Count;
+    const reserveCount = Math.ceil(totalPortable * (reservePercentNum / 100));
+    const perFloor = splitByFloors(totalPortable, floorsNum);
 
     const recommendations: string[] = [];
     const warnings: string[] = [];
 
+    recommendations.push(`Минимум по этажам: ${MIN_PER_FLOOR} шт. на этаж (всего ${minTotal} шт. минимально).`);
     recommendations.push(`Порошковые огнетушители ОП-4/ОП-5: ${powderCount} шт.`);
     
     if (co2Count > 0) {
       recommendations.push(`Углекислотные огнетушители ОУ-3/ОУ-5: ${co2Count} шт. (для электрооборудования)`);
     }
 
+    if (perFloor.length > 1) {
+      recommendations.push(`Распределение по этажам: ${perFloor.map((count, index) => `этаж ${index + 1} — ${count} шт.`).join(", ")}`);
+    }
+
     if (mobileCount > 0) {
       recommendations.push(`Передвижные огнетушители ОП-25/ОП-50: ${mobileCount} шт.`);
     }
 
-    recommendations.push(`Резерв на ТО: ${reserveCount} шт. (10% от общего количества)`);
+    recommendations.push(`Резерв на ТО: ${reserveCount} шт. (${reservePercentNum}% от переносных, СТ РК 1487-2006 п. 8.5)`);
 
     if (category === "A" || category === "B") {
       warnings.push("Категория А/Б требует взрывозащищенного электрооборудования");
@@ -103,8 +135,13 @@ export default function FireExtinguisherCalculator() {
       recommendations.push("Применено сокращение 50% при наличии АУПТ (ППБ РК, Прил. 3, п. 13)");
     }
 
-    const maxDistance = category === "A" || category === "B" || category === "V" ? 30 : 
-                        category === "G" ? 40 : 70;
+    if (hasCabinets) {
+      recommendations.push("Пожарные шкафы: в каждом шкафу не менее 2 огнетушителей массой заряда ≥ 5 кг.");
+    }
+
+    const maxDistance = buildingType === "public" ? 20 :
+      category === "A" || category === "B" || category === "V" ? 30 : 
+      category === "G" ? 40 : 70;
     recommendations.push(`Максимальное расстояние до огнетушителя: ${maxDistance} м`);
 
     setResult({
@@ -113,7 +150,9 @@ export default function FireExtinguisherCalculator() {
       waterCount: 0,
       mobileCount,
       reserveCount,
-      totalCount: powderCount + co2Count + mobileCount + reserveCount,
+      totalCount: totalPortable + mobileCount + reserveCount,
+      totalPortable,
+      perFloor,
       recommendations,
       warnings,
     });
@@ -125,6 +164,9 @@ export default function FireExtinguisherCalculator() {
     setFloors("1");
     setHasAUPT(false);
     setHasElectrical(false);
+    setHasCabinets(false);
+    setReservePercent(String(DEFAULT_RESERVE));
+    setBuildingType("production");
     setResult(null);
   };
 
@@ -141,12 +183,16 @@ export default function FireExtinguisherCalculator() {
 - Этажей: ${floors}
 - АУПТ: ${hasAUPT ? "Да" : "Нет"}
 - Электрооборудование: ${hasElectrical ? "Да" : "Нет"}
+- Пожарные шкафы: ${hasCabinets ? "Да" : "Нет"}
+- Тип объекта: ${buildingType === "public" ? "Общественное/административное" : "Производственное/складское"}
+- Резерв: ${reservePercent}%
 
 РЕЗУЛЬТАТ:
 - Порошковые: ${result.powderCount} шт.
 - Углекислотные: ${result.co2Count} шт.
 - Передвижные: ${result.mobileCount} шт.
 - Резерв: ${result.reserveCount} шт.
+- Переносные: ${result.totalPortable} шт.
 - ИТОГО: ${result.totalCount} шт.
 
 РЕКОМЕНДАЦИИ:
@@ -206,6 +252,19 @@ ${result.warnings.length > 0 ? `ПРЕДУПРЕЖДЕНИЯ:\n${result.warnings
             </div>
 
             <div>
+              <Label>Тип объекта</Label>
+              <Select value={buildingType} onValueChange={setBuildingType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите тип" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Производственное/складское</SelectItem>
+                  <SelectItem value="public">Общественное/административное</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label>Категория помещения по взрывопожароопасности</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
@@ -254,6 +313,29 @@ ${result.warnings.length > 0 ? `ПРЕДУПРЕЖДЕНИЯ:\n${result.warnings
                   Электрооборудование под напряжением
                 </Label>
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="cabinet"
+                  checked={hasCabinets}
+                  onCheckedChange={(checked) => setHasCabinets(checked === true)}
+                />
+                <Label htmlFor="cabinet" className="cursor-pointer">
+                  Есть пожарные шкафы (ПК)
+                </Label>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="reserve">Резерв на ТО (%)</Label>
+              <Input
+                id="reserve"
+                type="number"
+                min="0"
+                max="50"
+                value={reservePercent}
+                onChange={(e) => setReservePercent(e.target.value)}
+              />
             </div>
 
             <div className="flex gap-3">
@@ -284,7 +366,7 @@ ${result.warnings.length > 0 ? `ПРЕДУПРЕЖДЕНИЯ:\n${result.warnings
           <CardContent>
             {result ? (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-center">
                     <div className="text-3xl font-bold text-red-600">{result.powderCount}</div>
                     <div className="text-sm text-muted-foreground">Порошковые ОП</div>
@@ -297,9 +379,17 @@ ${result.warnings.length > 0 ? `ПРЕДУПРЕЖДЕНИЯ:\n${result.warnings
                     <div className="text-3xl font-bold text-orange-600">{result.mobileCount}</div>
                     <div className="text-sm text-muted-foreground">Передвижные</div>
                   </div>
+                  <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
+                    <div className="text-3xl font-bold text-emerald-600">{result.reserveCount}</div>
+                    <div className="text-sm text-muted-foreground">Резерв</div>
+                  </div>
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-lg text-center">
+                    <div className="text-3xl font-bold text-slate-600">{result.totalPortable}</div>
+                    <div className="text-sm text-muted-foreground">Переносные</div>
+                  </div>
                   <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
                     <div className="text-3xl font-bold text-green-600">{result.totalCount}</div>
-                    <div className="text-sm text-muted-foreground">Всего</div>
+                    <div className="text-sm text-muted-foreground">Всего с резервом</div>
                   </div>
                 </div>
 
