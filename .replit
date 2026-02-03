@@ -7,8 +7,8 @@ channel = "stable-25_05"
 packages = ["jq", "ffmpeg"]
 
 [deployment]
-deploymentTarget = "autoscale"
-build = ["npm run build"]
+deploymentTarget = "vm"
+build = ["npm ci && npm run build"]
 run = ["npm start"]
 
 [[ports]]
