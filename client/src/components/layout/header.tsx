@@ -30,16 +30,12 @@ import { MchsEmblem } from "@/components/mchs-emblem";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Bell,
-  BookOpen,
   Bot,
   Calculator,
-  ChartBarBig,
   CircleUser,
   ClipboardList,
   FileText,
-  Headset,
   Layers,
-  MapPin,
   Menu,
   Shield,
   Sparkles,
@@ -64,12 +60,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Shield,
       },
       {
-        title: "Карты пожаров",
-        description: "Интерактивные карты из модуля госучёта пожаров",
-        href: "/fire-module?tab=maps",
-        icon: MapPin,
-      },
-      {
         title: "Контроль и надзор",
         description: "Реестр подконтрольных объектов и график проверок",
         href: "/controlled-objects",
@@ -90,10 +80,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Журналы и списки",
+    label: "Журналы",
     items: [
       {
-        title: "Модуль журналов и списков",
+        title: "Модуль журналов",
         description: "Все журналы и перечни в одном интерфейсе",
         href: "/journals-lists",
         icon: ClipboardList,
@@ -113,17 +103,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Отчёты",
-    items: [
-      {
-        title: "Расширенная аналитика",
-        description: "Дашборды, сравнения регионов и тренды",
-        href: "/analytics",
-        icon: ChartBarBig,
-      },
-    ],
-  },
-  {
     label: "Администрирование",
     items: [
       {
@@ -133,8 +112,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         icon: Users,
       },
       {
-        title: "CRM данные",
-        description: "Организации, контакты и интеграции",
+        title: "Справочники",
+        description: "Организации, контакты и справочные данные",
         href: "/crm",
         icon: Sparkles,
       },
@@ -154,23 +133,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         description: "Консультации по НПА РК и пожарной безопасности",
         href: "/ai-assistant",
         icon: Bot,
-      },
-    ],
-  },
-  {
-    label: "Помощь",
-    items: [
-      {
-        title: "Документация",
-        description: "Руководства пользователя и шаблоны",
-        href: "/documents",
-        icon: BookOpen,
-      },
-      {
-        title: "Поддержка",
-        description: "Чат с оператором и база знаний",
-        href: "/notifications?tab=support",
-        icon: Headset,
       },
     ],
   },

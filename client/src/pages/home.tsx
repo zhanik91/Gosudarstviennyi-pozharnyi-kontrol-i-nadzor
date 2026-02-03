@@ -77,6 +77,7 @@ export default function Home() {
           <div className="space-y-4">
             <h3 className="text-xl font-semibold text-foreground">Модули системы</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {/* Основные модули (верхний ряд) */}
               <ModuleCard
                 icon={Shield}
                 iconBg="bg-primary/20"
@@ -102,18 +103,6 @@ export default function Home() {
               />
 
               <ModuleCard
-                icon={FileCheck}
-                iconBg="bg-orange-500/20"
-                iconColor="text-orange-400"
-                title="Журналы и списки"
-                description="Ведомственные и объектовые журналы, учёт ППС и инструктажей"
-                primaryAction={{
-                  label: "Открыть модуль",
-                  href: "/journals-lists",
-                }}
-              />
-
-              <ModuleCard
                 icon={Scale}
                 iconBg="bg-purple-500/20"
                 iconColor="text-purple-400"
@@ -125,6 +114,19 @@ export default function Home() {
                 }}
               />
 
+              <ModuleCard
+                icon={FileCheck}
+                iconBg="bg-orange-500/20"
+                iconColor="text-orange-400"
+                title="Журналы"
+                description="Ведомственные и объектовые журналы, учёт ППС и инструктажей"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/journals-lists",
+                }}
+              />
+
+              {/* Вспомогательные модули (нижний ряд) */}
               <ModuleCard
                 icon={BookOpen}
                 iconBg="bg-blue-500/20"
@@ -153,7 +155,7 @@ export default function Home() {
                 icon={Bot}
                 iconBg="bg-cyan-500/20"
                 iconColor="text-cyan-400"
-                title="АИ ассистент"
+                title="ИИ-Ассистент"
                 description="Умный помощник с базой знаний НПА, консультации в реальном времени"
                 primaryAction={{
                   label: "Открыть модуль",
