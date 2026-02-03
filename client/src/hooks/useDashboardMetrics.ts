@@ -7,6 +7,8 @@ export type DashboardMetrics = {
   objects: number;
   users: number;
   reports: number;
+  inspections: number;
+  adminCases: number;
 };
 
 export function useDashboardMetrics() {

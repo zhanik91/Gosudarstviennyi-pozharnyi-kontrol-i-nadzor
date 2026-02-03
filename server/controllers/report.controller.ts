@@ -92,7 +92,9 @@ export class ReportController {
         incidents: incidentStats.totalIncidents,
         objects: await storage.getObjectsCount(),
         reports: await storage.getReportsCount(),
-        users: await storage.getUsersCount()
+        users: await storage.getUsersCount(),
+        inspections: await storage.getInspectionsCount(),
+        adminCases: await storage.getAdminCasesCount(),
       };
 
       res.json(stats);

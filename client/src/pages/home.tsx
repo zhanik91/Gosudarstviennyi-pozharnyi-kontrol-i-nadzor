@@ -5,7 +5,7 @@ import Footer from "@/components/layout/footer";
 import ModuleCard from "@/components/portal/module-card";
 import StatsCard from "@/components/portal/stats-card";
 import { SimpleActions } from "@/components/navigation/simple-actions";
-import { Shield, Building, Activity, Users, FileCheck, Scale, BookOpen, Calculator, Bot } from "lucide-react";
+import { Shield, Building, Activity, Users, FileCheck, Scale, BookOpen, Calculator, Bot, ClipboardCheck, FileWarning } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
 export default function Home() {
@@ -74,136 +74,135 @@ export default function Home() {
           </div>
 
           {/* Module Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <ModuleCard
-              icon={Shield}
-              iconBg="bg-primary/20"
-              iconColor="text-primary"
-              title="Государственный учёт пожаров"
-              description="Регистрация пожаров, автозаполнение форм 1-7, интерактивная аналитика"
-              primaryAction={{
-                label: "Открыть модуль",
-                href: "/fire-module"
-              }}
-              secondaryActions={[
-                { label: "Журнал", href: "/fire-module?tab=journal" },
-                { label: "Отчёты", href: "/fire-module?tab=reports" }
-              ]}
-            />
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-foreground">Модули системы</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <ModuleCard
+                icon={Shield}
+                iconBg="bg-primary/20"
+                iconColor="text-primary"
+                title="Государственный учёт пожаров"
+                description="Регистрация пожаров, автозаполнение форм 1-7, интерактивная аналитика"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/fire-module"
+                }}
+              />
 
-            <ModuleCard
-              icon={Building}
-              iconBg="bg-accent/20"
-              iconColor="text-accent"
-              title="Государственный контроль и надзор"
-              description="Реестр объектов, проверки, МОР с контролем сроков, талоны"
-              primaryAction={{
-                label: "Открыть модуль",
-                href: "/controlled-objects"
-              }}
-              secondaryActions={[
-                { label: "Реестр", href: "/controlled-objects?tab=registry" },
-                { label: "Проверки", href: "/controlled-objects?tab=inspections" }
-              ]}
-            />
+              <ModuleCard
+                icon={Building}
+                iconBg="bg-accent/20"
+                iconColor="text-accent"
+                title="Государственный контроль и надзор"
+                description="Реестр объектов, проверки, МОР с контролем сроков, талоны"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/controlled-objects"
+                }}
+              />
 
-            <ModuleCard
-              icon={FileCheck}
-              iconBg="bg-orange-500/20"
-              iconColor="text-orange-400"
-              title="Журналы и списки"
-              description="Ведомственные и объектовые журналы, учёт ППС и инструктажей"
-              primaryAction={{
-                label: "Открыть модуль",
-                href: "/journals-lists",
-              }}
-              secondaryActions={[
-                { label: "Ведомственный", href: "/journals-lists?tab=audits" }
-              ]}
-            />
+              <ModuleCard
+                icon={FileCheck}
+                iconBg="bg-orange-500/20"
+                iconColor="text-orange-400"
+                title="Журналы и списки"
+                description="Ведомственные и объектовые журналы, учёт ППС и инструктажей"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/journals-lists",
+                }}
+              />
 
-            <ModuleCard
-              icon={Scale}
-              iconBg="bg-purple-500/20"
-              iconColor="text-purple-400"
-              title="Административная практика"
-              description="Регистрация админ. дел, протоколы, постановления, фотофиксация"
-              primaryAction={{
-                label: "Открыть модуль",
-                href: "/admin-practice"
-              }}
-              secondaryActions={[
-                { label: "Журнал", href: "/admin-practice?tab=journal" }
-              ]}
-            />
+              <ModuleCard
+                icon={Scale}
+                iconBg="bg-purple-500/20"
+                iconColor="text-purple-400"
+                title="Административная практика"
+                description="Регистрация админ. дел, протоколы, постановления, фотофиксация"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/admin-practices"
+                }}
+              />
 
-            <ModuleCard
-              icon={BookOpen}
-              iconBg="bg-blue-500/20"
-              iconColor="text-blue-400"
-              title="Нормативные документы"
-              description="Полная база НПА, законов, приказов и техрегламентов РК"
-              primaryAction={{
-                label: "Открыть модуль",
-                href: "/normative-documents"
-              }}
-              secondaryActions={[
-                { label: "Законы", href: "/normative-documents?category=laws" }
-              ]}
-            />
+              <ModuleCard
+                icon={BookOpen}
+                iconBg="bg-blue-500/20"
+                iconColor="text-blue-400"
+                title="Нормативные документы"
+                description="Полная база НПА, законов, приказов и техрегламентов РК"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/normative-documents"
+                }}
+              />
 
-            <ModuleCard
-              icon={Calculator}
-              iconBg="bg-emerald-500/20"
-              iconColor="text-emerald-400"
-              title="Калькуляторы"
-              description="Расчёт огнетушителей, ПСС (НГПС), категорий взрывопожароопасности"
-              primaryAction={{
-                label: "Открыть модуль",
-                href: "/calculators"
-              }}
-              secondaryActions={[
-                { label: "Огнетушители", href: "/calculators/fire-extinguishers" },
-                { label: "ПСС", href: "/calculators/ngps" }
-              ]}
-            />
+              <ModuleCard
+                icon={Calculator}
+                iconBg="bg-emerald-500/20"
+                iconColor="text-emerald-400"
+                title="Калькуляторы"
+                description="Расчёт огнетушителей, ПСС (НГПС), категорий взрывопожароопасности"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/calculators"
+                }}
+              />
 
-            <ModuleCard
-              icon={Bot}
-              iconBg="bg-cyan-500/20"
-              iconColor="text-cyan-400"
-              title="АИ ассистент"
-              description="Умный помощник с базой знаний НПА, консультации в реальном времени"
-              primaryAction={{
-                label: "Открыть модуль",
-                href: "/ai-assistant"
-              }}
-            />
+              <ModuleCard
+                icon={Bot}
+                iconBg="bg-cyan-500/20"
+                iconColor="text-cyan-400"
+                title="АИ ассистент"
+                description="Умный помощник с базой знаний НПА, консультации в реальном времени"
+                primaryAction={{
+                  label: "Открыть модуль",
+                  href: "/ai-assistant"
+                }}
+              />
+            </div>
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatsCard
-              icon={Activity}
-              iconColor="text-primary"
-              label="Инциденты за месяц"
-              value={renderMetricValue(metrics?.incidents)}
-              dataTestId="stat-incidents"
-            />
-            <StatsCard
-              icon={Building}
-              iconColor="text-accent"
-              label="Объекты на учёте"
-              value={renderMetricValue(metrics?.objects)}
-              dataTestId="stat-objects"
-            />
-            <StatsCard
-              icon={Users}
-              iconColor="text-green-400"
-              label="Пользователей в системе"
-              value={renderMetricValue(metrics?.users)}
-              dataTestId="stat-users"
-            />
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-foreground">Статистика за месяц</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              <StatsCard
+                icon={Activity}
+                iconColor="text-primary"
+                label="Инциденты"
+                value={renderMetricValue(metrics?.incidents)}
+                dataTestId="stat-incidents"
+              />
+              <StatsCard
+                icon={Building}
+                iconColor="text-accent"
+                label="Объекты на учёте"
+                value={renderMetricValue(metrics?.objects)}
+                dataTestId="stat-objects"
+              />
+              <StatsCard
+                icon={ClipboardCheck}
+                iconColor="text-orange-400"
+                label="Проверок проведено"
+                value={renderMetricValue(metrics?.inspections)}
+                dataTestId="stat-inspections"
+              />
+              <StatsCard
+                icon={FileWarning}
+                iconColor="text-purple-400"
+                label="Адм. дел составлено"
+                value={renderMetricValue(metrics?.adminCases)}
+                dataTestId="stat-admin-cases"
+              />
+              <StatsCard
+                icon={Users}
+                iconColor="text-green-400"
+                label="Пользователей"
+                value={renderMetricValue(metrics?.users)}
+                dataTestId="stat-users"
+              />
+            </div>
           </div>
         </div>
       </div>

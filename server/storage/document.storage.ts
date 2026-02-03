@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { auditLogs, documents, notifications, users } from "@shared/schema";
+import { auditLogs, documents, notifications, users, inspections, adminCases, controlObjects } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { applyScopeCondition, type ScopeUser } from "../services/authz";
 
@@ -111,7 +111,27 @@ export class DocumentStorage {
   async getObjectsCount(): Promise<number> {
     const [result] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(documents);
+      .from(controlObjects);
+    return Number(result?.count ?? 0);
+  }
+
+  async getInspectionsCount(): Promise<number> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(inspections)
+      .where(sql`${inspections.createdAt} >= ${startOfMonth}`);
+    return Number(result?.count ?? 0);
+  }
+
+  async getAdminCasesCount(): Promise<number> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(adminCases)
+      .where(sql`${adminCases.caseDate} >= ${startOfMonth}`);
     return Number(result?.count ?? 0);
   }
 
