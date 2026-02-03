@@ -9,7 +9,7 @@ packages = ["jq", "ffmpeg"]
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "ci", "&&", "npm", "run", "build"]
-run = ["node", "dist/index.js"]
+run = ["bash", "-c", "NODE_ENV=production node dist/index.js"]
 
 [[ports]]
 localPort = 5000
