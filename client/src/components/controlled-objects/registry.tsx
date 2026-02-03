@@ -54,7 +54,7 @@ type InspectionFormState = {
 const inspectionTypeOptions = [
   { value: "scheduled", label: "Плановая" },
   { value: "unscheduled", label: "Внеплановая" },
-  { value: "preventive", label: "Профилактическая" },
+  { value: "preventive_control", label: "Профилактическая" },
   { value: "monitoring", label: "Мониторинг" },
 ];
 

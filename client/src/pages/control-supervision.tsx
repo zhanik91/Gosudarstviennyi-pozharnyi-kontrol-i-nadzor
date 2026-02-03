@@ -83,7 +83,7 @@ type ControlledObject = {
   subjective: SubjectiveCriteria;
 };
 
-type InspectionType = "scheduled" | "unscheduled" | "preventive" | "monitoring";
+type InspectionType = "scheduled" | "unscheduled" | "preventive_control" | "monitoring";
 type InspectionStatus = "planned" | "in_progress" | "completed" | "canceled";
 type PrescriptionStatus = "issued" | "in_progress" | "fulfilled" | "overdue" | "canceled";
 type MeasureStatus = "draft" | "issued" | "in_progress" | "completed" | "canceled";
@@ -200,7 +200,7 @@ const INSPECTION_STATUSES: Array<{ value: InspectionStatus; label: string }> = [
 const INSPECTION_TYPES: Array<{ value: InspectionType; label: string }> = [
   { value: "scheduled", label: "Плановая" },
   { value: "unscheduled", label: "Внеплановая" },
-  { value: "preventive", label: "Профилактическая" },
+  { value: "preventive_control", label: "Профилактическая" },
   { value: "monitoring", label: "Мониторинг" },
 ];
 

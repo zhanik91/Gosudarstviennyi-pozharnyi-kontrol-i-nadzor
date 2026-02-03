@@ -985,7 +985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedCount: sql<number>`sum(case when ${inspections.status} = 'completed' then 1 else 0 end)`,
         scheduledCount: sql<number>`sum(case when ${inspections.type} = 'scheduled' then 1 else 0 end)`,
         unscheduledCount: sql<number>`sum(case when ${inspections.type} = 'unscheduled' then 1 else 0 end)`,
-        preventiveCount: sql<number>`sum(case when ${inspections.type} = 'preventive' then 1 else 0 end)`,
+        preventiveCount: sql<number>`sum(case when ${inspections.type} = 'preventive_control' then 1 else 0 end)`,
         monitoringCount: sql<number>`sum(case when ${inspections.type} = 'monitoring' then 1 else 0 end)`,
         withViolationsCount: sql<number>`sum(case when coalesce(${inspections.violationsCount}, 0) > 0 then 1 else 0 end)`,
         withPrescriptionsCount: sql<number>`sum(case when exists(select 1 from ${prescriptions} where ${prescriptions.inspectionId} = ${inspections.id}) then 1 else 0 end)`,

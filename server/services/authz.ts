@@ -23,12 +23,12 @@ export function toScopeUser(user: any): ScopeUser | undefined {
 }
 
 /**
- * Проверяет, является ли пользователь администратором МЧС
+ * Проверяет, является ли пользователь администратором МЧС (полный доступ)
  */
 export function isAdmin(user: ScopeUser | any): boolean {
   if (!user) return false;
-  const role = user.role?.toLowerCase?.() ?? user.role;
-  return role === 'admin' || role === 'mchs';
+  const role = user.role?.toUpperCase?.() ?? user.role?.toUpperCase?.();
+  return role === 'ADMIN' || role === 'MCHS';
 }
 
 /**
@@ -36,17 +36,18 @@ export function isAdmin(user: ScopeUser | any): boolean {
  */
 export function isDCHS(user: ScopeUser | any): boolean {
   if (!user) return false;
-  // ДЧС - это пользователь с регионом, но без района
-  return user.region && !user.district;
+  const role = user.role?.toUpperCase?.() ?? user.role?.toUpperCase?.();
+  return role === 'DCHS';
 }
 
 /**
  * Проверяет, является ли пользователь ОЧС (районный уровень)
+ * Поддерживает роли OCHS и DISTRICT (используется на фронтенде)
  */
 export function isOCHS(user: ScopeUser | any): boolean {
   if (!user) return false;
-  // ОЧС - это пользователь с регионом И районом
-  return user.region && user.district;
+  const role = user.role?.toUpperCase?.() ?? user.role?.toUpperCase?.();
+  return role === 'OCHS' || role === 'DISTRICT';
 }
 
 /**
@@ -55,7 +56,18 @@ export function isOCHS(user: ScopeUser | any): boolean {
 export function getUserLevel(user: ScopeUser | any): 'MCHS' | 'DCHS' | 'OCHS' {
   if (isAdmin(user)) return 'MCHS';
   if (isDCHS(user)) return 'DCHS';
+  if (isOCHS(user)) return 'OCHS';
   return 'OCHS';
+}
+
+/**
+ * Проверяет, может ли пользователь редактировать данные (admin, DCHS, OCHS - да, MCHS - нет)
+ */
+export function canEdit(user: ScopeUser | any): boolean {
+  if (!user) return false;
+  const role = user.role?.toUpperCase?.() ?? user.role?.toUpperCase?.();
+  // MCHS - только чтение, остальные могут редактировать
+  return role !== 'MCHS';
 }
 
 /**
@@ -82,30 +94,42 @@ function applyScopeConditionInternal(
     return sql`1 = 0`;
   }
 
-  // Администратор МЧС видит всё
+  // Администратор или МЧС (только чтение, но всё видит) - видит всё
   if (isAdmin(user)) {
     return undefined;
   }
 
   // ДЧС - фильтр по области (видит все районы своей области)
-  if (isDCHS(user) && user.region) {
+  if (isDCHS(user)) {
+    if (!user.region) {
+      // DCHS без региона - блокируем доступ (ошибка в данных)
+      console.warn(`DCHS user ${user.id} has no region assigned`);
+      return sql`1 = 0`;
+    }
     return eq(regionColumn, user.region);
   }
 
-  // ОЧС - фильтр по области И району
-  if (isOCHS(user) && user.region && user.district && districtColumn) {
-    return and(
-      eq(regionColumn, user.region),
-      eq(districtColumn, user.district)
-    );
-  }
-
-  // Если только регион указан
-  if (user.region) {
+  // ОЧС/DISTRICT - фильтр по области И району
+  if (isOCHS(user)) {
+    if (!user.region) {
+      // OCHS без региона - блокируем доступ (ошибка в данных)
+      console.warn(`OCHS user ${user.id} has no region assigned`);
+      return sql`1 = 0`;
+    }
+    
+    // Если есть колонка района и у пользователя задан район - фильтруем по обоим
+    if (user.district && districtColumn) {
+      return and(
+        eq(regionColumn, user.region),
+        eq(districtColumn, user.district)
+      );
+    }
+    
+    // Если нет колонки района или у OCHS не задан район - фильтр только по региону
     return eq(regionColumn, user.region);
   }
 
-  // Нет доступа
+  // Fallback - нет доступа
   return sql`1 = 0`;
 }
 
@@ -130,7 +154,15 @@ export async function applyScope<T extends { where: (condition: SQL) => T }>(
     return query;
   }
 
-  return query.where(and(...conditions));
+  if (conditions.length === 1) {
+    return query.where(conditions[0]);
+  }
+
+  const combined = and(...conditions);
+  if (!combined) {
+    return query;
+  }
+  return query.where(combined);
 }
 
 /**
@@ -155,6 +187,7 @@ export default {
   isDCHS,
   isOCHS,
   getUserLevel,
+  canEdit,
   applyScopeCondition,
   applyScope,
   scopeMiddleware
