@@ -979,6 +979,20 @@ export default function ControlSupervisionPage() {
     },
   });
 
+  const inspectionIds = useMemo(() => inspectionsData.map((i: any) => i.id), [inspectionsData]);
+  const { data: adminCasesCountMap = {} } = useQuery<Record<string, number>>({
+    queryKey: ['/api/admin-cases/count-by-inspections', inspectionIds.join(',')],
+    queryFn: async () => {
+      if (inspectionIds.length === 0) return {};
+      const res = await fetch(`/api/admin-cases/count-by-inspections?inspectionIds=${inspectionIds.join(',')}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) return {};
+      return res.json();
+    },
+    enabled: inspectionIds.length > 0,
+  });
+
   const { data: reportRows = [], isLoading: isLoadingReports } = useQuery<ReportRow[]>({
     queryKey: ['/api/reports/inspections', reportQuery],
     queryFn: async () => {
@@ -2015,8 +2029,8 @@ export default function ControlSupervisionPage() {
                               const linkedMeasures = measuresData.filter(
                                 (m) => m.relatedInspectionId === item.id
                               ).length;
-                              // TODO: Добавить подсчет дел (когда будет API)
-                              const linkedCases = 0;
+                              // Подсчет связанных административных дел
+                              const linkedCases = adminCasesCountMap[item.id] || 0;
 
                               return (
                                 <>

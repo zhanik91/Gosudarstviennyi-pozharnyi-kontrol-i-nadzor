@@ -892,6 +892,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin-cases/count-by-inspections', isAuthenticated, async (req: any, res) => {
+    try {
+      const { inspectionIds } = req.query;
+      if (!inspectionIds) {
+        return res.json({});
+      }
+      const ids = typeof inspectionIds === 'string' ? inspectionIds.split(',') : inspectionIds;
+      if (ids.length > 500) {
+        return res.status(400).json({ message: 'Слишком много ID проверок (макс. 500)' });
+      }
+      const scopeUser = toScopeUser(req.user);
+      const scopeCondition = applyScopeCondition(scopeUser, adminCases.region, adminCases.district);
+      const conditions = [inArray(adminCases.inspectionId, ids)];
+      if (scopeCondition) conditions.push(scopeCondition);
+      const result = await db
+        .select({
+          inspectionId: adminCases.inspectionId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(adminCases)
+        .where(and(...conditions))
+        .groupBy(adminCases.inspectionId);
+      const countMap: Record<string, number> = {};
+      result.forEach((r) => {
+        if (r.inspectionId) countMap[r.inspectionId] = r.count;
+      });
+      res.json(countMap);
+    } catch (error) {
+      console.error('Error counting admin cases by inspections:', error);
+      res.status(500).json({ message: 'Ошибка подсчёта административных дел' });
+    }
+  });
+
   app.post('/api/admin-cases', isAuthenticated, canWriteRegistry, buildScopeWriteCheck({
     table: adminCases,
     regionColumn: adminCases.region,
