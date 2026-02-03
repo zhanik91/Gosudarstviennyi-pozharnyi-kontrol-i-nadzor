@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -27,6 +28,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MchsEmblem } from "@/components/mchs-emblem";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Bell,
@@ -40,6 +43,10 @@ import {
   Shield,
   Sparkles,
   Users,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  XCircle,
 } from "lucide-react";
 
 type NavItem = {
@@ -150,13 +157,36 @@ function getInitials(name?: string) {
 
 export default function Header() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Получение уведомлений
+  const { data: notifications = [] } = useQuery<any[]>({
+    queryKey: ["/api/notifications"],
+    enabled: !!user,
+  });
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
   if (!user) return null;
+
   const isAdmin = (user as any)?.role === "MCHS" || (user as any)?.role === "admin";
   const navGroupsForUser = navGroups.filter(
     (group) => group.label !== "Администрирование" || isAdmin
   );
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "warning":
+        return <AlertTriangle className="h-4 w-4 text-warning" />;
+      case "error":
+        return <XCircle className="h-4 w-4 text-destructive" />;
+      case "success":
+        return <CheckCircle className="h-4 w-4 text-success" />;
+      default:
+        return <Info className="h-4 w-4 text-blue-500" />;
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background text-foreground shadow-sm">
@@ -166,7 +196,7 @@ export default function Header() {
             <MchsEmblem className="h-10 w-10 rounded-md shadow-sm" />
             <div className="leading-tight">
               <p className="text-xs uppercase tracking-[0.08em] text-primary">
-                ҚР ТЖМ ӨҚҚК 
+                ҚР ТЖМ ӨҚҚК
               </p>
               <p className="text-sm font-semibold text-foreground">
                 КПС МЧС РК
@@ -265,17 +295,77 @@ export default function Header() {
 
           <div className="flex flex-none items-center gap-2">
             <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Уведомления"
-              className="relative hidden sm:inline-flex text-foreground transition duration-200 hover:bg-primary/10"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                3
-              </span>
-            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Уведомления"
+                  className="relative text-foreground transition duration-200 hover:bg-primary/10"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 rounded-xl p-0 overflow-hidden">
+                <div className="p-4 border-b flex items-center justify-between">
+                  <h3 className="font-semibold">Уведомления</h3>
+                  {unreadCount > 0 && <Badge variant="secondary">{unreadCount} новых</Badge>}
+                </div>
+                <ScrollArea className="h-[350px]">
+                  {notifications.length > 0 ? (
+                    <div className="grid">
+                      {notifications.map((notif) => (
+                        <DropdownMenuItem
+                          key={notif.id}
+                          className={`flex items-start gap-3 p-4 cursor-pointer focus:bg-primary/5 border-b last:border-0 ${!notif.isRead ? 'bg-primary/5' : ''}`}
+                          onClick={() => setLocation(`/notifications?id=${notif.id}`)}
+                        >
+                          <div className="mt-0.5">
+                            {getNotificationIcon(notif.type)}
+                          </div>
+                          <div className="space-y-1 overflow-hidden">
+                            <p className="text-sm font-medium leading-none truncate">{notif.title}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-snug">
+                              {notif.message}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {new Date(notif.createdAt).toLocaleString('ru-RU', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                      <Bell className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                      <p className="text-sm text-muted-foreground">У вас пока нет уведомлений</p>
+                    </div>
+                  )}
+                </ScrollArea>
+                <div className="p-2 bg-muted/30 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => setLocation("/notifications")}
+                  >
+                    Показать все уведомления
+                  </Button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
