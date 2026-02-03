@@ -56,6 +56,12 @@ Preferred communication style: Simple, everyday language.
   - **Source Citations**: All responses must include НПА name, number, and link to adilet.zan.kz
   - **Temperature**: 0.3 for accurate, fact-based responses
   - **Implementation**: `server/replit_integrations/chat/routes.ts`
+- **Administrative Practice Module**: Full CRUD for administrative cases with journal and reporting.
+  - **KoAP Articles**: ст.410, ст.410-1, ст.336, ст.359, ст.367, ст.438, ст.589
+  - **Form Component**: `client/src/components/admin-practices/admin-case-form.tsx`
+  - **Journal Page**: `client/src/pages/admin-practices.tsx`
+  - **Report Controller**: `server/controllers/admin-practice-report.controller.ts`
+  - **Enums**: paymentType (voluntary/forced), outcome (warning/termination/other), status (opened/in_review/resolved/closed/canceled)
 
 # External Dependencies
 

@@ -2,17 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { REGION_NAMES, ADMIN2_BY_REGION } from "@/data/kazakhstan-data";
+import { Button } from "@/components/ui/button";
+import { Plus, Pencil } from "lucide-react";
+import AdminCaseForm from "@/components/admin-practices/admin-case-form";
 
 type AdminCase = {
   id: string;
-  caseNumber: string;
+  number: string;
   caseDate: string;
   protocolNumber: string;
   protocolDate: string;
   region: string;
   district: string;
   article: string;
-  stage: string;
+  status: string;
+  paymentType: string;
+  outcome: string;
   offenderName: string;
   offenderBirthDate: string;
   offenderIin: string;
@@ -78,6 +83,10 @@ export default function AdminPracticesPage() {
   const [period, setPeriod] = useState("all");
   const [paymentStatuses, setPaymentStatuses] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingCase, setEditingCase] = useState<AdminCase | null>(null);
+
+  const canWrite = userRole !== "MCHS";
   const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
@@ -119,7 +128,7 @@ export default function AdminPracticesPage() {
   }, [entries]);
 
   const stages = useMemo(() => {
-    return ["Все", ...Array.from(new Set(entries.map((item) => item.stage)))];
+    return ["Все", ...Array.from(new Set(entries.map((item) => item.status)))];
   }, [entries]);
 
   const periodStart = useMemo(() => {
@@ -140,7 +149,7 @@ export default function AdminPracticesPage() {
   const filtered = useMemo(() => {
     return entries.filter((item) => {
       if (article !== "Все" && item.article !== article) return false;
-      if (stage !== "Все" && item.stage !== stage) return false;
+      if (stage !== "Все" && item.status !== stage) return false;
 
       if (periodStart) {
         const itemDate = new Date(item.caseDate);
@@ -185,8 +194,22 @@ export default function AdminPracticesPage() {
               Отбирайте протоколы по периоду, статье КоАП, стадии и статусу оплаты.
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
-            Записей: <span className="font-semibold text-foreground">{filtered.length}</span>
+          <div className="flex items-center gap-3">
+            {canWrite && (
+              <Button
+                onClick={() => {
+                  setEditingCase(null);
+                  setFormOpen(true);
+                }}
+                data-testid="button-add-case"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Добавить запись
+              </Button>
+            )}
+            <div className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
+              Записей: <span className="font-semibold text-foreground">{filtered.length}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -374,6 +397,7 @@ export default function AdminPracticesPage() {
                 <th className="px-3 py-2" colSpan={1}>Контакт</th>
               </tr>
               <tr className="border-t border-border/70">
+                {canWrite && <th className="px-3 py-3 w-12"></th>}
                 <th className="px-3 py-3">№</th>
                 <th className="px-3 py-3">Номер дела</th>
                 <th className="px-3 py-3">Регион</th>
@@ -408,7 +432,7 @@ export default function AdminPracticesPage() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={29} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={canWrite ? 30 : 29} className="px-4 py-10 text-center text-muted-foreground">
                     По выбранным фильтрам записи не найдены.
                   </td>
                 </tr>
@@ -418,13 +442,28 @@ export default function AdminPracticesPage() {
                     key={item.id}
                     className="border-t border-border/60 hover:bg-muted/30"
                   >
+                    {canWrite && (
+                      <td className="px-3 py-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingCase(item);
+                            setFormOpen(true);
+                          }}
+                          data-testid={`button-edit-case-${item.id}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    )}
                     <td className="px-3 py-2 text-muted-foreground">{index + 1}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{item.caseNumber}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{item.number}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{item.region}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{item.district}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{item.caseDate}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{item.article}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{item.stage}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{item.status}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{item.protocolNumber}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{item.protocolDate}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{item.offenderName}</td>
@@ -468,6 +507,15 @@ export default function AdminPracticesPage() {
           </table>
         )}
       </section>
+
+      <AdminCaseForm
+        open={formOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditingCase(null);
+        }}
+        editData={editingCase}
+      />
     </div>
   );
 }
