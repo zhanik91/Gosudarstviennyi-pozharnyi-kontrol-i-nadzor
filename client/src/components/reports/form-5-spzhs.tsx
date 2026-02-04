@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FORM_5_COLUMNS, FORM_5_ROWS, Form5Row } from "@shared/fire-forms-data";
-import { Download, Send, Printer, Home, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import { FileDown, Send, Printer, Home, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
@@ -67,7 +68,7 @@ export default function Form5SPZHS() {
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
-    
+
     const checkRow = (row: Form5Row) => {
       if (row.isSection) {
         row.children?.forEach(checkRow);
@@ -105,16 +106,16 @@ export default function Form5SPZHS() {
       });
       row.children?.forEach(checkRow);
     };
-    
+
     FORM_5_ROWS.forEach(checkRow);
-    
+
     return errors;
   };
 
   const handleValidate = () => {
     const errors = validateForm();
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       toast({
         title: "Валидация пройдена",
@@ -154,37 +155,42 @@ export default function Form5SPZHS() {
   };
 
   const handleExport = () => {
-    const csvHeader = [
-      "№ п/п",
-      "Наименование показателя",
-      ...FORM_5_COLUMNS.map(column => column.label)
-    ].join(',') + "\n";
-    
-    const flattenRows = (rows: Form5Row[], level = 0): string[] => {
+    const flattenRows = (rows: Form5Row[], level = 0): any[] => {
       return rows.flatMap(row => {
         const prefix = "  ".repeat(level);
         const data = row.isSection ? { urban: '', rural: '' } : getRowData(row.id);
-        const rowValues = FORM_5_COLUMNS.map(column => data[column.key as keyof RowData]);
-        const rowLine = `"${row.number ?? ''}","${prefix}${row.label}",${rowValues.join(',')}`;
+
+        const exportRow: any = {
+          "№ п/п": row.number ?? '',
+          "Наименование показателя": `${prefix}${row.label}`
+        };
+
+        FORM_5_COLUMNS.forEach(column => {
+          exportRow[column.label] = data[column.key as keyof RowData];
+        });
+
         const childLines = row.children ? flattenRows(row.children, level + 1) : [];
-        return [rowLine, ...childLines];
+        return [exportRow, ...childLines];
       });
     };
-    
-    const csvData = flattenRows(FORM_5_ROWS).join('\n');
-    const csvContent = csvHeader + csvData;
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form_5_spzhs_${reportMonth}_${reportYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
+
+    const exportData = flattenRows(FORM_5_ROWS);
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Форма 5-СПЖС");
+
+    ws["!cols"] = [
+      { wch: 10 },
+      { wch: 50 },
+      ...FORM_5_COLUMNS.map(() => ({ wch: 15 }))
+    ];
+
+    XLSX.writeFile(wb, `form_5_spzhs_${reportMonth}_${reportYear}.xlsx`);
+
     toast({
       title: "Экспорт завершен",
-      description: "Форма 5-СПЖС экспортирована в CSV"
+      description: "Форма 5-СПЖС экспортирована в Excel"
     });
   };
 
@@ -444,7 +450,7 @@ export default function Form5SPZHS() {
                 <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" readOnly />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель</Label>
@@ -512,8 +518,8 @@ export default function Form5SPZHS() {
               Печать
             </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт CSV
+              <FileDown className="h-4 w-4" />
+              Экспорт в Excel
             </Button>
             <Button onClick={handleSubmit} className="flex items-center gap-2">
               <Send className="h-4 w-4" />

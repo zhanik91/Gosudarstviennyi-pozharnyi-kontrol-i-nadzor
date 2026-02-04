@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FORM_7_CO_ROWS, Form7CORow } from "@shared/fire-forms-data";
-import { Download, Send, Printer, AlertTriangle, ChevronDown, ChevronRight, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { FileDown, Send, Printer, AlertTriangle, ChevronDown, ChevronRight, CheckCircle, AlertCircle, Info } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
@@ -64,7 +65,7 @@ export default function FormCO() {
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
-    
+
     const checkRow = (row: Form7CORow) => {
       const data = getCOData(row.id);
       if (data.killed_total < 0 || data.injured_total < 0) {
@@ -76,7 +77,7 @@ export default function FormCO() {
       }
       row.children?.forEach(checkRow);
     };
-    
+
     FORM_7_CO_ROWS.forEach(checkRow);
 
     const sumDirectChildren = (rowId: string) => {
@@ -142,7 +143,7 @@ export default function FormCO() {
   const handleValidate = () => {
     const errors = validateForm();
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       toast({
         title: "Валидация пройдена",
@@ -181,32 +182,39 @@ export default function FormCO() {
   };
 
   const handleExport = () => {
-    const csvHeader = "Код строки,Наименование показателя,Погибло людей,Травмировано людей\n";
-    
-    const flattenRows = (rows: Form7CORow[], level = 0): string[] => {
+    const flattenRows = (rows: Form7CORow[], level = 0): any[] => {
       return rows.flatMap(row => {
         const data = getCOData(row.id);
         const prefix = "  ".repeat(level);
-        const rowLine = `"${row.number || ''}","${prefix}${row.label}",${data.killed_total},${data.injured_total}`;
+        const exportRow = {
+          "Код строки": row.number || '',
+          "Наименование показателя": `${prefix}${row.label}`,
+          "Погибло людей": data.killed_total,
+          "Травмировано людей": data.injured_total
+        };
         const childLines = row.children ? flattenRows(row.children, level + 1) : [];
-        return [rowLine, ...childLines];
+        return [exportRow, ...childLines];
       });
     };
-    
-    const csvData = flattenRows(FORM_7_CO_ROWS).join('\n');
-    const csvContent = csvHeader + csvData;
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form_7_co_${reportMonth}_${reportYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
+
+    const exportData = flattenRows(FORM_7_CO_ROWS);
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Форма 7-CO");
+
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 50 },
+      { wch: 15 },
+      { wch: 15 }
+    ];
+
+    XLSX.writeFile(wb, `form_7_co_${reportMonth}_${reportYear}.xlsx`);
+
     toast({
       title: "Экспорт завершен",
-      description: "Форма 7-CO экспортирована в CSV"
+      description: "Форма 7-CO экспортирована в Excel"
     });
   };
 
@@ -472,7 +480,7 @@ export default function FormCO() {
                 <Input placeholder="Полный адрес организации" className="mt-1" readOnly />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Телефон</Label>
@@ -553,8 +561,8 @@ export default function FormCO() {
               Печать
             </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт CSV
+              <FileDown className="h-4 w-4" />
+              Экспорт в Excel
             </Button>
             <Button onClick={handleSubmit} className="flex items-center gap-2">
               <Send className="h-4 w-4" />

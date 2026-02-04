@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FORM_4_SOVP_ROWS, Form4SOVPRow } from "@shared/fire-forms-data";
-import { Download, FileText, Send, Printer, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import { FileDown, FileText, Send, Printer, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
@@ -55,7 +56,7 @@ export default function Form4SOVP() {
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
-    
+
     const checkRow = (row: Form4SOVPRow) => {
       const data = getObjectData(row.id);
       if (data.fires_total < 0 || data.damage_total < 0 || data.deaths_total < 0 || data.injuries_total < 0) {
@@ -67,7 +68,7 @@ export default function Form4SOVP() {
       }
       row.children?.forEach(checkRow);
     };
-    
+
     FORM_4_SOVP_ROWS.forEach(checkRow);
     return errors;
   };
@@ -75,7 +76,7 @@ export default function Form4SOVP() {
   const handleValidate = () => {
     const errors = validateForm();
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       toast({
         title: "Валидация пройдена",
@@ -130,35 +131,53 @@ export default function Form4SOVP() {
   };
 
   const handleExport = () => {
-    const csvHeader = "Код строки,Объекты возникновения пожаров,Количество пожаров,Ущерб (тыс. тенге),Погибло людей,Травмировано людей\n";
-    
-    const flattenRows = (rows: Form4SOVPRow[], level = 0): string[] => {
+    const flattenRows = (rows: Form4SOVPRow[], level = 0): any[] => {
       return rows.flatMap(row => {
         const data = getObjectData(row.id);
         const prefix = "  ".repeat(level);
-        const rowLine = `"${row.number || ''}","${prefix}${row.label}",${data.fires_total},${data.damage_total.toFixed(1)},${data.deaths_total},${data.injuries_total}`;
+        const exportRow = {
+          "Код строки": row.number || '',
+          "Объекты возникновения пожаров": `${prefix}${row.label}`,
+          "Количество пожаров": data.fires_total,
+          "Ущерб (тыс. тенге)": Number(data.damage_total.toFixed(1)),
+          "Погибло людей": data.deaths_total,
+          "Травмировано людей": data.injuries_total
+        };
         const childLines = row.children ? flattenRows(row.children, level + 1) : [];
-        return [rowLine, ...childLines];
+        return [exportRow, ...childLines];
       });
     };
 
-    const csvData = flattenRows(FORM_4_SOVP_ROWS).join('\n');
+    const exportData = flattenRows(FORM_4_SOVP_ROWS);
     const totals = getTotals();
-    const totalRow = `\n"","ИТОГО:",${totals.fires_total},${totals.damage_total.toFixed(1)},${totals.deaths_total},${totals.injuries_total}`;
-    
-    const csvContent = csvHeader + csvData + totalRow;
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form_4_sovp_${reportMonth}_${reportYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
+
+    exportData.push({
+      "Код строки": "",
+      "Объекты возникновения пожаров": "ИТОГО:",
+      "Количество пожаров": totals.fires_total,
+      "Ущерб (тыс. тенге)": Number(totals.damage_total.toFixed(1)),
+      "Погибло людей": totals.deaths_total,
+      "Травмировано людей": totals.injuries_total
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Форма 4-СОВП");
+
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 50 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 20 }
+    ];
+
+    XLSX.writeFile(wb, `form_4_sovp_${reportMonth}_${reportYear}.xlsx`);
+
     toast({
       title: "Экспорт завершен",
-      description: "Форма 4-СОВП экспортирована в CSV"
+      description: "Форма 4-СОВП экспортирована в Excel"
     });
   };
 
@@ -206,7 +225,7 @@ export default function Form4SOVP() {
     const data = getObjectData(row.id);
     const hasChildren = row.children && row.children.length > 0;
     const isExpanded = expandedRows.has(row.id);
-    
+
     return (
       <tr key={row.id} className={`hover:bg-secondary/30 ${level === 0 ? 'bg-secondary/20' : ''}`}>
         <td className="border border-border p-2 text-center font-medium w-16">
@@ -436,7 +455,7 @@ export default function Form4SOVP() {
                 <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" readOnly />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель</Label>
@@ -504,8 +523,8 @@ export default function Form4SOVP() {
               Печать
             </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт CSV
+              <FileDown className="h-4 w-4" />
+              Экспорт в Excel
             </Button>
             <Button onClick={handleSubmit} className="flex items-center gap-2">
               <Send className="h-4 w-4" />

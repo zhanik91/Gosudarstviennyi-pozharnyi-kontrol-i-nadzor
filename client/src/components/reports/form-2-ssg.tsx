@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NON_FIRE_CASES } from "@shared/fire-forms-data";
-import { Download, FileText, Send, Printer, CheckCircle, AlertCircle } from "lucide-react";
+import { FileDown, FileText, Send, Printer, CheckCircle, AlertCircle } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
@@ -38,7 +39,7 @@ export default function Form2SSG() {
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
-    
+
     NON_FIRE_CASES.forEach(case_ => {
       const value = reportData[case_.code] || 0;
       if (value < 0) {
@@ -56,7 +57,7 @@ export default function Form2SSG() {
   const handleValidate = () => {
     const errors = validateForm();
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       toast({
         title: "Валидация пройдена",
@@ -76,25 +77,33 @@ export default function Form2SSG() {
   };
 
   const handleExport = () => {
-    const csvHeader = "Код строки,Случаи горения не подлежащие учету как пожары,Количество\n";
-    const csvData = NON_FIRE_CASES.map((case_) => {
-      return `"${case_.code}","${case_.name}",${reportData[case_.code] || 0}`;
-    }).join('\n');
-    
-    const totalRow = `\n"","ИТОГО:",${getTotalCases()}`;
-    const csvContent = csvHeader + csvData + totalRow;
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form_2_ssg_${reportMonth}_${reportYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
+    const exportData = NON_FIRE_CASES.map((case_) => ({
+      "Код строки": case_.code,
+      "Случаи горения не подлежащие учету как пожары": case_.name,
+      "Количество": reportData[case_.code] || 0
+    }));
+
+    exportData.push({
+      "Код строки": "",
+      "Случаи горения не подлежащие учету как пожары": "ИТОГО:",
+      "Количество": getTotalCases()
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Форма 2-ССГ");
+
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 60 },
+      { wch: 15 }
+    ];
+
+    XLSX.writeFile(wb, `form_2_ssg_${reportMonth}_${reportYear}.xlsx`);
+
     toast({
       title: "Экспорт завершен",
-      description: "Форма 2-ССГ экспортирована в CSV"
+      description: "Форма 2-ССГ экспортирована в Excel"
     });
   };
 
@@ -305,7 +314,7 @@ export default function Form2SSG() {
                 <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" readOnly />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель</Label>
@@ -373,8 +382,8 @@ export default function Form2SSG() {
               Печать
             </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт CSV
+              <FileDown className="h-4 w-4" />
+              Экспорт в Excel
             </Button>
             <Button onClick={handleSubmit} className="flex items-center gap-2">
               <Send className="h-4 w-4" />

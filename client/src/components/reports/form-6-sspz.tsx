@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FORM_6_STEPPE_FIRES_ROWS, FORM_6_IGNITIONS_ROWS, Form6SSPZRow } from "@shared/fire-forms-data";
-import { Download, Send, Printer, Flame, CheckCircle, AlertCircle } from "lucide-react";
+import { FileDown, Send, Printer, Flame, CheckCircle, AlertCircle } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
@@ -127,7 +128,7 @@ export default function Form6SSPZ() {
   const handleValidate = () => {
     const errors = validateForm();
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       toast({
         title: "Валидация пройдена",
@@ -172,49 +173,48 @@ export default function Form6SSPZ() {
   };
 
   const handleExport = () => {
-    const buildCsvHeader = (overrides: Partial<Record<typeof columnDefinitions[number]['key'], string>> = {}) => {
-      return [
-        "№ п/п",
-        "Наименование области/города",
-        ...columnDefinitions.map(column => overrides[column.key] ?? column.label)
-      ].join(',') + "\n";
-    };
-    
-    const flattenRows = (rows: Form6SSPZRow[], level = 0): string[] => {
-      return rows.flatMap(row => {
+    const getTableData = (rows: Form6SSPZRow[], overrides: Partial<Record<typeof columnDefinitions[number]['key'], string>> = {}) => {
+      return rows.map(row => {
         const data = getFireData(row.id);
-        const prefix = "  ".repeat(level);
-        const values = columnDefinitions.map(column => {
+        const exportRow: any = {
+          "№ п/п": row.number || '',
+          "Наименование области/города": row.label
+        };
+
+        columnDefinitions.forEach(column => {
+          const label = overrides[column.key] ?? column.label;
           const value = data[column.key as keyof SteppeFireData];
-          if (column.valueType === 'decimal') {
-            return value.toFixed(column.precision ?? 1);
-          }
-          return value;
+          exportRow[label] = column.valueType === 'decimal' ? Number(value.toFixed(column.precision ?? 1)) : value;
         });
-        const rowLine = `"${row.number || ''}","${prefix}${row.label}",${values.join(',')}`;
-        return [rowLine];
+
+        return exportRow;
       });
     };
-    
-    const table1 = ['Таблица 1. Степные пожары', buildCsvHeader().trim(), ...flattenRows(FORM_6_STEPPE_FIRES_ROWS)].join('\n');
-    const table2 = [
-      'Таблица 2. Загорания',
-      buildCsvHeader({ fires_count: 'Количество загораний' }).trim(),
-      ...flattenRows(FORM_6_IGNITIONS_ROWS)
-    ].join('\n');
-    const csvContent = `${table1}\n\n${table2}\n`;
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form_6_sspz_${reportMonth}_${reportYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
+
+    const wb = XLSX.utils.book_new();
+
+    const steppeData = getTableData(FORM_6_STEPPE_FIRES_ROWS);
+    const ws1 = XLSX.utils.json_to_sheet(steppeData);
+    XLSX.utils.book_append_sheet(wb, ws1, "Степные пожары");
+
+    const ignitionData = getTableData(FORM_6_IGNITIONS_ROWS, { fires_count: 'Количество загораний' });
+    const ws2 = XLSX.utils.json_to_sheet(ignitionData);
+    XLSX.utils.book_append_sheet(wb, ws2, "Загорания");
+
+    // Set column widths for both sheets
+    [ws1, ws2].forEach(ws => {
+      ws["!cols"] = [
+        { wch: 8 },
+        { wch: 30 },
+        ...columnDefinitions.map(() => ({ wch: 15 }))
+      ];
+    });
+
+    XLSX.writeFile(wb, `form_6_sspz_${reportMonth}_${reportYear}.xlsx`);
+
     toast({
       title: "Экспорт завершен",
-      description: "Форма 6-ССПЗ экспортирована в CSV"
+      description: "Форма 6-ССПЗ экспортирована в Excel"
     });
   };
 
@@ -506,7 +506,7 @@ export default function Form6SSPZ() {
                 <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" readOnly />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель</Label>
@@ -574,8 +574,8 @@ export default function Form6SSPZ() {
               Печать
             </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт CSV
+              <FileDown className="h-4 w-4" />
+              Экспорт в Excel
             </Button>
             <Button onClick={handleSubmit} className="flex items-center gap-2">
               <Send className="h-4 w-4" />

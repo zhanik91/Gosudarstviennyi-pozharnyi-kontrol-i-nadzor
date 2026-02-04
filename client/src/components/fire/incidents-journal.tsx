@@ -610,17 +610,17 @@ export default function IncidentsJournal() {
 
   const incidentPage = Array.isArray(incidentsResponse)
     ? {
-        items: incidentsResponse,
-        total: incidentsResponse.length,
-        limit: incidentsResponse.length,
-        offset: 0,
-      }
+      items: incidentsResponse,
+      total: incidentsResponse.length,
+      limit: incidentsResponse.length,
+      offset: 0,
+    }
     : incidentsResponse ?? {
-        items: [],
-        total: 0,
-        limit: pageSize,
-        offset: 0,
-      };
+      items: [],
+      total: 0,
+      limit: pageSize,
+      offset: 0,
+    };
 
   const incidents = incidentPage.items ?? [];
   const totalIncidents = incidentPage.total ?? 0;
@@ -716,7 +716,7 @@ export default function IncidentsJournal() {
     }
   };
 
-  const handleExport = (exportFormat: "csv" | "xlsx") => {
+  const handleExport = () => {
     const dataToExport = selectedIncidents.length > 0
       ? incidents.filter((incident: Incident) => selectedIncidents.includes(incident.id))
       : incidents;
@@ -733,12 +733,15 @@ export default function IncidentsJournal() {
     const exportData = dataToExport.map((incident: Incident, index: number) => ({
       "№": index + 1,
       "Дата": incident.dateTime ? format(new Date(incident.dateTime), "dd.MM.yyyy HH:mm") : "",
-      "Тип": incident.incidentType === "fire" ? "Пожар" : 
-             incident.incidentType === "steppe_fire" ? "Степной пожар" : incident.incidentType,
+      "Тип": incident.incidentType === "fire" ? "Пожар" :
+        incident.incidentType === "nonfire" ? "Случай горения" :
+          incident.incidentType === "steppe_fire" ? "Степной пожар" :
+            incident.incidentType === "steppe_smolder" ? "Степное загорание" :
+              incident.incidentType === "co_nofire" ? "Отравление CO" : incident.incidentType,
       "Регион": REGION_NAMES[incident.region as keyof typeof REGION_NAMES] || incident.region || "",
       "Район/Город": incident.city || "",
-      "Местность": incident.locality === "cities" ? "Город" : 
-                   incident.locality === "rural" ? "Село" : incident.locality || "",
+      "Местность": incident.locality === "cities" ? "Город" :
+        incident.locality === "rural" ? "Село" : incident.locality || "",
       "Адрес": incident.address || "",
       "Причина": formatCodeLabel(incident.causeCode, incident.cause, ""),
       "Объект": formatCodeLabel(incident.objectCode, incident.objectType, ""),
@@ -756,34 +759,26 @@ export default function IncidentsJournal() {
 
     const filename = `журнал_пожаров_${new Date().toISOString().split("T")[0]}`;
 
-    if (exportFormat === "xlsx") {
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Журнал пожаров");
-      ws["!cols"] = [
-        { wch: 5 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
-        { wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 25 }, { wch: 15 },
-        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 },
-        { wch: 18 }, { wch: 18 }, { wch: 15 }, { wch: 22 },
-      ];
-      XLSX.writeFile(wb, `${filename}.xlsx`);
-    } else {
-      const headers = Object.keys(exportData[0]).join(",");
-      const rows = exportData.map(row => Object.values(row).map(v => `"${v}"`).join(",")).join("\n");
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers + "\n" + rows;
-      const link = document.createElement("a");
-      link.setAttribute("href", encodeURI(csvContent));
-      link.setAttribute("download", `${filename}.csv`);
-      link.click();
-    }
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Журнал пожаров");
+
+    ws["!cols"] = [
+      { wch: 5 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
+      { wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 25 }, { wch: 15 },
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 },
+      { wch: 18 }, { wch: 18 }, { wch: 15 }, { wch: 22 },
+    ];
+
+    XLSX.writeFile(wb, `${filename}.xlsx`);
 
     toast({
       title: "Экспорт завершён",
-      description: `${exportFormat.toUpperCase()}: ${dataToExport.length} записей`,
+      description: `Excel: ${dataToExport.length} записей`,
     });
   };
 
-  const handleBulkExport = () => handleExport("xlsx");
+  const handleBulkExport = () => handleExport();
 
   const handleBulkEdit = () => {
     if (selectedIncidents.length === 0) return;
@@ -899,9 +894,9 @@ export default function IncidentsJournal() {
         // Show detailed results modal instead of just a toast
         const normalizedErrors = Array.isArray(payload?.errors)
           ? payload.errors.map((err: { rowNumber?: number; message?: string; error?: string }) => ({
-              rowNumber: err.rowNumber ?? 0,
-              error: err.error ?? err.message ?? "Неизвестная ошибка",
-            }))
+            rowNumber: err.rowNumber ?? 0,
+            error: err.error ?? err.message ?? "Неизвестная ошибка",
+          }))
           : [];
 
         setImportResults({
@@ -953,9 +948,8 @@ export default function IncidentsJournal() {
             incident.objectCode,
             incident.objectType,
             ""
-          )},${incident.damage || 0},${incident.deathsTotal || 0},${incident.deathsChildren || 0},${
-            incident.injuredTotal || 0
-          },${incident.savedPeopleTotal || 0},${incident.savedProperty || 0}`;
+          )},${incident.damage || 0},${incident.deathsTotal || 0},${incident.deathsChildren || 0},${incident.injuredTotal || 0
+            },${incident.savedPeopleTotal || 0},${incident.savedProperty || 0}`;
         })
         .join("\n");
 
@@ -1251,187 +1245,188 @@ export default function IncidentsJournal() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-2 flex-1">
-                 <Label htmlFor="search-query" className="sr-only">Поиск</Label>
-                 <div className="relative w-full max-w-sm">
-                   <Input
-                     id="search-query"
-                     value={filters.searchQuery}
-                     onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                     placeholder="Поиск по адресу, описанию..."
-                     className="pr-8"
-                     data-testid="input-search"
-                   />
-                   <Search className="pointer-events-none absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                 </div>
+                <Label htmlFor="search-query" className="sr-only">Поиск</Label>
+                <div className="relative w-full max-w-sm">
+                  <Input
+                    id="search-query"
+                    value={filters.searchQuery}
+                    onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                    placeholder="Поиск по адресу, описанию..."
+                    className="pr-8"
+                    data-testid="input-search"
+                  />
+                  <Search className="pointer-events-none absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                </div>
 
-                 {/* Modern Filter Popover */}
-                 <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={hasFilters ? "border-primary text-primary" : ""}>
-                         <Filter className="h-4 w-4 mr-2" />
-                         Фильтры
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-4" align="start">
-                        <div className="space-y-4">
-                           <h4 className="font-medium text-sm">Расширенный поиск</h4>
-                           <div className="grid gap-2">
-                             <DateRangeField
-                               from={filters.dateFrom}
-                               to={filters.dateTo}
-                               fromLabel="Дата с"
-                               toLabel="Дата по"
-                               onChange={({ from, to }) =>
-                                 setFilters({ ...filters, dateFrom: from, dateTo: to })
-                               }
-                             />
-
-                              <div className="flex flex-col gap-1">
-                                <Label htmlFor="incident-type" className="text-sm">Тип события</Label>
-                                <select
-                                  id="incident-type"
-                                  value={filters.incidentType}
-                                  onChange={(e) => setFilters({ ...filters, incidentType: e.target.value })}
-                                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                  data-testid="select-incident-type"
-                                >
-                                  <option value="">Все типы</option>
-                                  <option value="fire">Пожар</option>
-                                  <option value="nonfire">Случай горения</option>
-                                  <option value="steppe_fire">Степной пожар</option>
-                                  <option value="steppe_smolder">Степное загорание</option>
-                                  <option value="co_nofire">Отравление CO</option>
-                                </select>
-                              </div>
-
-                              <div className="flex flex-col gap-1">
-                                <Label htmlFor="region-filter" className="text-sm">Регион</Label>
-                                <select
-                                  id="region-filter"
-                                  value={filters.region}
-                                  onChange={(e) => setFilters({ ...filters, region: e.target.value, district: "" })}
-                                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                  disabled={!isMchsUser && Boolean(userRegion)}
-                                  data-testid="select-region"
-                                >
-                                  <option value="">Все регионы</option>
-                                  {(isMchsUser ? REGION_NAMES : userRegion ? [userRegion] : REGION_NAMES).map((region) => (
-                                    <option key={region} value={region}>
-                                      {region}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div className="flex flex-col gap-1">
-                                <Label htmlFor="district-filter" className="text-sm">Район</Label>
-                                <select
-                                  id="district-filter"
-                                  value={filters.district}
-                                  onChange={(e) => setFilters({ ...filters, district: e.target.value })}
-                                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                  disabled={isDistrictUser && Boolean(userDistrict)}
-                                  data-testid="select-district"
-                                >
-                                  <option value="">Все районы</option>
-                                  {(isDistrictUser && userDistrict 
-                                    ? [userDistrict] 
-                                    : (ADMIN2_BY_REGION[filters.region || userRegion] || [])
-                                  ).map((district) => (
-                                    <option key={district} value={district}>
-                                      {district}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div className="pt-2 flex justify-end">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      setFilters({
-                                        searchQuery: "",
-                                        dateFrom: "",
-                                        dateTo: "",
-                                        incidentType: "",
-                                        region: isMchsUser ? "" : userRegion,
-                                        district: isDistrictUser ? userDistrict : "",
-                                      })
-                                    }
-                                  >
-                                    Сбросить
-                                  </Button>
-                              </div>
-                            </div>
-                        </div>
-                    </PopoverContent>
-                 </Popover>
-
-                 <Popover>
-                   <PopoverTrigger asChild>
-                     <Button variant="outline" size="sm">
-                       <Columns className="h-4 w-4 mr-2" />
-                       Столбцы
-                     </Button>
-                   </PopoverTrigger>
-                   <PopoverContent className="w-72 p-4" align="start">
-                     <div className="space-y-3">
-                       <div className="flex items-center justify-between">
-                         <h4 className="font-medium text-sm">Отображение столбцов</h4>
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           onClick={() => setVisibleColumns(DEFAULT_VISIBLE_COLUMNS)}
-                         >
-                           Сбросить
-                         </Button>
-                       </div>
-                       <div className="space-y-2">
-                         {columnDefinitions.map((column) => (
-                           <label
-                             key={column.id}
-                             className="flex items-center gap-2 text-sm text-foreground"
-                           >
-                             <Checkbox
-                               checked={isColumnVisible(column.id)}
-                               onCheckedChange={(checked) => {
-                                 setVisibleColumns((prev) => {
-                                   if (checked) {
-                                     return prev.includes(column.id)
-                                       ? prev
-                                       : [...prev, column.id];
-                                   }
-                                   return prev.filter((id) => id !== column.id);
-                                 });
-                               }}
-                             />
-                             {column.label}
-                           </label>
-                         ))}
-                       </div>
-                     </div>
-                   </PopoverContent>
-                 </Popover>
-
-                 {hasFilters && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                         setFilters({
-                           searchQuery: "",
-                           dateFrom: "",
-                           dateTo: "",
-                           incidentType: "",
-                           region: "",
-                         })
-                      }
-                      title="Сбросить все"
-                    >
-                       <X className="h-4 w-4" />
+                {/* Modern Filter Popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={hasFilters ? "border-primary text-primary" : ""}>
+                      <Filter className="h-4 w-4 mr-2" />
+                      Фильтры
                     </Button>
-                 )}
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-4" align="start">
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm">Расширенный поиск</h4>
+                      <div className="grid gap-2">
+                        <DateRangeField
+                          from={filters.dateFrom}
+                          to={filters.dateTo}
+                          fromLabel="Дата с"
+                          toLabel="Дата по"
+                          onChange={({ from, to }) =>
+                            setFilters({ ...filters, dateFrom: from, dateTo: to })
+                          }
+                        />
+
+                        <div className="flex flex-col gap-1">
+                          <Label htmlFor="incident-type" className="text-sm">Тип события</Label>
+                          <select
+                            id="incident-type"
+                            value={filters.incidentType}
+                            onChange={(e) => setFilters({ ...filters, incidentType: e.target.value })}
+                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                            data-testid="select-incident-type"
+                          >
+                            <option value="">Все типы</option>
+                            <option value="fire">Пожар</option>
+                            <option value="nonfire">Случай горения</option>
+                            <option value="steppe_fire">Степной пожар</option>
+                            <option value="steppe_smolder">Степное загорание</option>
+                            <option value="co_nofire">Отравление CO</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <Label htmlFor="region-filter" className="text-sm">Регион</Label>
+                          <select
+                            id="region-filter"
+                            value={filters.region}
+                            onChange={(e) => setFilters({ ...filters, region: e.target.value, district: "" })}
+                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                            disabled={!isMchsUser && Boolean(userRegion)}
+                            data-testid="select-region"
+                          >
+                            <option value="">Все регионы</option>
+                            {(isMchsUser ? REGION_NAMES : userRegion ? [userRegion] : REGION_NAMES).map((region) => (
+                              <option key={region} value={region}>
+                                {region}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <Label htmlFor="district-filter" className="text-sm">Район</Label>
+                          <select
+                            id="district-filter"
+                            value={filters.district}
+                            onChange={(e) => setFilters({ ...filters, district: e.target.value })}
+                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                            disabled={isDistrictUser && Boolean(userDistrict)}
+                            data-testid="select-district"
+                          >
+                            <option value="">Все районы</option>
+                            {(isDistrictUser && userDistrict
+                              ? [userDistrict]
+                              : (ADMIN2_BY_REGION[filters.region || userRegion] || [])
+                            ).map((district) => (
+                              <option key={district} value={district}>
+                                {district}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="pt-2 flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setFilters({
+                                searchQuery: "",
+                                dateFrom: "",
+                                dateTo: "",
+                                incidentType: "",
+                                region: isMchsUser ? "" : userRegion,
+                                district: isDistrictUser ? userDistrict : "",
+                              })
+                            }
+                          >
+                            Сбросить
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Columns className="h-4 w-4 mr-2" />
+                      Столбцы
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-4" align="start">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">Отображение столбцов</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setVisibleColumns(DEFAULT_VISIBLE_COLUMNS)}
+                        >
+                          Сбросить
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {columnDefinitions.map((column) => (
+                          <label
+                            key={column.id}
+                            className="flex items-center gap-2 text-sm text-foreground"
+                          >
+                            <Checkbox
+                              checked={isColumnVisible(column.id)}
+                              onCheckedChange={(checked) => {
+                                setVisibleColumns((prev) => {
+                                  if (checked) {
+                                    return prev.includes(column.id)
+                                      ? prev
+                                      : [...prev, column.id];
+                                  }
+                                  return prev.filter((id) => id !== column.id);
+                                });
+                              }}
+                            />
+                            {column.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {hasFilters && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setFilters({
+                        searchQuery: "",
+                        dateFrom: "",
+                        dateTo: "",
+                        incidentType: "",
+                        region: "",
+                        district: "",
+                      })
+                    }
+                    title="Сбросить все"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-1 sm:gap-2">
@@ -1451,28 +1446,15 @@ export default function IncidentsJournal() {
                   <span className="hidden sm:inline">Добавить</span>
                 </Button>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      data-testid="button-export"
-                      className="px-2 sm:px-3"
-                    >
-                      <FileDown className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Экспорт</span>
-                      <ChevronDown className="h-3 w-3 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExport("xlsx")}>
-                      📊 Excel (.xlsx)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport("csv")}>
-                      📄 CSV (.csv)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  className="px-2 sm:px-3"
+                >
+                  <FileDown className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Экспорт в Excel</span>
+                </Button>
 
                 <input
                   type="file"
@@ -1557,9 +1539,8 @@ export default function IncidentsJournal() {
                     {incidents.map((incident, index: number) => (
                       <tr
                         key={incident.id}
-                        className={`border-b hover:bg-muted/50 ${
-                          selectedIncidents.includes(incident.id) ? "bg-primary/10" : ""
-                        }`}
+                        className={`border-b hover:bg-muted/50 ${selectedIncidents.includes(incident.id) ? "bg-primary/10" : ""
+                          }`}
                         data-testid={`row-incident-${incident.id}`}
                       >
                         <td className="p-2 border-r border-border">
@@ -1764,51 +1745,51 @@ export default function IncidentsJournal() {
       {importResults && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background border border-border rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-lg">
-             <div className="p-6">
-                 <div className="flex items-center justify-between mb-4">
-                   <h3 className="text-lg font-semibold">Результаты импорта</h3>
-                   <Button variant="ghost" size="sm" onClick={() => setImportResults(null)}>✕</Button>
-                 </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Результаты импорта</h3>
+                <Button variant="ghost" size="sm" onClick={() => setImportResults(null)}>✕</Button>
+              </div>
 
-                 <div className="space-y-4">
-                    <div className="flex gap-4">
-                       <div className="p-3 bg-green-100 dark:bg-green-900 rounded-md flex-1 text-center">
-                          <div className="text-2xl font-bold text-green-700 dark:text-green-300">{importResults.created}</div>
-                          <div className="text-xs text-green-800 dark:text-green-200">Добавлено</div>
-                       </div>
-                       <div className="p-3 bg-red-100 dark:bg-red-900 rounded-md flex-1 text-center">
-                          <div className="text-2xl font-bold text-red-700 dark:text-red-300">{importResults.errors.length}</div>
-                          <div className="text-xs text-red-800 dark:text-red-200">Ошибок</div>
-                       </div>
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-md flex-1 text-center">
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">{importResults.created}</div>
+                    <div className="text-xs text-green-800 dark:text-green-200">Добавлено</div>
+                  </div>
+                  <div className="p-3 bg-red-100 dark:bg-red-900 rounded-md flex-1 text-center">
+                    <div className="text-2xl font-bold text-red-700 dark:text-red-300">{importResults.errors.length}</div>
+                    <div className="text-xs text-red-800 dark:text-red-200">Ошибок</div>
+                  </div>
+                </div>
+
+                {importResults.errors.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-sm mb-2 text-destructive">Детали ошибок:</h4>
+                    <div className="bg-muted p-3 rounded-md max-h-48 overflow-y-auto text-sm space-y-1">
+                      {importResults.errors.map((err, i) => (
+                        <div key={i} className="text-destructive-foreground">
+                          <span className="font-mono font-bold">Строка {err.rowNumber}:</span>{" "}
+                          {err.message ?? err.error}
+                        </div>
+                      ))}
                     </div>
+                  </div>
+                )}
 
-                    {importResults.errors.length > 0 && (
-                       <div className="mt-4">
-                          <h4 className="font-medium text-sm mb-2 text-destructive">Детали ошибок:</h4>
-                          <div className="bg-muted p-3 rounded-md max-h-48 overflow-y-auto text-sm space-y-1">
-                             {importResults.errors.map((err, i) => (
-                                <div key={i} className="text-destructive-foreground">
-                                   <span className="font-mono font-bold">Строка {err.rowNumber}:</span>{" "}
-                                   {err.message ?? err.error}
-                                </div>
-                             ))}
-                          </div>
-                       </div>
-                    )}
+                <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+                  <div className="font-medium text-foreground mb-1">Формат файла импорта</div>
+                  Обязательные колонки для отчетных форм: Дата/Время, Тип, Адрес, Причина (код),
+                  Причина (детально), Объект (код), Объект (детально). Можно дополнительно указывать
+                  текстовые поля «Причина» и «Объект» — они используются для сверки и авто-подбора
+                  кодов.
+                </div>
 
-                    <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
-                      <div className="font-medium text-foreground mb-1">Формат файла импорта</div>
-                      Обязательные колонки для отчетных форм: Дата/Время, Тип, Адрес, Причина (код),
-                      Причина (детально), Объект (код), Объект (детально). Можно дополнительно указывать
-                      текстовые поля «Причина» и «Объект» — они используются для сверки и авто-подбора
-                      кодов.
-                    </div>
-
-                    <div className="flex justify-end pt-2">
-                       <Button onClick={() => setImportResults(null)}>Закрыть</Button>
-                    </div>
-                 </div>
-             </div>
+                <div className="flex justify-end pt-2">
+                  <Button onClick={() => setImportResults(null)}>Закрыть</Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

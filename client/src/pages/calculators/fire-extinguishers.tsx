@@ -507,6 +507,7 @@ export default function FireExtinguishersCalculator() {
   const [hasCabinets, setHasCabinets] = useState(false);
   const [unitCount, setUnitCount] = useState("1"); // Для гаражей, эстакад и т.д.
   const [fireClasses, setFireClasses] = useState<FireClass[]>(["A"]); // Классы пожара
+  const [strictOnly, setStrictOnly] = useState(true); // Только рекомендуемые (++)
 
   // ============================================================================
   // ОСНОВНАЯ ЛОГИКА РАСЧЕТА
@@ -570,41 +571,53 @@ export default function FireExtinguishersCalculator() {
       if (fireClasses.length > 0) {
         const matrixData = PORTABLE_MATRIX[data.matrixKey];
         if (matrixData) {
-          const recommendedTypes: string[] = [];
-          const allowedTypes: string[] = [];
+          const recs = fireClasses.map(fc => matrixData[fc]).filter(Boolean);
 
-          fireClasses.forEach(fc => {
-            const rec = matrixData[fc];
-            if (rec) {
-              // Рекомендуемые (++)
-              if (rec.powder10 === "++") recommendedTypes.push("ОП-10");
-              if (rec.powder6 === "++") recommendedTypes.push("ОП-6");
-              if (rec.foam === "++") recommendedTypes.push("ОВП-10");
-              if (rec.emulsion === "++") recommendedTypes.push("ОВЭ-6");
-              if (rec.co2_5 === "++") recommendedTypes.push("ОУ-5/ОУ-8");
-              // Допускаемые (+)
-              if (rec.powder10 === "+") allowedTypes.push("ОП-10");
-              if (rec.powder6 === "+") allowedTypes.push("ОП-6");
-              if (rec.foam === "+") allowedTypes.push("ОВП-10");
-              if (rec.emulsion === "+") allowedTypes.push("ОВЭ-6");
-              if (rec.co2_5 === "+") allowedTypes.push("ОУ-5/ОУ-8");
-            }
-          });
+          // Поиск типов, которые являются рекомендуемыми (++) для ВСЕХ выбранных классов
+          const universalPlusPlus = ["powder10", "powder6", "foam", "emulsion", "co2_5"].filter(type =>
+            recs.every(r => r[type as keyof ExtinguisherRec] === "++")
+          );
 
-          const uniqueRecommended = Array.from(new Set(recommendedTypes));
-          const uniqueAllowed = Array.from(new Set(allowedTypes)).filter(t => !uniqueRecommended.includes(t));
+          // Поиск типов, которые хотя бы допускаются (+) для ВСЕХ выбранных классов
+          const universalPlus = ["powder10", "powder6", "foam", "emulsion", "co2_5"].filter(type =>
+            recs.every(r => r[type as keyof ExtinguisherRec] === "++" || r[type as keyof ExtinguisherRec] === "+")
+          ).filter(type => !universalPlusPlus.includes(type));
 
-          if (uniqueRecommended.length > 0) {
+          const typeMap: Record<string, string> = {
+            powder10: "ОП-10", powder6: "ОП-6", foam: "ОВП-10", emulsion: "ОВЭ-6", co2_5: "ОУ-5/ОУ-8"
+          };
+
+          const recommendedTypes = universalPlusPlus.map(t => typeMap[t]);
+          const allowedTypes = universalPlus.map(t => typeMap[t]);
+
+          if (recommendedTypes.length > 0 || (!strictOnly && allowedTypes.length > 0)) {
             reasons.push({
               label: "Тип огнетушителей",
-              text: `Рекомендуемые типы для классов ${fireClasses.join(", ")}: ${uniqueRecommended.join(", ")}${uniqueAllowed.length > 0 ? `. Допускаемые: ${uniqueAllowed.join(", ")}` : ""}.`,
+              text: `На основе выбранных классов (${fireClasses.join(", ")}): ${recommendedTypes.length > 0 ? `Рекомендуемые (++): ${recommendedTypes.join(", ")}` : "Рекомендуемых типов для всех классов одновременно не найдено"
+                }${!strictOnly && allowedTypes.length > 0 ? `. Допускаемые (+): ${allowedTypes.join(", ")}` : ""}.`,
               ref: "Табл. 1 Прил. 3 к ППБ РК"
             });
+
+            if (universalPlusPlus.some(t => t.startsWith("powder"))) {
+              notes.push("Предпочтение отдается более универсальному порошковому огнетушителю (п. 2 Прил. 3).");
+            }
+          } else if (strictOnly && universalPlus.length > 0) {
+            warnings.push("Для выбранной комбинации классов нет 'рекомендуемых' (++) типов, но есть 'допускаемые' (+). Отключите фильтр 'Только рекомендуемые', чтобы увидеть их.");
           }
 
-          // Добавляем информацию о выбранных классах пожара
+          // Примечания по маркам порошка
+          if (fireClasses.includes("A")) {
+            notes.push("Для тушения пожаров класса А – порошковые огнетушители с зарядом ABC(E).");
+          }
+          if (fireClasses.some(c => ["B", "C", "E"].includes(c))) {
+            notes.push("Для тушения пожаров классов В, С и Е – порошковые огнетушители с зарядом BC(E) или ABC(E).");
+          }
+          if (fireClasses.includes("D")) {
+            notes.push("Для тушения пожаров класса D – порошковые огнетушители с зарядом D.");
+          }
+
           const classDescriptions = fireClasses.map(fc => `${fc} (${FIRE_CLASS_INFO[fc].description})`).join("; ");
-          notes.push(`Классы пожара: ${classDescriptions}`);
+          notes.push(`Выбранные классы пожара: ${classDescriptions}`);
         }
       }
 
@@ -669,6 +682,48 @@ export default function FireExtinguishersCalculator() {
         ref: "Табл. 1 Прил. 3 к ППБ РК"
       });
 
+      // Рекомендации по типам огнетушителей для общественных зданий
+      if (fireClasses.length > 0) {
+        const matrixData = PORTABLE_MATRIX["PUBLIC"];
+        if (matrixData) {
+          const recs = fireClasses.map(fc => matrixData[fc]).filter(Boolean);
+
+          const universalPlusPlus = ["powder10", "powder6", "foam", "emulsion", "co2_5"].filter(type =>
+            recs.every(r => r[type as keyof ExtinguisherRec] === "++")
+          );
+
+          const universalPlus = ["powder10", "powder6", "foam", "emulsion", "co2_5"].filter(type =>
+            recs.every(r => r[type as keyof ExtinguisherRec] === "++" || r[type as keyof ExtinguisherRec] === "+")
+          ).filter(type => !universalPlusPlus.includes(type));
+
+          const typeMap: Record<string, string> = {
+            powder10: "ОП-10", powder6: "ОП-6", foam: "ОВП-10", emulsion: "ОВЭ-6", co2_5: "ОУ-5/ОУ-8"
+          };
+
+          const recommendedTypes = universalPlusPlus.map(t => typeMap[t]);
+          const allowedTypes = universalPlus.map(t => typeMap[t]);
+
+          if (recommendedTypes.length > 0 || (!strictOnly && allowedTypes.length > 0)) {
+            reasons.push({
+              label: "Тип огнетушителей",
+              text: `На основе выбранных классов (${fireClasses.join(", ")}): ${recommendedTypes.length > 0 ? `Рекомендуемые (++): ${recommendedTypes.join(", ")}` : "Рекомендуемых типов для всех классов одновременно не найдено"
+                }${!strictOnly && allowedTypes.length > 0 ? `. Допускаемые (+): ${allowedTypes.join(", ")}` : ""}.`,
+              ref: "Табл. 1 Прил. 3 к ППБ РК"
+            });
+          } else if (strictOnly && universalPlus.length > 0) {
+            warnings.push("Нет 'рекомендуемых' (++) типов для этой комбинации классов. Отключите 'Только рекомендуемые' в настройках.");
+          }
+
+          // Примечания по порошку
+          if (fireClasses.includes("A")) {
+            notes.push("Для общественных зданий (класс А) – порошковые огнетушители с зарядом ABC(E).");
+          }
+          if (fireClasses.some(c => ["B", "C", "E"].includes(c))) {
+            notes.push("Для тушения электроустановок (класс Е) – порошковые ABC(E) или углекислотные ОУ.");
+          }
+        }
+      }
+
       // Скидка 50% при наличии АУПТ
       if (hasAUPT) {
         const before = portableQty;
@@ -691,7 +746,7 @@ export default function FireExtinguishersCalculator() {
       }
 
       powderCount = portableQty;
-      if (hasElectrical) {
+      if (hasElectrical || fireClasses.includes("E")) {
         co2Count = Math.max(1, Math.round(portableQty * 0.2));
         powderCount = portableQty - co2Count;
         reasons.push({ label: "Электрооборудование", text: `Замена ${co2Count} шт. на ОУ.` });
@@ -1058,8 +1113,16 @@ export default function FireExtinguishersCalculator() {
               <Select
                 value={objType}
                 onValueChange={(v) => {
-                  setObjType(v as ObjType);
+                  const newType = v as ObjType;
+                  setObjType(newType);
                   setSubCategory("");
+                  // Если переключаемся на общественные, оставляем только подходящие классы
+                  if (newType === "PUBLIC") {
+                    setFireClasses(prev => {
+                      const filtered = prev.filter(c => ["A", "E"].includes(c));
+                      return filtered.length > 0 ? filtered : ["A"];
+                    });
+                  }
                 }}
               >
                 <SelectTrigger id="obj-type">
@@ -1120,53 +1183,73 @@ export default function FireExtinguishersCalculator() {
               </div>
             ) : null}
 
-            {/* Классы пожара (только для производственных зданий) */}
-            {objType === "INDUSTRIAL" && (
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  Классы пожара
-                  <span className="text-[10px] text-muted-foreground font-normal">(выберите все применимые)</span>
-                </Label>
+            {/* Классы пожара (Производственные и Общественные) */}
+            {(objType === "INDUSTRIAL" || objType === "PUBLIC") && (
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    Классы пожара
+                    <span className="text-[10px] text-muted-foreground font-normal">(выберите все применимые)</span>
+                  </Label>
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="strict-mode" className="text-[10px] uppercase font-bold text-slate-500 cursor-pointer">
+                      Только рекомендуемые (++)
+                    </Label>
+                    <Checkbox
+                      id="strict-mode"
+                      checked={strictOnly}
+                      onCheckedChange={(checked) => setStrictOnly(!!checked)}
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 gap-2">
-                  {(Object.keys(FIRE_CLASS_INFO) as FireClass[]).map((fc) => (
-                    <div
-                      key={fc}
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${fireClasses.includes(fc)
-                        ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800"
-                        : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-200"
-                        }`}
-                      onClick={() => {
-                        if (fireClasses.includes(fc)) {
-                          if (fireClasses.length > 1) {
-                            setFireClasses(fireClasses.filter(c => c !== fc));
-                          }
-                        } else {
-                          setFireClasses([...fireClasses, fc]);
-                        }
-                      }}
-                    >
-                      <Checkbox
-                        checked={fireClasses.includes(fc)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
+                  {(Object.keys(FIRE_CLASS_INFO) as FireClass[])
+                    .filter(fc => objType === "INDUSTRIAL" || ["A", "E"].includes(fc)) // Для общественных обычно A и E
+                    .map((fc) => (
+                      <div
+                        key={fc}
+                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${fireClasses.includes(fc)
+                          ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800 shadow-sm"
+                          : "bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 hover:border-blue-200"
+                          }`}
+                        onClick={() => {
+                          if (fireClasses.includes(fc)) {
+                            if (fireClasses.length > 1) {
+                              setFireClasses(fireClasses.filter(c => c !== fc));
+                            }
+                          } else {
                             setFireClasses([...fireClasses, fc]);
-                          } else if (fireClasses.length > 1) {
-                            setFireClasses(fireClasses.filter(c => c !== fc));
                           }
                         }}
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-sm">{fc}</span>
-                          <span className="text-xs text-slate-600 dark:text-slate-400">— {FIRE_CLASS_INFO[fc].description}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
-                          Примеры: {FIRE_CLASS_INFO[fc].examples}
+                      >
+                        <Checkbox
+                          checked={fireClasses.includes(fc)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFireClasses([...fireClasses, fc]);
+                            } else if (fireClasses.length > 1) {
+                              setFireClasses(fireClasses.filter(c => c !== fc));
+                            }
+                          }}
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-sm">{fc}</span>
+                            <span className="text-xs text-slate-600 dark:text-slate-400">— {FIRE_CLASS_INFO[fc].description}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5 italic">
+                            {FIRE_CLASS_INFO[fc].examples}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  {objType === "PUBLIC" && (
+                    <p className="text-[9px] text-slate-400 text-center italic">
+                      Для общественных зданий обычно рассматриваются классы A и E (п. 1.2 Прил. 1)
+                    </p>
+                  )}
                 </div>
               </div>
             )}

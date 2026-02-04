@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FORM_1_OSP_ROWS, Form1OSPRow } from "@shared/fire-forms-data";
-import { Download, FileText, Send, Printer, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { FileDown, FileText, Send, Printer, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
@@ -146,34 +147,44 @@ export default function Form1OSP() {
   };
 
   const handleExport = () => {
-    const csvHeader = "Код строки,Наименование показателя,Всего,В городах,В сельской местности\n";
-
-    const flattenRows = (rows: Form1OSPRow[], indent = 0): string[] => {
+    const flattenRows = (rows: Form1OSPRow[], indent = 0): any[] => {
       return rows.reduce((acc, row) => {
         const data = getRowData(row.id);
         const prefix = indent > 0 ? "  ".repeat(indent) : "";
-        acc.push(`"${row.number}","${prefix}${row.label}",${data.total},${data.urban},${data.rural}`);
+        acc.push({
+          "Код строки": row.number,
+          "Наименование показателя": `${prefix}${row.label}`,
+          "Всего": data.total,
+          "в городах": data.urban,
+          "в сельской местности": data.rural
+        });
         if (row.children) {
           acc.push(...flattenRows(row.children, indent + 1));
         }
         return acc;
-      }, [] as string[]);
+      }, [] as any[]);
     };
 
-    const csvData = flattenRows(FORM_1_OSP_ROWS).join('\n');
-    const csvContent = csvHeader + csvData;
+    const exportData = flattenRows(FORM_1_OSP_ROWS);
 
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form_1_osp_${reportMonth}_${reportYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Форма 1-ОСП");
+
+    // Set column widths
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 50 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 20 }
+    ];
+
+    XLSX.writeFile(wb, `form_1_osp_${reportMonth}_${reportYear}.xlsx`);
 
     toast({
       title: "Экспорт завершен",
-      description: "Форма 1-ОСП экспортирована в CSV"
+      description: "Форма 1-ОСП экспортирована в Excel"
     });
   };
 
@@ -520,8 +531,8 @@ export default function Form1OSP() {
               Печать
             </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт CSV
+              <FileDown className="h-4 w-4" />
+              Экспорт в Excel
             </Button>
             <Button onClick={handleSubmit} className="flex items-center gap-2">
               <Send className="h-4 w-4" />

@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FIRE_CAUSES, FireCause } from "@shared/fire-forms-data";
-import { Download, FileText, Send, Printer, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import { FileDown, FileText, Send, Printer, ChevronDown, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { useReportForm } from "@/components/reports/use-report-form";
 import { useReportPeriod } from "@/components/reports/use-report-period";
@@ -55,7 +56,7 @@ export default function Form3SPVP() {
 
   const validateForm = (): ValidationError[] => {
     const errors: ValidationError[] = [];
-    
+
     const checkCause = (cause: FireCause) => {
       const data = getCauseData(cause.code);
       if (data.fires_total < 0 || data.fires_high_risk < 0 || data.damage_total < 0 || data.damage_high_risk < 0) {
@@ -74,7 +75,7 @@ export default function Form3SPVP() {
       }
       cause.children?.forEach(checkCause);
     };
-    
+
     FIRE_CAUSES.forEach(checkCause);
     return errors;
   };
@@ -82,7 +83,7 @@ export default function Form3SPVP() {
   const handleValidate = () => {
     const errors = validateForm();
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       toast({
         title: "Валидация пройдена",
@@ -137,35 +138,53 @@ export default function Form3SPVP() {
   };
 
   const handleExport = () => {
-    const csvHeader = "Код строки,Причины возникновения пожаров,Количество пожаров всего,в том числе на объектах высокой степени риска,Ущерб всего (тыс. тенге),в том числе на объектах высокой степени риска\n";
-    
-    const flattenCauses = (causes: FireCause[], level = 0): string[] => {
+    const flattenCauses = (causes: FireCause[], level = 0): any[] => {
       return causes.flatMap(cause => {
         const data = getCauseData(cause.code);
         const prefix = "  ".repeat(level);
-        const rowLine = `"${cause.code}","${prefix}${cause.name}",${data.fires_total},${data.fires_high_risk},${data.damage_total.toFixed(1)},${data.damage_high_risk.toFixed(1)}`;
-        const childLines = cause.children ? flattenCauses(cause.children, level + 1) : [];
-        return [rowLine, ...childLines];
+        const row = {
+          "Код строки": cause.code,
+          "Причины возникновения пожаров": `${prefix}${cause.name}`,
+          "Количество пожаров всего": data.fires_total,
+          "в т.ч. на объектах высокой степени риска (пожары)": data.fires_high_risk,
+          "Ущерб всего (тыс. тенге)": Number(data.damage_total.toFixed(1)),
+          "в т.ч. на объектах высокой степени риска (ущерб)": Number(data.damage_high_risk.toFixed(1))
+        };
+        const children = cause.children ? flattenCauses(cause.children, level + 1) : [];
+        return [row, ...children];
       });
     };
-    
-    const csvData = flattenCauses(FIRE_CAUSES).join('\n');
+
+    const exportData = flattenCauses(FIRE_CAUSES);
     const totals = getTotals();
-    const totalRow = `\n"","ИТОГО:",${totals.fires_total},${totals.fires_high_risk},${totals.damage_total.toFixed(1)},${totals.damage_high_risk.toFixed(1)}`;
-    
-    const csvContent = csvHeader + csvData + totalRow;
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form_3_spvp_${reportMonth}_${reportYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
+
+    exportData.push({
+      "Код строки": "",
+      "Причины возникновения пожаров": "ИТОГО:",
+      "Количество пожаров всего": totals.fires_total,
+      "в т.ч. на объектах высокой степени риска (пожары)": totals.fires_high_risk,
+      "Ущерб всего (тыс. тенге)": Number(totals.damage_total.toFixed(1)),
+      "в т.ч. на объектах высокой степени риска (ущерб)": Number(totals.damage_high_risk.toFixed(1))
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Форма 3-СПВП");
+
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 50 },
+      { wch: 20 },
+      { wch: 30 },
+      { wch: 20 },
+      { wch: 30 }
+    ];
+
+    XLSX.writeFile(wb, `form_3_spvp_${reportMonth}_${reportYear}.xlsx`);
+
     toast({
       title: "Экспорт завершен",
-      description: "Форма 3-СПВП экспортирована в CSV"
+      description: "Форма 3-СПВП экспортирована в Excel"
     });
   };
 
@@ -450,7 +469,7 @@ export default function Form3SPVP() {
                 <Input placeholder="XXXXXXXXXXXX" maxLength={12} className="mt-1" readOnly />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Исполнитель</Label>
@@ -518,8 +537,8 @@ export default function Form3SPVP() {
               Печать
             </Button>
             <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт CSV
+              <FileDown className="h-4 w-4" />
+              Экспорт в Excel
             </Button>
             <Button onClick={handleSubmit} className="flex items-center gap-2">
               <Send className="h-4 w-4" />
