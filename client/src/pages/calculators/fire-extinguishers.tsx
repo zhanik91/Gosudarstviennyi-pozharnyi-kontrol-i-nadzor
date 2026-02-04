@@ -914,26 +914,25 @@ export default function FireExtinguishersCalculator() {
           <CardContent className="space-y-6">
             {/* Выбор сценария */}
             <div className="space-y-3">
-              <Label>Тип объекта (помещение, здание)</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: "INDUSTRIAL", label: "Производственные и складские", icon: Flame },
-                  { id: "PUBLIC", label: "Общественные здания", icon: Info },
-                  { id: "SERVICE", label: "СТО, АЗС, гаражи, офисы", icon: RefreshCw },
-                  { id: "PETROLEUM", label: "Нефтебазы и склады ГСМ", icon: Layers },
-                  { id: "CONSTRUCTION", label: "Стройплощадки", icon: Construction }
-                ].map((t) => (
-                  <Button
-                    key={t.id}
-                    variant={objType === t.id ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 min-w-[140px]"
-                    onClick={() => { setObjType(t.id as ObjType); setSubCategory(""); }}
-                  >
-                    <t.icon className="w-4 h-4 mr-2" /> {t.label}
-                  </Button>
-                ))}
-              </div>
+              <Label htmlFor="obj-type">Тип объекта (помещение, здание)</Label>
+              <Select
+                value={objType}
+                onValueChange={(v) => {
+                  setObjType(v as ObjType);
+                  setSubCategory("");
+                }}
+              >
+                <SelectTrigger id="obj-type">
+                  <SelectValue placeholder="Выберите тип объекта" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INDUSTRIAL">Производственные и складские</SelectItem>
+                  <SelectItem value="PUBLIC">Общественные здания</SelectItem>
+                  <SelectItem value="SERVICE">СТО, АЗС, гаражи, офисы</SelectItem>
+                  <SelectItem value="PETROLEUM">Нефтебазы и склады ГСМ</SelectItem>
+                  <SelectItem value="CONSTRUCTION">Стройплощадки</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Площадь */}
