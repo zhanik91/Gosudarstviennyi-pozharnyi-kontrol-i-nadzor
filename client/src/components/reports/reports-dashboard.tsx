@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  FileText, 
-  Calendar, 
-  CheckCircle, 
-  AlertCircle, 
+import {
+  FileText,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
   Clock,
   Percent,
   Download,
@@ -105,7 +105,7 @@ export default function ReportsDashboard() {
       description: 'Классификация объектов по типам и категориям'
     },
     {
-      id: '5-spzhs',
+      id: '5-spzs',
       name: 'Сведения о пожарах в жилом секторе',
       index: '5-СПЖС',
       status: 'draft',
@@ -169,7 +169,7 @@ export default function ReportsDashboard() {
       case '5-spzhs': return <Form5SPZHS />;
       case '6-sspz': return <Form6SSPZ />;
       case 'co': return <FormCO />;
-      default: 
+      default:
         return (
           <Card>
             <CardContent className="p-6 text-center">
@@ -342,7 +342,7 @@ export default function ReportsDashboard() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-3">
                         <Badge className={getStatusColor(report.status)}>
                           {getStatusIcon(report.status)}

@@ -203,7 +203,7 @@ export class ReportController {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
       }
 
-      const allowedForms = new Set(['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzhs', '6-sspz', 'co', 'admin-practice']);
+      const allowedForms = new Set(['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzs', '6-sspz', 'co', 'admin-practice']);
       if (!form || !allowedForms.has(form)) {
         return res.status(400).json({ ok: false, msg: 'invalid form' });
       }
@@ -246,37 +246,60 @@ export class ReportController {
         return res.status(400).json({ ok: false, msg: "form and period required" });
       }
 
-      const orgId = (req.user as any)?.orgUnitId || 'mchs-rk';
+      let orgId = (req.user as any)?.orgUnitId;
+      if (!orgId) {
+        const allOrgs = await storage.getAllOrganizations();
+        const root = allOrgs.find(o => !o.parentId);
+        orgId = root?.id || 'mchs-rk';
+      }
 
       // Находим все дочерние организации (области/районы)
       const hierarchy = await storage.getOrganizationHierarchy(orgId);
 
-      // Оставляем только те, у которых тип совпадает с тем, что нам нужно импортировать
-      // Обычно импортируют по областям (DCHS) или районам (DISTRICT)
-      const targetUnits = hierarchy.filter(u => u.id !== orgId);
+      // Если мы МЧС, берем всех детей (ДЧС)
+      // Если мы ДЧС, берем всех детей (Районы)
+      // Если детей нет, берем саму организацию
+      let targetUnits = hierarchy.filter(u => u.parentId === orgId);
+      if (targetUnits.length === 0) {
+        targetUnits = hierarchy.filter(u => u.id === orgId);
+      }
 
-      // Определяем столбцы для формы
-      const indicatorIds = getFormIndicatorIds(form as string);
-      const indicatorFields = getFormIndicatorFields(form as string);
+      if (targetUnits.length === 0) {
+        return res.status(404).json({ ok: false, msg: "No organizations found for template" });
+      }
 
-      const header = ["ID Организации", "Наименование организации"];
-      indicatorIds.forEach(id => {
-        indicatorFields.forEach(field => {
-          header.push(`${id}:${field}`);
+      // Матричный формат: Показатели в строках, Организации в колонках
+      const indicators = getDetailedIndicators(form as string);
+      const fields = getFormIndicatorFields(form as string);
+
+      // Формируем заголовок (3 строки)
+      // Строка 1: ID организаций (скрытая или техническая)
+      const row1 = ["ID", "Наименование"];
+      // Строка 2: Названия организаций
+      const row2 = ["Код", "Показатель"];
+      // Строка 3: Поля (всего, в городах...)
+      const row3 = ["", ""];
+
+      targetUnits.forEach(unit => {
+        fields.forEach((field, fIdx) => {
+          row1.push(unit.id);
+          row2.push(fIdx === 0 ? unit.name : "");
+          row3.push(getFieldLabel(field));
         });
       });
 
-      const rows = [header];
-      targetUnits.forEach(unit => {
-        const row = [unit.id, unit.name];
-        // Пустые ячейки для заполнения
-        indicatorIds.forEach(() => {
-          indicatorFields.forEach(() => {
+      const rows = [row1, row2, row3];
+
+      indicators.forEach(ind => {
+        const row = [ind.id, ind.label];
+        targetUnits.forEach(() => {
+          fields.forEach(() => {
             row.push("");
           });
         });
         rows.push(row);
       });
+
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -290,11 +313,11 @@ export class ReportController {
       res.send(buffer);
     } catch (error: any) {
       console.error('Error generating template:', error);
-      res.status(500).json({ ok: false, msg: error.message || 'Internal server error' });
+      res.status(500).json({ ok: false, msg: `Ошибка генерации шаблона: ${error.message}` });
     }
   }
 
-  // Массовый импорт данных из Excel
+  // Массовый импорт данных из Excel (Матричный формат)
   async importBulk(req: Request, res: Response) {
     try {
       const { form, period } = req.body;
@@ -307,42 +330,52 @@ export class ReportController {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-      if (data.length < 2) {
-        return res.status(400).json({ ok: false, msg: "empty file" });
+      if (data.length < 4) {
+        return res.status(400).json({ ok: false, msg: "Недостаточно данных в файле. Ожидался матричный шаблон." });
       }
 
-      const headers = data[0];
-      const resultRows = data.slice(1);
-      const indicatorFields = getFormIndicatorFields(form);
+      const unitIds = data[0]; // Строка 1: ID организаций
+      const fields = getFormIndicatorFields(form);
+      const indicatorsRows = data.slice(3); // Данные начинаются с 4-й строки
 
-      let successCount = 0;
+      const orgDataMap: Record<string, Record<string, any>> = {};
 
-      for (const row of resultRows) {
-        const orgId = row[0];
-        if (!orgId) continue;
+      // Проходим по колонкам с данными (начиная с 3-й, индекс 2)
+      for (let col = 2; col < unitIds.length; col++) {
+        const orgId = unitIds[col];
+        if (!orgId || orgId === "ID") continue;
 
-        const manualData: Record<string, any> = {};
+        if (!orgDataMap[orgId]) orgDataMap[orgId] = {};
 
-        // Разбираем строку в объект data
-        headers.forEach((header, index) => {
-          if (index < 2) return;
-          const [indicatorId, field] = String(header).split(':');
-          if (!indicatorId) return;
+        indicatorsRows.forEach((row) => {
+          const indicatorId = String(row[0]);
+          if (!indicatorId || indicatorId === "undefined") return;
 
-          const rawValue = row[index];
+          // Определяем, какое это поле (всего, в городах...)
+          // Колонки для одной организации идут блоком длиной fields.length
+          // Нам нужно понять индекс поля внутри этого блока
+          // Но проще всего: мы знаем текущую колонку 'col'. 
+          // Нам нужно найти ее смещение относительно первого появления этого orgId.
+          const firstColForOrg = unitIds.indexOf(orgId);
+          const fieldIndex = col - firstColForOrg;
+          const fieldName = fields[fieldIndex];
+
+          if (!fieldName) return;
+
+          const rawValue = row[col];
           const value = rawValue === "" || rawValue === undefined ? 0 : Number(rawValue);
 
-          if (indicatorFields.length === 1 && indicatorFields[0] === 'value') {
-            manualData[indicatorId] = value;
+          if (fields.length === 1 && fields[0] === 'value') {
+            orgDataMap[orgId][indicatorId] = value;
           } else {
-            if (!manualData[indicatorId]) manualData[indicatorId] = {};
-            manualData[indicatorId][field] = value;
+            if (!orgDataMap[orgId][indicatorId]) orgDataMap[orgId][indicatorId] = {};
+            orgDataMap[orgId][indicatorId][fieldName] = value;
           }
         });
+      }
 
-        // Конструктор полной структуры формы (rows с привязанными values)
-        // Для простоты мы сохраняем только сырые значения, 
-        // а storage.getReportFormData соберет их в rows.
+      let successCount = 0;
+      for (const [orgId, manualData] of Object.entries(orgDataMap)) {
         await storage.upsertReportForm({
           orgUnitId: orgId,
           period,
@@ -370,7 +403,7 @@ type ReportDashboardSummary = {
   validationErrors: number;
 };
 
-const REPORT_FORM_IDS = ['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzhs', '6-sspz', 'co', 'admin-practice'] as const;
+const REPORT_FORM_IDS = ['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzs', '6-sspz', 'co', 'admin-practice'] as const;
 const FORM_1_FIELDS = ['total', 'urban', 'rural'] as const;
 const FORM_3_FIELDS = ['fires_total', 'fires_high_risk', 'damage_total', 'damage_high_risk'] as const;
 const FORM_4_FIELDS = ['fires_total', 'damage_total', 'deaths_total', 'injuries_total'] as const;
@@ -396,16 +429,20 @@ const FORM_6_FIELDS = [
 ] as const;
 const FORM_7_FIELDS = ['killed_total', 'injured_total'] as const;
 
-const flattenRows = <T extends { id?: string; children?: T[] }>(
+const flattenRowsWithLabels = <T extends { id?: string; number?: string; label?: string; children?: T[] }>(
   rows: T[],
   options?: { skipSections?: boolean }
-): string[] => {
-  const ids: string[] = [];
+): { id: string; label: string; number: string }[] => {
+  const result: { id: string; label: string; number: string }[] = [];
   const walk = (items: T[]) => {
     items.forEach((item) => {
-      const isSection = options?.skipSections && 'isSection' in item && Boolean((item as { isSection?: boolean }).isSection);
+      const isSection = options?.skipSections && (item as any).isSection;
       if (!isSection && item.id) {
-        ids.push(item.id);
+        result.push({
+          id: item.id,
+          label: item.label || '',
+          number: item.number || item.id
+        });
       }
       if (item.children) {
         walk(item.children);
@@ -413,7 +450,43 @@ const flattenRows = <T extends { id?: string; children?: T[] }>(
     });
   };
   walk(rows);
-  return ids;
+  return result;
+};
+
+const getDetailedIndicators = (form: string): { id: string; label: string; number: string }[] => {
+  switch (form) {
+    case "1-osp": return flattenRowsWithLabels(FORM_1_OSP_ROWS);
+    case "2-ssg": return NON_FIRE_CASES.map(i => ({ id: i.code, label: i.name, number: i.code }));
+    case "3-spvp": return flattenRowsWithLabels(FIRE_CAUSES);
+    case "4-sovp": return flattenRowsWithLabels(FORM_4_SOVP_ROWS);
+    case "5-spzs": return flattenRowsWithLabels(FORM_5_ROWS, { skipSections: true });
+    case "6-sspz": return [...FORM_6_STEPPE_FIRES_ROWS, ...FORM_6_IGNITIONS_ROWS].map(r => ({ id: r.id, label: r.label, number: r.number || r.id }));
+    case "co": return flattenRowsWithLabels(FORM_7_CO_ROWS);
+    case "admin-practice": return [{ id: "main", label: "Административная практика", number: "1" }];
+    default: return [];
+  }
+};
+
+const getFieldLabel = (field: string): string => {
+  switch (field) {
+    case 'total':
+    case 'value':
+    case 'fires_total':
+    case 'inspections_total':
+      return 'Всего';
+    case 'urban': return 'в городах';
+    case 'rural': return 'в сельской местности';
+    case 'fires_high_risk': return 'выс. риск';
+    case 'damage_total':
+    case 'damage_high_risk':
+      return 'Ущерб';
+    case 'deaths_total': return 'Погибло';
+    case 'injuries_total': return 'Травмировано';
+    case 'violations_total': return 'Нарушений';
+    case 'fines_total': return 'Штрафы (наложено)';
+    case 'fines_paid': return 'Штрафы (оплачено)';
+    default: return field;
+  }
 };
 
 const isEmptyValue = (value: unknown) =>
@@ -447,7 +520,7 @@ const getComputedValidationData = (form: string, payload: any): Record<string, a
     return result;
   }
 
-  if (form === "5-spzhs") {
+  if (form === "5-spzs") {
     walkRows(payload?.rows, (row) => assignRow(row.code ?? row.id, row.values ?? {}));
     return result;
   }
@@ -475,7 +548,7 @@ const getReportCompletion = (form: string, data: Record<string, any>) => {
 
   switch (form) {
     case "1-osp":
-      rowIds = flattenRows(FORM_1_OSP_ROWS);
+      rowIds = getDetailedIndicators("1-osp").map(i => i.id);
       fields = [...FORM_1_FIELDS];
       break;
     case "2-ssg":
@@ -483,15 +556,15 @@ const getReportCompletion = (form: string, data: Record<string, any>) => {
       fields = ["value"];
       break;
     case "3-spvp":
-      rowIds = flattenRows(FIRE_CAUSES);
+      rowIds = getDetailedIndicators("3-spvp").map(i => i.id);
       fields = [...FORM_3_FIELDS];
       break;
     case "4-sovp":
-      rowIds = flattenRows(FORM_4_SOVP_ROWS);
+      rowIds = getDetailedIndicators("4-sovp").map(i => i.id);
       fields = [...FORM_4_FIELDS];
       break;
-    case "5-spzhs":
-      rowIds = flattenRows(FORM_5_ROWS, { skipSections: true });
+    case "5-spzs":
+      rowIds = getDetailedIndicators("5-spzs").map(i => i.id);
       fields = [...FORM_5_FIELDS];
       break;
     case "admin-practice":
@@ -503,7 +576,7 @@ const getReportCompletion = (form: string, data: Record<string, any>) => {
       fields = [...FORM_6_FIELDS];
       break;
     case "co":
-      rowIds = flattenRows(FORM_7_CO_ROWS);
+      rowIds = getDetailedIndicators("co").map(i => i.id);
       fields = [...FORM_7_FIELDS];
       break;
     default:
@@ -534,17 +607,7 @@ const getReportCompletion = (form: string, data: Record<string, any>) => {
   return { completionPercent, totalFields, emptyFields };
 };
 const getFormIndicatorIds = (form: string): string[] => {
-  switch (form) {
-    case "1-osp": return flattenRows(FORM_1_OSP_ROWS);
-    case "2-ssg": return NON_FIRE_CASES.map(i => i.code);
-    case "3-spvp": return flattenRows(FIRE_CAUSES);
-    case "4-sovp": return flattenRows(FORM_4_SOVP_ROWS);
-    case "5-spzhs": return flattenRows(FORM_5_ROWS, { skipSections: true });
-    case "admin-practice": return ["main"];
-    case "6-sspz": return [...FORM_6_STEPPE_FIRES_ROWS, ...FORM_6_IGNITIONS_ROWS].map(r => r.id);
-    case "co": return flattenRows(FORM_7_CO_ROWS);
-    default: return [];
-  }
+  return getDetailedIndicators(form).map(i => i.id);
 };
 
 const getFormIndicatorFields = (form: string): string[] => {
@@ -553,7 +616,7 @@ const getFormIndicatorFields = (form: string): string[] => {
     case "2-ssg": return ["value"];
     case "3-spvp": return [...FORM_3_FIELDS];
     case "4-sovp": return [...FORM_4_FIELDS];
-    case "5-spzhs": return [...FORM_5_FIELDS];
+    case "5-spzs": return [...FORM_5_FIELDS];
     case "admin-practice": return [...ADMIN_PRACTICE_FIELDS];
     case "6-sspz": return [...FORM_6_FIELDS];
     case "co": return [...FORM_7_FIELDS];
