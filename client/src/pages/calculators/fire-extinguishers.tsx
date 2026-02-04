@@ -775,15 +775,15 @@ export default function FireExtinguishersCalculator() {
     // Определяем название объекта
     let objName = "";
     if (objType === "INDUSTRIAL" && category) {
-      objName = `Производственное/складское здание (кат. ${category})`;
+      objName = `Производственное или складское здание (кат. ${category})`;
     } else if (objType === "PUBLIC") {
       objName = "Общественное здание";
     } else if (objType === "SERVICE") {
-      objName = TABLE_5_DATA.find(d => d.id === subCategory)?.label || "";
+      objName = "Объект обслуживания";
     } else if (objType === "PETROLEUM") {
-      objName = APP_10_DATA.find(d => d.id === subCategory)?.label || "";
+      objName = "Предприятие нефтепродуктообеспечения";
     } else if (objType === "CONSTRUCTION") {
-      objName = APP_11_DATA.find(d => d.id === subCategory)?.label || "";
+      objName = "Строящееся/реконструируемое здание или сооружение";
     }
 
     let content = `ОТЧЕТ ПО РАСЧЕТУ ПЕРВИЧНЫХ СРЕДСТВ ПОЖАРОТУШЕНИЯ
@@ -902,7 +902,9 @@ export default function FireExtinguishersCalculator() {
           <Calculator className="mr-3 w-8 h-8 text-red-500" />
           Калькулятор первичных средств пожаротушения
         </h1>
-        <p className="text-muted-foreground">ППБ РК, Приложения 3, 10, 11 и Таблица 5</p>
+        <p className="text-muted-foreground uppercase text-[10px] tracking-wider font-semibold">
+          согласно правилам пожарной безопасности рк
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -926,11 +928,11 @@ export default function FireExtinguishersCalculator() {
                   <SelectValue placeholder="Выберите тип объекта" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="INDUSTRIAL">Производственные и складские</SelectItem>
+                  <SelectItem value="INDUSTRIAL">Производственные и складские здания</SelectItem>
                   <SelectItem value="PUBLIC">Общественные здания</SelectItem>
-                  <SelectItem value="SERVICE">СТО, АЗС, гаражи, офисы</SelectItem>
-                  <SelectItem value="PETROLEUM">Нефтебазы и склады ГСМ</SelectItem>
-                  <SelectItem value="CONSTRUCTION">Стройплощадки</SelectItem>
+                  <SelectItem value="SERVICE">Объекты обслуживания</SelectItem>
+                  <SelectItem value="PETROLEUM">Основные и вспомогательные предприятия нефтепродуктообеспечения</SelectItem>
+                  <SelectItem value="CONSTRUCTION">Строящиеся и реконструируемые здания, сооружения и подсобные помещения</SelectItem>
                 </SelectContent>
               </Select>
             </div>
