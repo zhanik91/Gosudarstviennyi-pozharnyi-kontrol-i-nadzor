@@ -1056,33 +1056,33 @@ export default function FireExtinguishersCalculator() {
                 >
                   {/* Основные огнетушители */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-red-100/50 dark:bg-red-900/20 rounded-xl text-center border border-red-200 dark:border-red-800">
-                      <div className="text-3xl font-bold text-red-600">{result.powderCount}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Порошковые (ОП)</div>
+                    <div className="p-4 bg-red-100/50 dark:bg-red-900/30 rounded-xl text-center border border-red-200 dark:border-red-800">
+                      <div className="text-3xl font-bold text-red-600 dark:text-red-400">{result.powderCount}</div>
+                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Порошковые (ОП)</div>
                     </div>
-                    <div className="p-4 bg-blue-100/50 dark:bg-blue-900/20 rounded-xl text-center border border-blue-200 dark:border-blue-800">
-                      <div className="text-3xl font-bold text-blue-600">{result.co2Count}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Углекисл. (ОУ)</div>
+                    <div className="p-4 bg-blue-100/50 dark:bg-blue-900/30 rounded-xl text-center border border-blue-200 dark:border-blue-800">
+                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{result.co2Count}</div>
+                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Углекисл. (ОУ)</div>
                     </div>
-                    <div className="p-4 bg-green-100/50 dark:bg-green-900/20 rounded-xl text-center border border-green-200 dark:border-green-800">
-                      <div className="text-3xl font-bold text-green-600">{result.foamCount}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Пенные (ОВП)</div>
+                    <div className="p-4 bg-green-100/50 dark:bg-green-900/30 rounded-xl text-center border border-green-200 dark:border-green-800">
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400">{result.foamCount}</div>
+                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Пенные (ОВП)</div>
                     </div>
-                    <div className="p-4 bg-orange-100/50 dark:bg-orange-900/20 rounded-xl text-center border border-orange-200 dark:border-orange-800">
-                      <div className="text-3xl font-bold text-orange-600">{result.mobileCount}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Передвижные</div>
+                    <div className="p-4 bg-orange-100/50 dark:bg-orange-900/30 rounded-xl text-center border border-orange-200 dark:border-orange-800">
+                      <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{result.mobileCount}</div>
+                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Передвижные</div>
                     </div>
                   </div>
 
                   {/* Итого и дистанция */}
-                  <div className="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                  <div className="flex justify-between items-center p-3 bg-slate-200/80 dark:bg-slate-800/80 rounded-lg border border-slate-300 dark:border-slate-700">
                     <div>
-                      <span className="text-sm text-muted-foreground">ИТОГО:</span>
-                      <span className="ml-2 text-xl font-bold">{result.totalCount} шт.</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">ИТОГО:</span>
+                      <span className="ml-2 text-xl font-black text-slate-900 dark:text-white">{result.totalCount} шт.</span>
                     </div>
                     <div>
-                      <span className="text-sm text-muted-foreground">Макс. дистанция:</span>
-                      <span className="ml-2 font-bold">{result.maxDistance} м</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Макс. дистанция:</span>
+                      <span className="ml-2 font-black text-slate-900 dark:text-white">{result.maxDistance} м</span>
                     </div>
                   </div>
 
@@ -1133,17 +1133,17 @@ export default function FireExtinguishersCalculator() {
                   )}
 
                   {/* Обоснование */}
-                  <div className="space-y-3 pt-4 border-t">
-                    <h4 className="font-bold text-sm flex items-center">
-                      <Info className="w-4 h-4 mr-2" /> Обоснование:
+                  <div className="space-y-3 pt-4 border-t border-slate-300 dark:border-slate-700">
+                    <h4 className="font-black text-sm flex items-center text-slate-900 dark:text-white">
+                      <Info className="w-4 h-4 mr-2" /> ОБОСНОВАНИЕ:
                     </h4>
                     <ul className="space-y-2">
                       {result.reasons.map((r, i) => (
-                        <li key={i} className="text-xs flex items-start">
-                          <CheckCircle className="w-3 h-3 text-emerald-500 mr-2 mt-0.5 shrink-0" />
+                        <li key={i} className="text-xs flex items-start text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+                          <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400 mr-2 mt-0.5 shrink-0" />
                           <span>
-                            <span className="font-bold">[{r.label}]</span> {r.text}
-                            {r.ref && <span className="text-muted-foreground ml-1">({r.ref})</span>}
+                            <span className="font-black text-slate-900 dark:text-white">[{r.label}]</span> {r.text}
+                            {r.ref && <span className="text-slate-500 dark:text-slate-400 ml-1 font-bold">({r.ref})</span>}
                           </span>
                         </li>
                       ))}
@@ -1152,13 +1152,13 @@ export default function FireExtinguishersCalculator() {
 
                   {/* Предупреждения */}
                   {result.warnings.length > 0 && (
-                    <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-200 dark:border-amber-800">
-                      <h4 className="text-amber-700 dark:text-amber-400 text-xs font-bold mb-2 flex items-center">
+                    <div className="p-4 bg-amber-100/80 dark:bg-amber-900/30 rounded-lg border border-amber-300 dark:border-amber-700 shadow-sm">
+                      <h4 className="text-amber-800 dark:text-amber-400 text-xs font-black mb-2 flex items-center">
                         <AlertTriangle className="w-3 h-3 mr-2" /> ТРЕБОВАНИЯ И ИНВЕНТАРЬ:
                       </h4>
                       <ul className="space-y-1">
                         {result.warnings.map((w, i) => (
-                          <li key={i} className="text-[10px]">• {w}</li>
+                          <li key={i} className="text-[11px] font-bold text-amber-900 dark:text-amber-200 tracking-tight">• {w}</li>
                         ))}
                       </ul>
                     </div>
@@ -1166,13 +1166,13 @@ export default function FireExtinguishersCalculator() {
 
                   {/* Примечания */}
                   {result.notes.length > 0 && (
-                    <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                      <h4 className="text-xs font-bold mb-2 flex items-center">
+                    <div className="p-4 bg-slate-200/80 dark:bg-slate-800/80 rounded-lg border border-slate-300 dark:border-slate-700">
+                      <h4 className="text-xs font-black mb-2 flex items-center text-slate-900 dark:text-white">
                         <Info className="w-3 h-3 mr-2" /> ПРИМЕЧАНИЯ:
                       </h4>
-                      <ul className="space-y-1">
+                      <ul className="space-y-2">
                         {result.notes.map((n, i) => (
-                          <li key={i} className="text-[10px] text-muted-foreground">• {n}</li>
+                          <li key={i} className="text-[10px] text-slate-700 dark:text-slate-300 font-bold leading-normal">• {n}</li>
                         ))}
                       </ul>
                     </div>
