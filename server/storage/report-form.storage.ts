@@ -66,4 +66,21 @@ export class ReportFormStorage {
       .returning();
     return reportForm;
   }
+
+  async getReportFormsByOrgs(params: {
+    orgUnitIds: string[];
+    period: string;
+    form: string;
+  }): Promise<ReportForm[]> {
+    return await db
+      .select()
+      .from(reportForms)
+      .where(
+        and(
+          inArray(reportForms.orgUnitId, params.orgUnitIds),
+          eq(reportForms.period, params.period),
+          eq(reportForms.form, params.form)
+        )
+      );
+  }
 }

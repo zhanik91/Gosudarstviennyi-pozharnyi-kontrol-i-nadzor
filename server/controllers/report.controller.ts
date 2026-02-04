@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import * as XLSX from "xlsx";
 import { storage } from "../storage";
 import { toScopeUser } from "../services/authz";
 import {
@@ -19,9 +20,9 @@ export class ReportController {
   async getReports(req: Request, res: Response) {
     try {
       const orgUnits = await storage.getOrganizations();
-      const userRole = req.user?.role;
-      const isGlobalAccess = userRole === 'admin' || userRole === 'MCHS';
-      
+      const userRole = (req.user as any)?.role?.toUpperCase();
+      const isGlobalAccess = userRole === 'ADMIN' || userRole === 'MCHS';
+
       // Для admin/MCHS используем корневую организацию и includeChildren по умолчанию
       const orgId = (req.query.orgId as string) || req.user?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : undefined);
       const includeChildren = req.query.includeChildren === 'true' || isGlobalAccess;
@@ -38,12 +39,12 @@ export class ReportController {
 
       try {
         // Для admin/MCHS пропускаем проверку org scope
-        const userOrgId = req.user?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : undefined);
+        const userOrgId = (req.user as any)?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : undefined);
         if (!userOrgId && !isGlobalAccess) {
           return res.status(400).json({ ok: false, msg: 'org unit required' });
         }
-        const resolvedOrgId = orgId || userOrgId;
-        
+        const resolvedOrgId = (orgId as string) || (userOrgId as string);
+
         if (!isGlobalAccess && resolvedOrgId) {
           assertOrgScope(orgUnits, userOrgId!, resolvedOrgId);
         }
@@ -55,15 +56,15 @@ export class ReportController {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
       }
 
-      const resolvedOrgId = orgId || req.user?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : undefined);
-      if (!resolvedOrgId && !isGlobalAccess) {
+      const finalOrgId = (orgId as string) || (req.user as any)?.orgUnitId || (isGlobalAccess ? 'mchs-rk' : 'mchs-rk');
+      if (!finalOrgId) {
         return res.status(400).json({ ok: false, msg: 'org unit required' });
       }
 
       const reportData = await storage.getReportFormData({
-        orgId: resolvedOrgId,
-        period,
-        form,
+        orgId: finalOrgId,
+        period: (period as string) || "",
+        form: form as string,
         region,
         includeChildren,
         scopeUser: toScopeUser(req.user),
@@ -108,7 +109,8 @@ export class ReportController {
       const orgId = (req.query.orgId as string) || req.user?.orgUnitId;
       const period = req.query.period as string;
 
-      if (!req.user?.orgUnitId) {
+      const userOrgId = (req.user as any)?.orgUnitId;
+      if (!userOrgId) {
         return res.status(400).json({ ok: false, msg: "org unit required" });
       }
 
@@ -116,14 +118,14 @@ export class ReportController {
         return res.status(400).json({ ok: false, msg: "period required" });
       }
 
-      const { assertOrgScope } = await import("../services/authz");
       try {
-        assertOrgScope(orgUnits, req.user?.orgUnitId, orgId || req.user?.orgUnitId);
+        const { assertOrgScope } = await import("../services/authz");
+        assertOrgScope(orgUnits, userOrgId, (orgId as string) || userOrgId);
       } catch (error: any) {
         return res.status(403).json({ ok: false, msg: "forbidden" });
       }
 
-      const resolvedOrgId = orgId || req.user?.orgUnitId;
+      const resolvedOrgId = (orgId as string) || userOrgId;
       const reportForms = await storage.getReportForms({
         orgUnitId: resolvedOrgId,
         period,
@@ -155,20 +157,21 @@ export class ReportController {
   async validateReports(req: Request, res: Response) {
     try {
       const orgUnits = await storage.getOrganizations();
-      const orgId = (req.query.orgId as string) || req.user?.orgUnitId;
+      const orgId = req.query.orgId as string;
       const period = req.query.period as string;
       const includeChildren = req.query.includeChildren === 'true';
+      const userOrgId = (req.user as any)?.orgUnitId;
 
-      // Проверка доступа
+      if (!userOrgId) {
+        return res.status(400).json({ ok: false, msg: 'org unit required' });
+      }
+
       const { assertOrgScope, assertTreeAccess } = await import('../services/authz');
 
       try {
-        if (!req.user?.orgUnitId) {
-          return res.status(400).json({ ok: false, msg: 'org unit required' });
-        }
-        assertOrgScope(orgUnits, req.user?.orgUnitId, orgId);
+        assertOrgScope(orgUnits, userOrgId, orgId);
         if (includeChildren) {
-          assertTreeAccess(req.user?.role || 'DISTRICT');
+          assertTreeAccess((req.user as any)?.role || 'DISTRICT');
         }
       } catch (error: any) {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
@@ -186,7 +189,7 @@ export class ReportController {
   async saveReport(req: Request, res: Response) {
     try {
       const orgUnits = await storage.getOrganizations();
-      const orgId = req.user?.orgUnitId;
+      const orgId = (req.user as any)?.orgUnitId;
       const { form, period, status } = req.body || {};
 
       if (!orgId) {
@@ -224,7 +227,7 @@ export class ReportController {
         orgUnitId: orgId,
         period,
         form,
-        data: {},
+        data: computedData,
         status: status === 'submitted' ? 'submitted' : 'draft',
       });
 
@@ -232,6 +235,127 @@ export class ReportController {
     } catch (error) {
       console.error('Error saving report:', error);
       res.status(500).json({ ok: false, msg: 'Failed to save report' });
+    }
+  }
+
+  // Генерация шаблона для импорта
+  async importTemplate(req: Request, res: Response) {
+    try {
+      const { form, period } = req.query;
+      if (!form || !period) {
+        return res.status(400).json({ ok: false, msg: "form and period required" });
+      }
+
+      const orgId = (req.user as any)?.orgUnitId || 'mchs-rk';
+
+      // Находим все дочерние организации (области/районы)
+      const hierarchy = await storage.getOrganizationHierarchy(orgId);
+
+      // Оставляем только те, у которых тип совпадает с тем, что нам нужно импортировать
+      // Обычно импортируют по областям (DCHS) или районам (DISTRICT)
+      const targetUnits = hierarchy.filter(u => u.id !== orgId);
+
+      // Определяем столбцы для формы
+      const indicatorIds = getFormIndicatorIds(form as string);
+      const indicatorFields = getFormIndicatorFields(form as string);
+
+      const header = ["ID Организации", "Наименование организации"];
+      indicatorIds.forEach(id => {
+        indicatorFields.forEach(field => {
+          header.push(`${id}:${field}`);
+        });
+      });
+
+      const rows = [header];
+      targetUnits.forEach(unit => {
+        const row = [unit.id, unit.name];
+        // Пустые ячейки для заполнения
+        indicatorIds.forEach(() => {
+          indicatorFields.forEach(() => {
+            row.push("");
+          });
+        });
+        rows.push(row);
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, "Template");
+
+      const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+      res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.header('Content-Disposition', `attachment; filename=template_${form}_${period}.xlsx`);
+      res.send(buffer);
+    } catch (error) {
+      console.error('Error generating template:', error);
+      res.status(500).json({ ok: false, msg: 'Internal server error' });
+    }
+  }
+
+  // Массовый импорт данных из Excel
+  async importBulk(req: Request, res: Response) {
+    try {
+      const { form, period } = req.body;
+      const file = (req as any).file;
+      if (!form || !period || !file) {
+        return res.status(400).json({ ok: false, msg: "form, period and file required" });
+      }
+
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (data.length < 2) {
+        return res.status(400).json({ ok: false, msg: "empty file" });
+      }
+
+      const headers = data[0];
+      const resultRows = data.slice(1);
+      const indicatorFields = getFormIndicatorFields(form);
+
+      let successCount = 0;
+
+      for (const row of resultRows) {
+        const orgId = row[0];
+        if (!orgId) continue;
+
+        const manualData: Record<string, any> = {};
+
+        // Разбираем строку в объект data
+        headers.forEach((header, index) => {
+          if (index < 2) return;
+          const [indicatorId, field] = String(header).split(':');
+          if (!indicatorId) return;
+
+          const rawValue = row[index];
+          const value = rawValue === "" || rawValue === undefined ? 0 : Number(rawValue);
+
+          if (indicatorFields.length === 1 && indicatorFields[0] === 'value') {
+            manualData[indicatorId] = value;
+          } else {
+            if (!manualData[indicatorId]) manualData[indicatorId] = {};
+            manualData[indicatorId][field] = value;
+          }
+        });
+
+        // Конструктор полной структуры формы (rows с привязанными values)
+        // Для простоты мы сохраняем только сырые значения, 
+        // а storage.getReportFormData соберет их в rows.
+        await storage.upsertReportForm({
+          orgUnitId: orgId,
+          period,
+          form,
+          data: manualData,
+          status: 'submitted',
+        });
+        successCount++;
+      }
+
+      res.json({ ok: true, count: successCount });
+    } catch (error) {
+      console.error('Error importing bulk data:', error);
+      res.status(500).json({ ok: false, msg: 'Import failed' });
     }
   }
 }
@@ -397,4 +521,29 @@ const getReportCompletion = (form: string, data: Record<string, any>) => {
   const completionPercent = totalFields === 0 ? 0 : Math.round(((totalFields - emptyFields) / totalFields) * 100);
 
   return { completionPercent, totalFields, emptyFields };
+};
+const getFormIndicatorIds = (form: string): string[] => {
+  switch (form) {
+    case "1-osp": return flattenRows(FORM_1_OSP_ROWS);
+    case "2-ssg": return NON_FIRE_CASES.map(i => i.code);
+    case "3-spvp": return flattenRows(FIRE_CAUSES);
+    case "4-sovp": return flattenRows(FORM_4_SOVP_ROWS);
+    case "5-spzs": return flattenRows(FORM_5_ROWS, { skipSections: true });
+    case "6-sspz": return [...FORM_6_STEPPE_FIRES_ROWS, ...FORM_6_IGNITIONS_ROWS].map(r => r.id);
+    case "co": return flattenRows(FORM_7_CO_ROWS);
+    default: return [];
+  }
+};
+
+const getFormIndicatorFields = (form: string): string[] => {
+  switch (form) {
+    case "1-osp": return [...FORM_1_FIELDS];
+    case "2-ssg": return ["value"];
+    case "3-spvp": return [...FORM_3_FIELDS];
+    case "4-sovp": return [...FORM_4_FIELDS];
+    case "5-spzs": return [...FORM_5_FIELDS];
+    case "6-sspz": return [...FORM_6_FIELDS];
+    case "co": return [...FORM_7_FIELDS];
+    default: return [];
+  }
 };

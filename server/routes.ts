@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { Router } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
 import { storage } from "./storage";
 import { db } from "./db";
 import { adminCases, controlObjects, incidents, inspections, measures, prescriptions, tickets } from "@shared/schema";
@@ -24,6 +25,12 @@ import { toScopeUser, applyScopeCondition } from "./services/authz";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   setupLocalAuth(app);
+
+  // Конфигурация multer для загрузки файлов в память
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  });
 
   // === Проверка прав на запись ===
   const canWriteRegistry = (req: any, res: any, next: any) => {
@@ -159,6 +166,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/summary', isAuthenticated, reportController.getReportsDashboard);
   app.get('/api/stats/dashboard', reportController.getDashboardStats);
   app.get('/api/reports/validate', isAuthenticated, reportController.validateReports);
+  app.get('/api/reports/import-template', isAuthenticated, reportController.importTemplate);
+  app.post('/api/reports/import-bulk', isAuthenticated, upload.single('file'), reportController.importBulk);
   app.get('/api/reports/form-13-kps', isAuthenticated, form13KpsController.getReport);
   app.get('/api/reports/admin-practice', isAuthenticated, adminPracticeReportController.getReport);
   app.get('/api/reports/admin-cases', isAuthenticated, async (req: any, res) => {
