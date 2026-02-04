@@ -310,11 +310,32 @@ export default function PackagesPanel() {
       });
       return;
     }
+    let url: string | null = null;
     try {
-      const response = await fetch(`/api/reports/import-template?form=${importForm}&period=${importPeriod}`);
-      if (!response.ok) throw new Error("Не удалось скачать шаблон");
+      const response = await apiRequest(
+        "GET",
+        `/api/reports/import-template?form=${importForm}&period=${importPeriod}`,
+      );
+      if (!response.ok) {
+        let errorMessage = "Не удалось скачать шаблон";
+        try {
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const data = await response.json();
+            errorMessage = data?.msg || data?.message || JSON.stringify(data);
+          } else {
+            const text = await response.text();
+            if (text) {
+              errorMessage = text;
+            }
+          }
+        } catch (parseError) {
+          console.error("Failed to parse template download error", parseError);
+        }
+        throw new Error(errorMessage);
+      }
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = `template_${importForm}_${importPeriod}.xlsx`;
@@ -327,6 +348,10 @@ export default function PackagesPanel() {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      if (url) {
+        window.URL.revokeObjectURL(url);
+      }
     }
   };
 
