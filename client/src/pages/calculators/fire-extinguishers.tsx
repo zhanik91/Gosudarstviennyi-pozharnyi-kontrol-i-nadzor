@@ -33,30 +33,30 @@ interface CalculationResult {
   co2Count: number;          // Углекислотные (ОУ)
   foamCount: number;         // Пенные (ОВП)
   mobileCount: number;       // Передвижные
-  
+
   // Дополнительные средства
   sandCount: number;         // Ящики с песком
   waterCount: number;        // Бочки с водой
   blanketCount: number;      // Кошма/покрывало
-  
+
   // Пожарные щиты
   shieldType: string;        // Тип щита (ЩП-А, ЩП-Б, ЩП-В, ЩП-Е, ЩП-СХ)
   shieldCount: number;       // Количество щитов
-  
+
   // Итоги
   totalPortable: number;
   totalCount: number;
   perFloor: number[];
   maxDistance: number;
-  
+
   // Обоснование
   reasons: { label: string; text: string; ref?: string }[];
   warnings: string[];
   notes: string[];
 }
 
-type ObjType = "PRODUCTION" | "SERVICE" | "PETROLEUM" | "CONSTRUCTION";
-type ExtCategory = "A" | "B" | "V_GAS" | "V_SOLID" | "G" | "D" | "PUBLIC";
+type ObjType = "INDUSTRIAL" | "PUBLIC" | "SERVICE" | "PETROLEUM" | "CONSTRUCTION";
+type ExtCategory = "A" | "B" | "V_GAS" | "V_SOLID" | "G" | "D";
 
 // ============================================================================
 // ДАННЫЕ ПРИЛОЖЕНИЯ 3 (Таблица 1 — Производственные и общественные)
@@ -72,41 +72,36 @@ const CATEGORY_DATA: Record<ExtCategory, {
   shieldArea: number;     // Площадь на 1 щит
   fireClass: string;      // Классы пожара
 }> = {
-  "A": { 
-    label: "А — повышенная взрывопожароопасность", 
+  "A": {
+    label: "А (повышенная взрывопожароопасность)",
     blockArea: 200, powderNorm: 2, distance: 30, mobileThreshold: 500,
     shieldType: "ЩП-А", shieldArea: 200, fireClass: "А, Б, В"
   },
-  "B": { 
-    label: "Б — взрывопожароопасность", 
+  "B": {
+    label: "Б (взрывопожароопасность)",
     blockArea: 200, powderNorm: 2, distance: 30, mobileThreshold: 500,
     shieldType: "ЩП-Б", shieldArea: 200, fireClass: "А, Б, В"
   },
-  "V_GAS": { 
-    label: "В — пожароопасность (горючие газы/жидкости)", 
+  "V_GAS": {
+    label: "В - горючие газы и жидкости",
     blockArea: 200, powderNorm: 2, distance: 30, mobileThreshold: 500,
     shieldType: "ЩП-Б", shieldArea: 200, fireClass: "А, Б"
   },
-  "V_SOLID": { 
-    label: "В — пожароопасность (твердые материалы)", 
+  "V_SOLID": {
+    label: "В - твердые горючие вещества и материалы",
     blockArea: 400, powderNorm: 2, distance: 30, mobileThreshold: 800,
     shieldType: "ЩП-А", shieldArea: 400, fireClass: "А"
   },
-  "G": { 
-    label: "Г — умеренная пожароопасность", 
+  "G": {
+    label: "Г (умеренная пожароопасность) и Д",
     blockArea: 1800, powderNorm: 2, distance: 40, mobileThreshold: 1800,
     shieldType: "ЩП-А", shieldArea: 1800, fireClass: "А"
   },
-  "D": { 
-    label: "Д — пониженная пожароопасность", 
+  "D": {
+    label: "Д (пониженная пожароопасность)",
     blockArea: 1800, powderNorm: 2, distance: 70,
     shieldType: "", shieldArea: 0, fireClass: "—"
-  },
-  "PUBLIC": { 
-    label: "Общественные и административные здания", 
-    blockArea: 800, powderNorm: 2, distance: 20,
-    shieldType: "", shieldArea: 0, fireClass: "А, Е"
-  },
+  }
 };
 
 // ============================================================================
@@ -114,84 +109,84 @@ const CATEGORY_DATA: Record<ExtCategory, {
 // ============================================================================
 
 const TABLE_5_DATA = [
-  { 
-    id: "sto", 
-    label: "СТО (Станция технического обслуживания)", 
-    areaNorm: 100, powder: 2, co2: 1, 
+  {
+    id: "sto",
+    label: "СТО (Станция технического обслуживания)",
+    areaNorm: 100, powder: 2, co2: 1,
     shield: "", note: ""
   },
-  { 
-    id: "parking_open", 
-    label: "Открытые стоянки автомобилей", 
-    areaNorm: 100, powder: 2, co2: 0, 
+  {
+    id: "parking_open",
+    label: "Открытые стоянки автомобилей",
+    areaNorm: 100, powder: 2, co2: 0,
     shield: "ЩП-В", note: "1 щит на каждые 100 м²"
   },
-  { 
-    id: "parking_closed", 
-    label: "Закрытые стоянки/паркинги", 
-    areaNorm: 50, powder: 2, co2: 1, 
+  {
+    id: "parking_closed",
+    label: "Закрытые стоянки/паркинги",
+    areaNorm: 50, powder: 2, co2: 1,
     shield: "ЩП-В", note: ""
   },
-  { 
-    id: "garage", 
-    label: "Гаражи (на 1 бокс/машиноместо)", 
-    areaNorm: 0, powder: 1, co2: 0, 
+  {
+    id: "garage",
+    label: "Гаражи (на 1 бокс/машиноместо)",
+    areaNorm: 0, powder: 1, co2: 0,
     shield: "", note: "Рассчитывается по количеству боксов"
   },
-  { 
-    id: "azs_large", 
-    label: "АЗС (≥500 заправок в сутки)", 
-    areaNorm: 0, powder: 4, co2: 2, 
+  {
+    id: "azs_large",
+    label: "АЗС (≥500 заправок в сутки)",
+    areaNorm: 0, powder: 4, co2: 2,
     shield: "ЩП-В", note: "Дополнительно: 1 × ОП-100 передвижной",
     mobile: 1
   },
-  { 
-    id: "azs_small", 
-    label: "АЗС (<500 заправок в сутки)", 
-    areaNorm: 0, powder: 2, co2: 2, 
+  {
+    id: "azs_small",
+    label: "АЗС (<500 заправок в сутки)",
+    areaNorm: 0, powder: 2, co2: 2,
     shield: "ЩП-В", note: "Дополнительно: 1 × ОП-100 передвижной",
     mobile: 1
   },
-  { 
-    id: "azs_shop", 
-    label: "Магазин/кафе при АЗС", 
-    areaNorm: 100, powder: 1, co2: 1, 
+  {
+    id: "azs_shop",
+    label: "Магазин/кафе при АЗС",
+    areaNorm: 100, powder: 1, co2: 1,
     shield: "", note: ""
   },
-  { 
-    id: "kiosk", 
-    label: "Торговые павильоны/киоски", 
-    areaNorm: 100, powder: 1, co2: 0, 
+  {
+    id: "kiosk",
+    label: "Торговые павильоны/киоски",
+    areaNorm: 100, powder: 1, co2: 0,
     shield: "", note: ""
   },
-  { 
-    id: "office", 
-    label: "Офисы, банки, клубы, учреждения", 
-    areaNorm: 100, powder: 2, co2: 0, 
+  {
+    id: "office",
+    label: "Офисы, банки, клубы, учреждения",
+    areaNorm: 100, powder: 2, co2: 0,
     shield: "", note: ""
   },
-  { 
-    id: "shop", 
-    label: "Магазины, торговые центры", 
-    areaNorm: 100, powder: 2, co2: 0, 
+  {
+    id: "shop",
+    label: "Магазины, торговые центры",
+    areaNorm: 100, powder: 2, co2: 0,
     shield: "", note: ""
   },
-  { 
-    id: "hotel", 
-    label: "Гостиницы, общежития", 
-    areaNorm: 100, powder: 2, co2: 0, 
+  {
+    id: "hotel",
+    label: "Гостиницы, общежития",
+    areaNorm: 100, powder: 2, co2: 0,
     shield: "", note: "Минимум 2 ОТ на этаж"
   },
-  { 
-    id: "school", 
-    label: "Школы, ВУЗы, учебные заведения", 
-    areaNorm: 100, powder: 2, co2: 0, 
+  {
+    id: "school",
+    label: "Школы, ВУЗы, учебные заведения",
+    areaNorm: 100, powder: 2, co2: 0,
     shield: "", note: "Минимум 2 ОТ на этаж"
   },
-  { 
-    id: "hospital", 
-    label: "Больницы, поликлиники", 
-    areaNorm: 100, powder: 2, co2: 0, 
+  {
+    id: "hospital",
+    label: "Больницы, поликлиники",
+    areaNorm: 100, powder: 2, co2: 0,
     shield: "", note: "Минимум 2 ОТ на этаж"
   },
 ];
@@ -201,79 +196,79 @@ const TABLE_5_DATA = [
 // ============================================================================
 
 const APP_10_DATA = [
-  { 
-    id: "pump", 
-    label: "Насосные по перекачке нефтепродуктов", 
+  {
+    id: "pump",
+    label: "Насосные по перекачке нефтепродуктов",
     areaNorm: 50, co2: 2, foam: 2, powder: 0,
     sand: 1, blanket: 1, water: 0,
     note: "Кошма 2×2 м, песок 0.5 м³"
   },
-  { 
-    id: "kip", 
-    label: "Помещения КИПиА (контрольно-измерительные приборы)", 
+  {
+    id: "kip",
+    label: "Помещения КИПиА (контрольно-измерительные приборы)",
     areaNorm: 50, co2: 2, foam: 0, powder: 0,
     sand: 0, blanket: 0, water: 0,
     note: ""
   },
-  { 
-    id: "storage_tare", 
-    label: "Хранилище нефтепродуктов в таре", 
+  {
+    id: "storage_tare",
+    label: "Хранилище нефтепродуктов в таре",
     areaNorm: 200, co2: 0, foam: 1, powder: 2,
     sand: 1, blanket: 1, water: 0,
     note: "Песок 0.5 м³, кошма 2×2 м"
   },
-  { 
-    id: "lab", 
-    label: "Лаборатории при нефтебазе", 
+  {
+    id: "lab",
+    label: "Лаборатории при нефтебазе",
     areaNorm: 50, co2: 1, foam: 2, powder: 0,
     sand: 0, blanket: 1, water: 0,
     note: "Кошма 2×2 м"
   },
-  { 
-    id: "boiler", 
-    label: "Котельные на нефтебазе", 
+  {
+    id: "boiler",
+    label: "Котельные на нефтебазе",
     areaNorm: 100, co2: 1, foam: 2, powder: 1,
     sand: 1, blanket: 0, water: 0,
     note: "Песок 0.5 м³"
   },
-  { 
-    id: "estacade", 
-    label: "Эстакады слива/налива (на 50 м длины)", 
+  {
+    id: "estacade",
+    label: "Эстакады слива/налива (на 50 м длины)",
     areaNorm: 0, co2: 2, foam: 4, powder: 0,
     sand: 2, blanket: 2, water: 0,
     note: "Песок 0.5 м³ × 2, кошма 2×2 м × 2"
   },
-  { 
-    id: "reservoir_park", 
-    label: "Резервуарный парк (при обваловании)", 
+  {
+    id: "reservoir_park",
+    label: "Резервуарный парк (при обваловании)",
     areaNorm: 0, co2: 2, foam: 2, powder: 2,
     sand: 1, blanket: 1, water: 0,
     note: "На каждую группу резервуаров"
   },
-  { 
-    id: "oil_workshop", 
-    label: "Нефтяные мастерские, ремонтные цеха", 
+  {
+    id: "oil_workshop",
+    label: "Нефтяные мастерские, ремонтные цеха",
     areaNorm: 100, co2: 2, foam: 2, powder: 2,
     sand: 1, blanket: 1, water: 0,
     note: ""
   },
-  { 
-    id: "electric_sub", 
-    label: "Электроподстанции, электрощитовые", 
+  {
+    id: "electric_sub",
+    label: "Электроподстанции, электрощитовые",
     areaNorm: 50, co2: 2, foam: 0, powder: 0,
     sand: 0, blanket: 0, water: 0,
     note: "Только углекислотные!"
   },
-  { 
-    id: "oil_filling", 
-    label: "Разливочные (мелкая тара)", 
+  {
+    id: "oil_filling",
+    label: "Разливочные (мелкая тара)",
     areaNorm: 50, co2: 1, foam: 2, powder: 1,
     sand: 1, blanket: 1, water: 0,
     note: ""
   },
-  { 
-    id: "oil_garage", 
-    label: "Автогаражи при нефтебазе", 
+  {
+    id: "oil_garage",
+    label: "Автогаражи при нефтебазе",
     areaNorm: 100, co2: 1, foam: 2, powder: 2,
     sand: 1, blanket: 0, water: 0,
     note: ""
@@ -285,69 +280,69 @@ const APP_10_DATA = [
 // ============================================================================
 
 const APP_11_DATA = [
-  { 
-    id: "scaffolding", 
-    label: "Строительные леса (на каждые 20 м длины)", 
+  {
+    id: "scaffolding",
+    label: "Строительные леса (на каждые 20 м длины)",
     powder: 1, sand: 0, water: 0,
     note: "*", minQty: 2
   },
-  { 
-    id: "cabin", 
-    label: "Бытовки, временные здания (на 100 м²)", 
+  {
+    id: "cabin",
+    label: "Бытовки, временные здания (на 100 м²)",
     powder: 1, sand: 1, water: 1,
     note: "****", minQty: 2
   },
-  { 
-    id: "storage_timber", 
-    label: "Склады лесоматериалов (на 300 м³)", 
+  {
+    id: "storage_timber",
+    label: "Склады лесоматериалов (на 300 м³)",
     powder: 1, sand: 1, water: 1,
     note: "", minQty: 0
   },
-  { 
-    id: "fire_works", 
-    label: "Места огневых работ (сварка, резка)", 
+  {
+    id: "fire_works",
+    label: "Места огневых работ (сварка, резка)",
     powder: 2, sand: 1, water: 0,
     note: "****", minQty: 2
   },
-  { 
-    id: "bitumen", 
-    label: "Битумные котлы, плавители", 
+  {
+    id: "bitumen",
+    label: "Битумные котлы, плавители",
     powder: 2, sand: 1, water: 0,
     note: "****", minQty: 2
   },
-  { 
-    id: "gsm_storage", 
-    label: "Склады ГСМ на стройплощадке", 
+  {
+    id: "gsm_storage",
+    label: "Склады ГСМ на стройплощадке",
     powder: 2, sand: 1, water: 1,
     note: "****", minQty: 2
   },
-  { 
-    id: "workshop_temp", 
-    label: "Временные мастерские (столярные, слесарные)", 
+  {
+    id: "workshop_temp",
+    label: "Временные мастерские (столярные, слесарные)",
     powder: 2, sand: 1, water: 0,
     note: "*", minQty: 2
   },
-  { 
-    id: "carbide", 
-    label: "Склады карбида кальция", 
+  {
+    id: "carbide",
+    label: "Склады карбида кальция",
     powder: 2, sand: 0, water: 0,
     note: "Воду использовать запрещено!", minQty: 2
   },
-  { 
-    id: "paint_works", 
-    label: "Малярные работы (с ЛКМ)", 
+  {
+    id: "paint_works",
+    label: "Малярные работы (с ЛКМ)",
     powder: 2, sand: 0, water: 0,
     note: "*", minQty: 2
   },
-  { 
-    id: "roofing", 
-    label: "Кровельные работы (наплавляемые материалы)", 
+  {
+    id: "roofing",
+    label: "Кровельные работы (наплавляемые материалы)",
     powder: 2, sand: 1, water: 0,
     note: "****", minQty: 2
   },
-  { 
-    id: "concrete_site", 
-    label: "Бетонные/растворные узлы", 
+  {
+    id: "concrete_site",
+    label: "Бетонные/растворные узлы",
     powder: 1, sand: 1, water: 1,
     note: "", minQty: 0
   },
@@ -407,7 +402,7 @@ const SHIELD_CONFIG: Record<string, string[]> = {
 
 export default function FireExtinguishersCalculator() {
   // Состояния формы
-  const [objType, setObjType] = useState<ObjType>("PRODUCTION");
+  const [objType, setObjType] = useState<ObjType>("INDUSTRIAL");
   const [area, setArea] = useState("");
   const [category, setCategory] = useState<ExtCategory | "">("");
   const [subCategory, setSubCategory] = useState("");
@@ -429,7 +424,7 @@ export default function FireExtinguishersCalculator() {
     const reasons: { label: string; text: string; ref?: string }[] = [];
     const warnings: string[] = [];
     const notes: string[] = [];
-    
+
     let powderCount = 0;
     let co2Count = 0;
     let foamCount = 0;
@@ -442,9 +437,9 @@ export default function FireExtinguishersCalculator() {
     let maxDistance = 20;
 
     // =========================================================================
-    // РЕЖИМ 1: Производственные/Общественные (Приложение 3, Таблица 1-2)
+    // РЕЖИМ 1: Производственные и складские здания (Категории А-Д)
     // =========================================================================
-    if (objType === "PRODUCTION") {
+    if (objType === "INDUSTRIAL") {
       if (!category || S <= 0) return null;
       const data = CATEGORY_DATA[category as ExtCategory];
       maxDistance = data.distance;
@@ -456,8 +451,8 @@ export default function FireExtinguishersCalculator() {
           sandCount: 0, waterCount: 0, blanketCount: 0,
           shieldType: "", shieldCount: 0,
           totalPortable: 0, totalCount: 0, perFloor: [],
-          reasons: [{ 
-            label: "Исключение", 
+          reasons: [{
+            label: "Исключение",
             text: "Для помещений категории Д площадью до 100 м² огнетушители не требуются.",
             ref: "п. 8 Прил. 3 к ППБ РК"
           }],
@@ -468,31 +463,21 @@ export default function FireExtinguishersCalculator() {
       // Базовый расчет переносных ОТ
       const blocks = Math.ceil(S / data.blockArea);
       let portableQty = blocks * data.powderNorm;
-      
-      reasons.push({ 
-        label: "Базовый расчёт", 
-        text: `Для площади ${S} м² требуется ${portableQty} шт. переносных огнетушителей (норма: ${data.powderNorm} шт. на каждые ${data.blockArea} м², Таблица 1).`,
+
+      reasons.push({
+        label: "Базовый расчёт",
+        text: `Для площади ${S} м² требуется ${portableQty} шт. переносных огнетушителей (норма: ${data.powderNorm} шт. на каждые ${data.blockArea} м² для данной категории).`,
         ref: "Табл. 1 Прил. 3 к ППБ РК"
       });
 
       // Скидка 50% при наличии АУПТ
       if (hasAUPT) {
         const before = portableQty;
-        portableQty = Math.max(Math.round(portableQty * 0.5), N * 2);
-        reasons.push({ 
-          label: "АУПТ", 
+        portableQty = Math.max(Math.round(portableQty * 0.5), 1); // Минимум 1 если не общественное
+        reasons.push({
+          label: "АУПТ",
           text: `Снижение на 50% (с ${before} до ${portableQty} шт.) при наличии автоматической установки пожаротушения.`,
           ref: "п. 10 Прил. 3 к ППБ РК"
-        });
-      }
-
-      // Минимум 2 на этаж — ТОЛЬКО для общественных зданий
-      if (category === "PUBLIC" && portableQty < N * 2) {
-        portableQty = N * 2;
-        reasons.push({ 
-          label: "Минимум на этаж", 
-          text: `Минимум 2 огнетушителя на каждый этаж для общественных зданий (всего ${portableQty} шт.).`,
-          ref: "п. 5 Прил. 3 к ППБ РК"
         });
       }
 
@@ -501,8 +486,8 @@ export default function FireExtinguishersCalculator() {
       if (hasElectrical) {
         co2Count = Math.max(1, Math.round(portableQty * 0.2));
         powderCount = portableQty - co2Count;
-        reasons.push({ 
-          label: "Электрооборудование", 
+        reasons.push({
+          label: "Электрооборудование",
           text: `Замена ${co2Count} шт. порошковых на углекислотные (ОУ-5) для защиты электрооборудования (класс пожара Е).`,
           ref: "Табл. 1 Прил. 3 к ППБ РК"
         });
@@ -510,10 +495,9 @@ export default function FireExtinguishersCalculator() {
 
       // Передвижные огнетушители
       if (data.mobileThreshold && S > data.mobileThreshold) {
-        // Исправленная формула: 1 на каждые 1000 м² сверх порога
         mobileCount = Math.ceil(S / 1000);
-        reasons.push({ 
-          label: "Передвижные ОТ", 
+        reasons.push({
+          label: "Передвижные ОТ",
           text: `Требуется ${mobileCount} шт. передвижных огнетушителей (ОП-50 или ОУ-80) для площади свыше ${data.mobileThreshold} м².`,
           ref: "Табл. 2 Прил. 3 к ППБ РК"
         });
@@ -526,12 +510,60 @@ export default function FireExtinguishersCalculator() {
         warnings.push(`Пожарные щиты ${shieldType}: ${shieldCount} шт. (1 щит на ${data.shieldArea} м²)`);
       }
 
-      // Макс. расстояние
       notes.push(`Максимальное расстояние до огнетушителя: ${maxDistance} м`);
     }
 
     // =========================================================================
-    // РЕЖИМ 2: Объекты обслуживания (Таблица 5)
+    // РЕЖИМ 2: Общественные здания
+    // =========================================================================
+    else if (objType === "PUBLIC") {
+      if (S <= 0) return null;
+      maxDistance = 20;
+
+      const blockArea = 800;
+      const powderNorm = 2;
+      const blocks = Math.ceil(S / blockArea);
+      let portableQty = blocks * powderNorm;
+
+      reasons.push({
+        label: "Базовый расчёт",
+        text: `Для площади ${S} м² требуется ${portableQty} шт. переносных огнетушителей (норма: 2 шт. на каждые 800 м² для общественных зданий).`,
+        ref: "Табл. 1 Прил. 3 к ППБ РК"
+      });
+
+      // Скидка 50% при наличии АУПТ
+      if (hasAUPT) {
+        const before = portableQty;
+        portableQty = Math.max(Math.round(portableQty * 0.5), N * 2);
+        reasons.push({
+          label: "АУПТ",
+          text: `Снижение на 50% (с ${before} до ${portableQty} шт., но не менее 2 на этаж).`,
+          ref: "п. 10 Прил. 3 к ППБ РК"
+        });
+      }
+
+      // Минимум 2 на этаж
+      if (portableQty < N * 2) {
+        portableQty = N * 2;
+        reasons.push({
+          label: "Минимум на этаж",
+          text: `В общественных зданиях и сооружениях на каждом этаже размещается не менее двух огнетушителей.`,
+          ref: "п. 5 Прил. 3 к ППБ РК"
+        });
+      }
+
+      powderCount = portableQty;
+      if (hasElectrical) {
+        co2Count = Math.max(1, Math.round(portableQty * 0.2));
+        powderCount = portableQty - co2Count;
+        reasons.push({ label: "Электрооборудование", text: `Замена ${co2Count} шт. на ОУ.` });
+      }
+
+      notes.push(`Максимальное расстояние до огнетушителя: ${maxDistance} м`);
+    }
+
+    // =========================================================================
+    // РЕЖИМ 3: Объекты обслуживания (Таблица 5)
     // =========================================================================
     else if (objType === "SERVICE") {
       if (!subCategory) return null;
@@ -542,24 +574,24 @@ export default function FireExtinguishersCalculator() {
         const calcUnits = Math.ceil(S / data.areaNorm);
         powderCount = calcUnits * data.powder;
         co2Count = calcUnits * data.co2;
-        reasons.push({ 
-          label: "Таблица 5", 
+        reasons.push({
+          label: "Таблица 5",
           text: `Для "${data.label}" на площади ${S} м² требуется: ${powderCount} ОП, ${co2Count} ОУ (норма: ${data.powder} ОП + ${data.co2} ОУ на каждые ${data.areaNorm} м²).`,
           ref: "Табл. 5 Прил. 3 к ППБ РК"
         });
       } else if (subCategory === "garage") {
         // Гаражи — по количеству боксов
         powderCount = units * data.powder;
-        reasons.push({ 
-          label: "Таблица 5", 
+        reasons.push({
+          label: "Таблица 5",
           text: `Для ${units} гаражных боксов требуется ${powderCount} шт. порошковых огнетушителей (по 1 ОП на бокс).`,
           ref: "Табл. 5 Прил. 3 к ППБ РК"
         });
       } else {
         powderCount = data.powder;
         co2Count = data.co2;
-        reasons.push({ 
-          label: "Таблица 5", 
+        reasons.push({
+          label: "Таблица 5",
           text: `Для "${data.label}" требуется: ${powderCount} ОП, ${co2Count} ОУ (фиксированная норма).`,
           ref: "Табл. 5 Прил. 3 к ППБ РК"
         });
@@ -608,8 +640,8 @@ export default function FireExtinguishersCalculator() {
       waterCount = calcUnits * (data.water || 0);
 
       const areaText = data.areaNorm > 0 ? ` на площади ${S} м² (${calcUnits} ед. × ${data.areaNorm} м²)` : "";
-      reasons.push({ 
-        label: "Приложение 10", 
+      reasons.push({
+        label: "Приложение 10",
         text: `Для "${data.label}"${areaText}: ${co2Count} ОУ, ${foamCount} ОВП, ${powderCount} ОП.`,
         ref: "Прил. 10 к ППБ РК"
       });
@@ -646,8 +678,8 @@ export default function FireExtinguishersCalculator() {
         powderCount = data.minQty;
       }
 
-      reasons.push({ 
-        label: "Приложение 11", 
+      reasons.push({
+        label: "Приложение 11",
         text: `Для "${data.label}": ${powderCount} шт. порошковых огнетушителей (ОП-5 или ОП-10).`,
         ref: "Прил. 11 к ППБ РК"
       });
@@ -678,7 +710,7 @@ export default function FireExtinguishersCalculator() {
     // =========================================================================
 
     const totalPortable = powderCount + co2Count + foamCount;
-    
+
     // Распределение по этажам
     const perFloorArr = Array(N).fill(0);
     for (let i = 0; i < totalPortable; i++) {
@@ -718,15 +750,15 @@ export default function FireExtinguishersCalculator() {
   // ============================================================================
 
   const reset = () => {
-    setArea(""); 
-    setCategory(""); 
-    setSubCategory(""); 
+    setArea("");
+    setCategory("");
+    setSubCategory("");
     setFloors("1");
-    setHasAUPT(false); 
-    setHasElectrical(false); 
+    setHasAUPT(false);
+    setHasElectrical(false);
     setHasCabinets(false);
     setUnitCount("1");
-    setObjType("PRODUCTION");
+    setObjType("INDUSTRIAL");
   };
 
   // ============================================================================
@@ -735,15 +767,17 @@ export default function FireExtinguishersCalculator() {
 
   const exportResult = () => {
     if (!result) return;
-    
+
     const now = new Date();
     const dateStr = now.toLocaleDateString("ru-RU");
     const timeStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-    
+
     // Определяем название объекта
     let objName = "";
-    if (objType === "PRODUCTION" && category) {
-      objName = CATEGORY_DATA[category as ExtCategory]?.label || "";
+    if (objType === "INDUSTRIAL" && category) {
+      objName = `Производственное/складское здание (кат. ${category})`;
+    } else if (objType === "PUBLIC") {
+      objName = "Общественное здание";
     } else if (objType === "SERVICE") {
       objName = TABLE_5_DATA.find(d => d.id === subCategory)?.label || "";
     } else if (objType === "PETROLEUM") {
@@ -880,13 +914,14 @@ export default function FireExtinguishersCalculator() {
           <CardContent className="space-y-6">
             {/* Выбор сценария */}
             <div className="space-y-3">
-              <Label>Сценарий расчета</Label>
+              <Label>Тип объекта (помещение, здание)</Label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { id: "PRODUCTION", label: "Производственные / Общественные", icon: Flame },
-                  { id: "SERVICE", label: "Объекты обслуживания", icon: RefreshCw },
-                  { id: "PETROLEUM", label: "Нефтяные объекты / ГСМ", icon: Layers },
-                  { id: "CONSTRUCTION", label: "Строительные площадки", icon: Construction }
+                  { id: "INDUSTRIAL", label: "Производственные и складские", icon: Flame },
+                  { id: "PUBLIC", label: "Общественные здания", icon: Info },
+                  { id: "SERVICE", label: "СТО, АЗС, гаражи, офисы", icon: RefreshCw },
+                  { id: "PETROLEUM", label: "Нефтебазы и склады ГСМ", icon: Layers },
+                  { id: "CONSTRUCTION", label: "Стройплощадки", icon: Construction }
                 ].map((t) => (
                   <Button
                     key={t.id}
@@ -904,19 +939,19 @@ export default function FireExtinguishersCalculator() {
             {/* Площадь */}
             <div className="space-y-2">
               <Label htmlFor="area">Общая площадь (м²)</Label>
-              <Input 
-                id="area" 
-                type="number" 
+              <Input
+                id="area"
+                type="number"
                 placeholder="Введите площадь"
-                value={area} 
-                onChange={(e) => setArea(e.target.value)} 
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
               />
             </div>
 
             {/* Категория или подкатегория */}
-            {objType === "PRODUCTION" ? (
+            {objType === "INDUSTRIAL" ? (
               <div className="space-y-2">
-                <Label>Категория взрывопожароопасности</Label>
+                <Label>Категория производственного/складского здания</Label>
                 <Select value={category} onValueChange={(v) => setCategory(v as ExtCategory)}>
                   <SelectTrigger><SelectValue placeholder="Выберите категорию" /></SelectTrigger>
                   <SelectContent>
@@ -926,9 +961,9 @@ export default function FireExtinguishersCalculator() {
                   </SelectContent>
                 </Select>
               </div>
-            ) : (
+            ) : objType !== "PUBLIC" ? (
               <div className="space-y-2">
-                <Label>Тип объекта / участка</Label>
+                <Label>Тип участка / Оборудование</Label>
                 <Select value={subCategory} onValueChange={setSubCategory}>
                   <SelectTrigger><SelectValue placeholder="Выберите тип" /></SelectTrigger>
                   <SelectContent>
@@ -944,31 +979,31 @@ export default function FireExtinguishersCalculator() {
                   </SelectContent>
                 </Select>
               </div>
-            )}
+            ) : null}
 
             {/* Количество единиц (для гаражей, лесов и т.д.) */}
-            {(subCategory === "garage" || subCategory === "scaffolding" || subCategory === "fire_works" || 
+            {(subCategory === "garage" || subCategory === "scaffolding" || subCategory === "fire_works" ||
               subCategory === "estacade" || subCategory === "reservoir_park") && (
-              <div className="space-y-2">
-                <Label>Количество единиц (боксов, секций, участков)</Label>
-                <Input 
-                  type="number" 
-                  min="1" 
-                  value={unitCount} 
-                  onChange={(e) => setUnitCount(e.target.value)} 
-                />
-              </div>
-            )}
+                <div className="space-y-2">
+                  <Label>Количество единиц (боксов, секций, участков)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={unitCount}
+                    onChange={(e) => setUnitCount(e.target.value)}
+                  />
+                </div>
+              )}
 
             {/* Этажность */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Этажность</Label>
-                <Input 
-                  type="number" 
-                  min="1" 
-                  value={floors} 
-                  onChange={(e) => setFloors(e.target.value)} 
+                <Input
+                  type="number"
+                  min="1"
+                  value={floors}
+                  onChange={(e) => setFloors(e.target.value)}
                 />
               </div>
             </div>
@@ -1012,10 +1047,10 @@ export default function FireExtinguishersCalculator() {
           <CardContent>
             <AnimatePresence mode="wait">
               {result ? (
-                <motion.div 
-                  key="res" 
-                  initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
+                <motion.div
+                  key="res"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   className="space-y-6"
                 >
                   {/* Основные огнетушители */}
