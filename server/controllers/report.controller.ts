@@ -203,7 +203,7 @@ export class ReportController {
         return res.status(403).json({ ok: false, msg: 'forbidden' });
       }
 
-      const allowedForms = new Set(['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzs', '6-sspz', 'co']);
+      const allowedForms = new Set(['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzhs', '6-sspz', 'co', 'admin-practice']);
       if (!form || !allowedForms.has(form)) {
         return res.status(400).json({ ok: false, msg: 'invalid form' });
       }
@@ -286,10 +286,11 @@ export class ReportController {
 
       res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.header('Content-Disposition', `attachment; filename=template_${form}_${period}.xlsx`);
+      res.header('Content-Length', buffer.length.toString());
       res.send(buffer);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating template:', error);
-      res.status(500).json({ ok: false, msg: 'Internal server error' });
+      res.status(500).json({ ok: false, msg: error.message || 'Internal server error' });
     }
   }
 
@@ -369,11 +370,12 @@ type ReportDashboardSummary = {
   validationErrors: number;
 };
 
-const REPORT_FORM_IDS = ['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzs', '6-sspz', 'co'] as const;
+const REPORT_FORM_IDS = ['1-osp', '2-ssg', '3-spvp', '4-sovp', '5-spzhs', '6-sspz', 'co', 'admin-practice'] as const;
 const FORM_1_FIELDS = ['total', 'urban', 'rural'] as const;
 const FORM_3_FIELDS = ['fires_total', 'fires_high_risk', 'damage_total', 'damage_high_risk'] as const;
 const FORM_4_FIELDS = ['fires_total', 'damage_total', 'deaths_total', 'injuries_total'] as const;
 const FORM_5_FIELDS = ['urban', 'rural'] as const;
+const ADMIN_PRACTICE_FIELDS = ['inspections_total', 'violations_total', 'fines_total', 'fines_paid'] as const;
 const FORM_6_FIELDS = [
   'fires_count',
   'steppe_area',
@@ -445,6 +447,11 @@ const getComputedValidationData = (form: string, payload: any): Record<string, a
     return result;
   }
 
+  if (form === "5-spzhs") {
+    walkRows(payload?.rows, (row) => assignRow(row.code ?? row.id, row.values ?? {}));
+    return result;
+  }
+
   if (form === "6-sspz") {
     const rows = [...(payload?.steppeRows ?? []), ...(payload?.ignitionRows ?? [])];
     rows.forEach((row) => assignRow(row.id, row.values ?? {}));
@@ -483,9 +490,13 @@ const getReportCompletion = (form: string, data: Record<string, any>) => {
       rowIds = flattenRows(FORM_4_SOVP_ROWS);
       fields = [...FORM_4_FIELDS];
       break;
-    case "5-spzs":
+    case "5-spzhs":
       rowIds = flattenRows(FORM_5_ROWS, { skipSections: true });
       fields = [...FORM_5_FIELDS];
+      break;
+    case "admin-practice":
+      rowIds = ["main"];
+      fields = [...ADMIN_PRACTICE_FIELDS];
       break;
     case "6-sspz":
       rowIds = [...FORM_6_STEPPE_FIRES_ROWS, ...FORM_6_IGNITIONS_ROWS].map((row) => row.id);
@@ -528,7 +539,8 @@ const getFormIndicatorIds = (form: string): string[] => {
     case "2-ssg": return NON_FIRE_CASES.map(i => i.code);
     case "3-spvp": return flattenRows(FIRE_CAUSES);
     case "4-sovp": return flattenRows(FORM_4_SOVP_ROWS);
-    case "5-spzs": return flattenRows(FORM_5_ROWS, { skipSections: true });
+    case "5-spzhs": return flattenRows(FORM_5_ROWS, { skipSections: true });
+    case "admin-practice": return ["main"];
     case "6-sspz": return [...FORM_6_STEPPE_FIRES_ROWS, ...FORM_6_IGNITIONS_ROWS].map(r => r.id);
     case "co": return flattenRows(FORM_7_CO_ROWS);
     default: return [];
@@ -541,7 +553,8 @@ const getFormIndicatorFields = (form: string): string[] => {
     case "2-ssg": return ["value"];
     case "3-spvp": return [...FORM_3_FIELDS];
     case "4-sovp": return [...FORM_4_FIELDS];
-    case "5-spzs": return [...FORM_5_FIELDS];
+    case "5-spzhs": return [...FORM_5_FIELDS];
+    case "admin-practice": return [...ADMIN_PRACTICE_FIELDS];
     case "6-sspz": return [...FORM_6_FIELDS];
     case "co": return [...FORM_7_FIELDS];
     default: return [];

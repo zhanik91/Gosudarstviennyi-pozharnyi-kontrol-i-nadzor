@@ -489,11 +489,13 @@ export default function PackagesPanel() {
                   onChange={(e) => setImportForm(e.target.value)}
                 >
                   <option value="1-osp">1-ОСП (Общие сведения)</option>
+                  <option value="2-ssg">2-ССГ (Горение)</option>
                   <option value="3-spvp">3-СПВП (Причины)</option>
                   <option value="4-sovp">4-СОВП (Объекты)</option>
-                  <option value="5-spzs">5-СПЖС (Жилой сектор)</option>
+                  <option value="5-spzhs">5-СПЖС (Жилой сектор)</option>
                   <option value="6-sspz">6-ССПЗ (Степные пожары)</option>
                   <option value="co">7-СО (Угарный газ)</option>
+                  <option value="admin-practice">Адм. практика (Форма 13)</option>
                 </select>
               </div>
 
