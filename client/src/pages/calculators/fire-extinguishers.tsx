@@ -57,6 +57,94 @@ interface CalculationResult {
 
 type ObjType = "INDUSTRIAL" | "PUBLIC" | "SERVICE" | "PETROLEUM" | "CONSTRUCTION";
 type ExtCategory = "A" | "B" | "V_GAS" | "V_SOLID" | "G" | "D";
+type FireClass = "A" | "B" | "C" | "D" | "E";
+
+// ============================================================================
+// КЛАССЫ ПОЖАРОВ (Приложение 1 к Техническому регламенту)
+// ============================================================================
+
+const FIRE_CLASS_INFO: Record<FireClass, { label: string; description: string; examples: string }> = {
+  "A": {
+    label: "Класс А",
+    description: "Пожары твёрдых горючих веществ и материалов",
+    examples: "Дерево, бумага, ткани, пластмассы"
+  },
+  "B": {
+    label: "Класс B",
+    description: "Пожары горючих жидкостей или плавящихся твёрдых веществ",
+    examples: "Бензин, масла, растворители, парафин"
+  },
+  "C": {
+    label: "Класс C",
+    description: "Пожары газов",
+    examples: "Пропан, метан, водород, ацетилен"
+  },
+  "D": {
+    label: "Класс D",
+    description: "Пожары металлов",
+    examples: "Алюминий, магний, титан, натрий"
+  },
+  "E": {
+    label: "Класс E",
+    description: "Пожары электроустановок под напряжением",
+    examples: "Электрощиты, серверные, трансформаторы"
+  }
+};
+
+// ============================================================================
+// МАТРИЦА РЕКОМЕНДАЦИЙ ПО ТИПАМ ОГНЕТУШИТЕЛЕЙ (Таблицы 1-2 Прил. 3)
+// "++": рекомендуемый, "+": допускаемый, "-": не допускается
+// ============================================================================
+
+type ExtRecommendation = "++" | "+" | "-";
+
+interface ExtinguisherRec {
+  foam: ExtRecommendation;      // Пенные и водные
+  powder2: ExtRecommendation;   // Порошковые 2 л
+  powder5: ExtRecommendation;   // Порошковые 5(4) л
+  powder10: ExtRecommendation;  // Порошковые 10(9) л
+  powder3: ExtRecommendation;   // Порошковые 3 л
+  powder6: ExtRecommendation;   // Порошковые 6 л
+  emulsion: ExtRecommendation;  // Воздушно-эмульсионные
+  co2_2: ExtRecommendation;     // Углекислотные 2(2) л
+  co2_5: ExtRecommendation;     // Углекислотные 3(5), 5(8) л
+}
+
+// Таблица 1: Переносные огнетушители
+const PORTABLE_MATRIX: Record<string, Record<FireClass, ExtinguisherRec>> = {
+  // Категория А, Б, В1-В4 (горючие газы и жидкости) — 200 м²
+  "A_B_V_GAS": {
+    "A": { foam: "++", powder2: "++", powder5: "-", powder10: "++", powder3: "++", powder6: "++", emulsion: "++", co2_2: "-", co2_5: "-" },
+    "B": { foam: "++", powder2: "-", powder5: "++", powder10: "++", powder3: "++", powder6: "++", emulsion: "++", co2_2: "-", co2_5: "+" },
+    "C": { foam: "-", powder2: "-", powder5: "-", powder10: "++", powder3: "-", powder6: "++", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "D": { foam: "-", powder2: "-", powder5: "-", powder10: "++", powder3: "-", powder6: "++", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "E": { foam: "-", powder2: "-", powder5: "-", powder10: "++", powder3: "++", powder6: "++", emulsion: "-", co2_2: "++", co2_5: "++" }
+  },
+  // Категория В1-В4 (твёрдые горючие вещества) — 400 м²
+  "V_SOLID": {
+    "A": { foam: "++", powder2: "-", powder5: "++", powder10: "++", powder3: "++", powder6: "++", emulsion: "++", co2_2: "-", co2_5: "+" },
+    "B": { foam: "-", powder2: "-", powder5: "-", powder10: "-", powder3: "-", powder6: "-", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "C": { foam: "-", powder2: "-", powder5: "-", powder10: "-", powder3: "-", powder6: "-", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "D": { foam: "-", powder2: "-", powder5: "++", powder10: "++", powder3: "++", powder6: "++", emulsion: "-", co2_2: "++", co2_5: "++" },
+    "E": { foam: "-", powder2: "-", powder5: "++", powder10: "++", powder3: "++", powder6: "++", emulsion: "-", co2_2: "++", co2_5: "++" }
+  },
+  // Категория Г и Д — 1800 м²
+  "G_D": {
+    "A": { foam: "++", powder2: "-", powder5: "-", powder10: "++", powder3: "-", powder6: "++", emulsion: "+", co2_2: "-", co2_5: "+" },
+    "B": { foam: "-", powder2: "-", powder5: "-", powder10: "-", powder3: "-", powder6: "-", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "C": { foam: "-", powder2: "-", powder5: "-", powder10: "-", powder3: "-", powder6: "-", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "D": { foam: "-", powder2: "-", powder5: "-", powder10: "++", powder3: "-", powder6: "++", emulsion: "-", co2_2: "++", co2_5: "++" },
+    "E": { foam: "-", powder2: "-", powder5: "-", powder10: "++", powder3: "-", powder6: "++", emulsion: "-", co2_2: "++", co2_5: "++" }
+  },
+  // Общественные здания — 800 м²
+  "PUBLIC": {
+    "A": { foam: "++", powder2: "++", powder5: "++", powder10: "++", powder3: "++", powder6: "++", emulsion: "++", co2_2: "-", co2_5: "+" },
+    "B": { foam: "-", powder2: "-", powder5: "-", powder10: "-", powder3: "-", powder6: "-", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "C": { foam: "-", powder2: "-", powder5: "-", powder10: "-", powder3: "-", powder6: "-", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "D": { foam: "-", powder2: "-", powder5: "-", powder10: "-", powder3: "-", powder6: "-", emulsion: "-", co2_2: "-", co2_5: "-" },
+    "E": { foam: "-", powder2: "-", powder5: "++", powder10: "++", powder3: "++", powder6: "++", emulsion: "-", co2_2: "++", co2_5: "++" }
+  }
+};
 
 // ============================================================================
 // ДАННЫЕ ПРИЛОЖЕНИЯ 3 (Таблица 1 — Производственные и общественные)
@@ -71,36 +159,43 @@ const CATEGORY_DATA: Record<ExtCategory, {
   shieldType: string;     // Тип пожарного щита
   shieldArea: number;     // Площадь на 1 щит
   fireClass: string;      // Классы пожара
+  matrixKey: string;      // Ключ для PORTABLE_MATRIX
 }> = {
   "A": {
     label: "А (повышенная взрывопожароопасность)",
     blockArea: 200, powderNorm: 2, distance: 30, mobileThreshold: 500,
-    shieldType: "ЩП-А", shieldArea: 200, fireClass: "А, Б, В"
+    shieldType: "ЩП-А", shieldArea: 200, fireClass: "А, Б, В",
+    matrixKey: "A_B_V_GAS"
   },
   "B": {
     label: "Б (взрывопожароопасность)",
     blockArea: 200, powderNorm: 2, distance: 30, mobileThreshold: 500,
-    shieldType: "ЩП-Б", shieldArea: 200, fireClass: "А, Б, В"
+    shieldType: "ЩП-Б", shieldArea: 200, fireClass: "А, Б, В",
+    matrixKey: "A_B_V_GAS"
   },
   "V_GAS": {
     label: "В - горючие газы и жидкости",
     blockArea: 200, powderNorm: 2, distance: 30, mobileThreshold: 500,
-    shieldType: "ЩП-Б", shieldArea: 200, fireClass: "А, Б"
+    shieldType: "ЩП-Б", shieldArea: 200, fireClass: "А, Б",
+    matrixKey: "A_B_V_GAS"
   },
   "V_SOLID": {
     label: "В - твердые горючие вещества и материалы",
     blockArea: 400, powderNorm: 2, distance: 30, mobileThreshold: 800,
-    shieldType: "ЩП-А", shieldArea: 400, fireClass: "А"
+    shieldType: "ЩП-А", shieldArea: 400, fireClass: "А",
+    matrixKey: "V_SOLID"
   },
   "G": {
     label: "Г (умеренная пожароопасность) и Д",
     blockArea: 1800, powderNorm: 2, distance: 40, mobileThreshold: 1800,
-    shieldType: "ЩП-А", shieldArea: 1800, fireClass: "А"
+    shieldType: "ЩП-А", shieldArea: 1800, fireClass: "А",
+    matrixKey: "G_D"
   },
   "D": {
     label: "Д (пониженная пожароопасность)",
     blockArea: 1800, powderNorm: 2, distance: 70,
-    shieldType: "", shieldArea: 0, fireClass: "—"
+    shieldType: "", shieldArea: 0, fireClass: "—",
+    matrixKey: "G_D"
   }
 };
 
@@ -411,6 +506,7 @@ export default function FireExtinguishersCalculator() {
   const [hasElectrical, setHasElectrical] = useState(false);
   const [hasCabinets, setHasCabinets] = useState(false);
   const [unitCount, setUnitCount] = useState("1"); // Для гаражей, эстакад и т.д.
+  const [fireClasses, setFireClasses] = useState<FireClass[]>(["A"]); // Классы пожара
 
   // ============================================================================
   // ОСНОВНАЯ ЛОГИКА РАСЧЕТА
@@ -470,6 +566,48 @@ export default function FireExtinguishersCalculator() {
         ref: "Табл. 1 Прил. 3 к ППБ РК"
       });
 
+      // Рекомендации по типам огнетушителей на основе классов пожара
+      if (fireClasses.length > 0) {
+        const matrixData = PORTABLE_MATRIX[data.matrixKey];
+        if (matrixData) {
+          const recommendedTypes: string[] = [];
+          const allowedTypes: string[] = [];
+
+          fireClasses.forEach(fc => {
+            const rec = matrixData[fc];
+            if (rec) {
+              // Рекомендуемые (++)
+              if (rec.powder10 === "++") recommendedTypes.push("ОП-10");
+              if (rec.powder6 === "++") recommendedTypes.push("ОП-6");
+              if (rec.foam === "++") recommendedTypes.push("ОВП-10");
+              if (rec.emulsion === "++") recommendedTypes.push("ОВЭ-6");
+              if (rec.co2_5 === "++") recommendedTypes.push("ОУ-5/ОУ-8");
+              // Допускаемые (+)
+              if (rec.powder10 === "+") allowedTypes.push("ОП-10");
+              if (rec.powder6 === "+") allowedTypes.push("ОП-6");
+              if (rec.foam === "+") allowedTypes.push("ОВП-10");
+              if (rec.emulsion === "+") allowedTypes.push("ОВЭ-6");
+              if (rec.co2_5 === "+") allowedTypes.push("ОУ-5/ОУ-8");
+            }
+          });
+
+          const uniqueRecommended = Array.from(new Set(recommendedTypes));
+          const uniqueAllowed = Array.from(new Set(allowedTypes)).filter(t => !uniqueRecommended.includes(t));
+
+          if (uniqueRecommended.length > 0) {
+            reasons.push({
+              label: "Тип огнетушителей",
+              text: `Рекомендуемые типы для классов ${fireClasses.join(", ")}: ${uniqueRecommended.join(", ")}${uniqueAllowed.length > 0 ? `. Допускаемые: ${uniqueAllowed.join(", ")}` : ""}.`,
+              ref: "Табл. 1 Прил. 3 к ППБ РК"
+            });
+          }
+
+          // Добавляем информацию о выбранных классах пожара
+          const classDescriptions = fireClasses.map(fc => `${fc} (${FIRE_CLASS_INFO[fc].description})`).join("; ");
+          notes.push(`Классы пожара: ${classDescriptions}`);
+        }
+      }
+
       // Скидка 50% при наличии АУПТ
       if (hasAUPT) {
         const before = portableQty;
@@ -483,7 +621,7 @@ export default function FireExtinguishersCalculator() {
 
       // Распределение по типам
       powderCount = portableQty;
-      if (hasElectrical) {
+      if (hasElectrical || fireClasses.includes("E")) {
         co2Count = Math.max(1, Math.round(portableQty * 0.2));
         powderCount = portableQty - co2Count;
         reasons.push({
@@ -982,6 +1120,57 @@ export default function FireExtinguishersCalculator() {
               </div>
             ) : null}
 
+            {/* Классы пожара (только для производственных зданий) */}
+            {objType === "INDUSTRIAL" && (
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  Классы пожара
+                  <span className="text-[10px] text-muted-foreground font-normal">(выберите все применимые)</span>
+                </Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {(Object.keys(FIRE_CLASS_INFO) as FireClass[]).map((fc) => (
+                    <div
+                      key={fc}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${fireClasses.includes(fc)
+                        ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800"
+                        : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-200"
+                        }`}
+                      onClick={() => {
+                        if (fireClasses.includes(fc)) {
+                          if (fireClasses.length > 1) {
+                            setFireClasses(fireClasses.filter(c => c !== fc));
+                          }
+                        } else {
+                          setFireClasses([...fireClasses, fc]);
+                        }
+                      }}
+                    >
+                      <Checkbox
+                        checked={fireClasses.includes(fc)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFireClasses([...fireClasses, fc]);
+                          } else if (fireClasses.length > 1) {
+                            setFireClasses(fireClasses.filter(c => c !== fc));
+                          }
+                        }}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-sm">{fc}</span>
+                          <span className="text-xs text-slate-600 dark:text-slate-400">— {FIRE_CLASS_INFO[fc].description}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                          Примеры: {FIRE_CLASS_INFO[fc].examples}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Количество единиц (для гаражей, лесов и т.д.) */}
             {(subCategory === "garage" || subCategory === "scaffolding" || subCategory === "fire_works" ||
               subCategory === "estacade" || subCategory === "reservoir_park") && (
@@ -1052,37 +1241,37 @@ export default function FireExtinguishersCalculator() {
                   key="res"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6"
+                  className="space-y-6 pt-6 bg-white dark:bg-slate-950"
                 >
                   {/* Основные огнетушители */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-red-100/50 dark:bg-red-900/30 rounded-xl text-center border border-red-200 dark:border-red-800">
-                      <div className="text-3xl font-bold text-red-600 dark:text-red-400">{result.powderCount}</div>
-                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Порошковые (ОП)</div>
+                    <div className="p-5 bg-red-50 dark:bg-red-950/40 rounded-2xl text-center border-2 border-red-100 dark:border-red-900/50 shadow-sm">
+                      <div className="text-4xl font-black text-red-600 dark:text-red-400 mb-1">{result.powderCount}</div>
+                      <div className="text-xs text-red-800 dark:text-red-200 font-black uppercase tracking-tight">Порошковые (ОП)</div>
                     </div>
-                    <div className="p-4 bg-blue-100/50 dark:bg-blue-900/30 rounded-xl text-center border border-blue-200 dark:border-blue-800">
-                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{result.co2Count}</div>
-                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Углекисл. (ОУ)</div>
+                    <div className="p-5 bg-blue-50 dark:bg-blue-950/40 rounded-2xl text-center border-2 border-blue-100 dark:border-blue-900/50 shadow-sm">
+                      <div className="text-4xl font-black text-blue-600 dark:text-blue-400 mb-1">{result.co2Count}</div>
+                      <div className="text-xs text-blue-800 dark:text-blue-200 font-black uppercase tracking-tight">Углекисл. (ОУ)</div>
                     </div>
-                    <div className="p-4 bg-green-100/50 dark:bg-green-900/30 rounded-xl text-center border border-green-200 dark:border-green-800">
-                      <div className="text-3xl font-bold text-green-600 dark:text-green-400">{result.foamCount}</div>
-                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Пенные (ОВП)</div>
+                    <div className="p-5 bg-green-50 dark:bg-green-950/40 rounded-2xl text-center border-2 border-green-100 dark:border-green-900/50 shadow-sm">
+                      <div className="text-4xl font-black text-green-600 dark:text-green-400 mb-1">{result.foamCount}</div>
+                      <div className="text-xs text-green-800 dark:text-green-200 font-black uppercase tracking-tight">Пенные (ОВП)</div>
                     </div>
-                    <div className="p-4 bg-orange-100/50 dark:bg-orange-900/30 rounded-xl text-center border border-orange-200 dark:border-orange-800">
-                      <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{result.mobileCount}</div>
-                      <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Передвижные</div>
+                    <div className="p-5 bg-orange-50 dark:bg-orange-950/40 rounded-2xl text-center border-2 border-orange-100 dark:border-orange-900/50 shadow-sm">
+                      <div className="text-4xl font-black text-orange-600 dark:text-orange-400 mb-1">{result.mobileCount}</div>
+                      <div className="text-xs text-orange-800 dark:text-orange-200 font-black uppercase tracking-tight">Передвижные</div>
                     </div>
                   </div>
 
                   {/* Итого и дистанция */}
-                  <div className="flex justify-between items-center p-3 bg-slate-200/80 dark:bg-slate-800/80 rounded-lg border border-slate-300 dark:border-slate-700">
+                  <div className="flex justify-between items-center p-4 bg-slate-900 dark:bg-white rounded-2xl shadow-lg">
                     <div>
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">ИТОГО:</span>
-                      <span className="ml-2 text-xl font-black text-slate-900 dark:text-white">{result.totalCount} шт.</span>
+                      <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-2">ИТОГО:</span>
+                      <span className="text-2xl font-black text-white dark:text-slate-900">{result.totalCount} шт.</span>
                     </div>
-                    <div>
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Макс. дистанция:</span>
-                      <span className="ml-2 font-black text-slate-900 dark:text-white">{result.maxDistance} м</span>
+                    <div className="text-right">
+                      <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-2">МАКС. ДИСТАНЦИЯ:</span>
+                      <span className="text-xl font-black text-white dark:text-slate-900">{result.maxDistance} м</span>
                     </div>
                   </div>
 
@@ -1133,32 +1322,44 @@ export default function FireExtinguishersCalculator() {
                   )}
 
                   {/* Обоснование */}
-                  <div className="space-y-3 pt-4 border-t border-slate-300 dark:border-slate-700">
-                    <h4 className="font-black text-sm flex items-center text-slate-900 dark:text-white">
-                      <Info className="w-4 h-4 mr-2" /> ОБОСНОВАНИЕ:
+                  <div className="space-y-4 pt-6 border-t-2 border-slate-100 dark:border-slate-800">
+                    <h4 className="font-black text-xs flex items-center text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      <Info className="w-4 h-4 mr-2 text-blue-500" /> ОБОСНОВАНИЕ РАСЧЕТА
                     </h4>
-                    <ul className="space-y-2">
+                    <div className="space-y-3">
                       {result.reasons.map((r, i) => (
-                        <li key={i} className="text-xs flex items-start text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
-                          <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400 mr-2 mt-0.5 shrink-0" />
-                          <span>
-                            <span className="font-black text-slate-900 dark:text-white">[{r.label}]</span> {r.text}
-                            {r.ref && <span className="text-slate-500 dark:text-slate-400 ml-1 font-bold">({r.ref})</span>}
-                          </span>
-                        </li>
+                        <div key={i} className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <div className="flex items-start">
+                            <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-3 mt-0.5 shrink-0" />
+                            <div className="text-sm leading-relaxed">
+                              <span className="font-black text-slate-900 dark:text-white uppercase text-[10px] bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-2">
+                                {r.label}
+                              </span>
+                              <span className="text-slate-700 dark:text-slate-300">{r.text}</span>
+                              {r.ref && (
+                                <div className="mt-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                                  Источник: {r.ref}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
 
                   {/* Предупреждения */}
                   {result.warnings.length > 0 && (
-                    <div className="p-4 bg-amber-100/80 dark:bg-amber-900/30 rounded-lg border border-amber-300 dark:border-amber-700 shadow-sm">
-                      <h4 className="text-amber-800 dark:text-amber-400 text-xs font-black mb-2 flex items-center">
-                        <AlertTriangle className="w-3 h-3 mr-2" /> ТРЕБОВАНИЯ И ИНВЕНТАРЬ:
+                    <div className="p-5 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border-2 border-amber-100 dark:border-amber-900/30">
+                      <h4 className="text-amber-800 dark:text-amber-400 text-xs font-black mb-3 flex items-center uppercase tracking-widest">
+                        <AlertTriangle className="w-4 h-4 mr-2" /> ТРЕБОВАНИЯ И ИНВЕНТАРЬ
                       </h4>
-                      <ul className="space-y-1">
+                      <ul className="space-y-2">
                         {result.warnings.map((w, i) => (
-                          <li key={i} className="text-[11px] font-bold text-amber-900 dark:text-amber-200 tracking-tight">• {w}</li>
+                          <li key={i} className="text-sm font-bold text-amber-900 dark:text-amber-200 flex items-center">
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-2 shrink-0" />
+                            {w}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -1166,13 +1367,13 @@ export default function FireExtinguishersCalculator() {
 
                   {/* Примечания */}
                   {result.notes.length > 0 && (
-                    <div className="p-4 bg-slate-200/80 dark:bg-slate-800/80 rounded-lg border border-slate-300 dark:border-slate-700">
-                      <h4 className="text-xs font-black mb-2 flex items-center text-slate-900 dark:text-white">
-                        <Info className="w-3 h-3 mr-2" /> ПРИМЕЧАНИЯ:
+                    <div className="p-5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <h4 className="text-[10px] font-black mb-3 flex items-center text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                        <Info className="w-3 h-3 mr-2" /> ВАЖНО ИЗ ППБ:
                       </h4>
                       <ul className="space-y-2">
                         {result.notes.map((n, i) => (
-                          <li key={i} className="text-[10px] text-slate-700 dark:text-slate-300 font-bold leading-normal">• {n}</li>
+                          <li key={i} className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic">• {n}</li>
                         ))}
                       </ul>
                     </div>
