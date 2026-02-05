@@ -66,7 +66,7 @@ export default function PpsRegistry({ embedded = false }: PpsRegistryProps) {
     region: "",
   });
 
-  const { data: dbEntries = [], isLoading: isLoadingDb } = useQuery<PpsRegistryItem[]>({
+  const { data: dbEntries = [], isLoading } = useQuery<PpsRegistryItem[]>({
     queryKey: ["/api/pps-registry"],
   });
 

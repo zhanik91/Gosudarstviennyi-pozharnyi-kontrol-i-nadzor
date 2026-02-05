@@ -60,7 +60,7 @@ export default function AuditOrgRegistry({ embedded = false }: AuditOrgRegistryP
     region: "",
   });
 
-  const { data: dbEntries = [] } = useQuery<AuditOrgRegistryItem[]>({
+  const { data: dbEntries = [], isLoading } = useQuery<AuditOrgRegistryItem[]>({
     queryKey: ["/api/audit-org-registry"],
   });
 
