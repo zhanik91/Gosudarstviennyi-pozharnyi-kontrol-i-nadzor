@@ -31,8 +31,8 @@ export default function ModuleCard({
   secondaryActions = []
 }: ModuleCardProps) {
   return (
-    <PortalCard>
-      <CardHeader>
+    <PortalCard className="h-full flex flex-col">
+      <CardHeader className="flex-1">
         <div className="flex items-center gap-3 mb-2">
           <div className={`w-12 h-12 rounded-lg ${iconBg} flex items-center justify-center`}>
             <Icon className={`w-6 h-6 ${iconColor}`} />
@@ -43,7 +43,7 @@ export default function ModuleCard({
           {description}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="mt-auto">
         <div className="space-y-3">
           {primaryAction.href && !primaryAction.disabled ? (
             <Link to={primaryAction.href}>
