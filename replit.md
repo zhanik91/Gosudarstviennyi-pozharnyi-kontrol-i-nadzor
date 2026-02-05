@@ -119,3 +119,24 @@ Preferred communication style: Simple, everyday language.
   2. Click on map to select coordinates
   3. Address geocoding via Nominatim OpenStreetMap API
 - **Map Features**: Layer toggles, region filtering, marker popups with incident/object details, Kazakhstan boundary limits
+- **Location Picker**: Modal component at `client/src/components/maps/location-picker.tsx` for selecting coordinates in forms
+  - Loading indicator while Leaflet initializes
+  - Error handling with retry functionality
+  - Address search via Nominatim API
+
+# Recent Changes
+
+## February 5, 2026 - Map Component Fixes
+- **LocationPicker**: Fixed map not loading in modal dialog when adding new incident
+  - Added loading indicator while Leaflet library initializes
+  - Added error state with retry button
+  - Improved Leaflet loading wait logic with max attempts (50 x 100ms)
+  - Added proper cleanup on dialog close
+  - Added accessibility improvements (aria-describedby)
+- **LeafletMap**: Fixed map disappearing when clicking "Mark on map" button
+  - Fixed map initialization to properly wait for Leaflet
+  - Added loading overlay during map initialization
+  - Fixed marker deletion logic (was using invalid .remove() method)
+  - Added proper map.invalidateSize() call after initialization
+  - Preserved onMapClick callback for external integrations
+  - Added DialogDescription for accessibility

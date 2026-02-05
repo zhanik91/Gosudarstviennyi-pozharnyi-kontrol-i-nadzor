@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { MapPin, Search, Plus, Trash2, Edit2, X } from 'lucide-react';
+import { MapPin, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 declare global {
@@ -97,18 +97,17 @@ export function LeafletMap({
   
   const [searchAddress, setSearchAddress] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
   const [clickedPosition, setClickedPosition] = useState<[number, number] | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newMarkerType, setNewMarkerType] = useState<'incident' | 'object'>('incident');
   const [selectedExistingId, setSelectedExistingId] = useState<string>('');
   const [isMarkMode, setIsMarkMode] = useState(false);
+  const [isMapLoading, setIsMapLoading] = useState(true);
   
-  // Refs для отслеживания текущего состояния (должны быть объявлены ДО useEffect)
   const isMarkModeRef = useRef(isMarkMode);
   const editableRef = useRef(editable);
+  const onMapClickRef = useRef(onMapClick);
   
-  // Синхронизируем refs с текущими значениями
   useEffect(() => {
     isMarkModeRef.current = isMarkMode;
   }, [isMarkMode]);
@@ -116,6 +115,10 @@ export function LeafletMap({
   useEffect(() => {
     editableRef.current = editable;
   }, [editable]);
+  
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+  }, [onMapClick]);
 
   const createIncidentIcon = useCallback(() => {
     const L = window.L;
@@ -138,75 +141,84 @@ export function LeafletMap({
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+    if (!mapRef.current) return;
 
-    const L = window.L;
-    if (!L) {
-      console.error('Leaflet not loaded');
-      return;
-    }
-
-    const map = L.map(mapRef.current, {
-      center: KAZAKHSTAN_CENTER,
-      zoom: 5,
-      minZoom: 4,
-      maxZoom: 18,
-      maxBounds: KAZAKHSTAN_BOUNDS,
-    });
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(map);
-
-    markersLayerRef.current = L.layerGroup().addTo(map);
-    mapInstanceRef.current = map;
-    
-    // Устанавливаем Leaflet обработчик клика сразу при инициализации
-    map.on('click', (e: any) => {
-      // Проверяем режим через ref для актуального значения
-      if (!isMarkModeRef.current && !editableRef.current) return;
+    const initMap = () => {
+      if (mapInstanceRef.current) return;
       
-      const { lat, lng } = e.latlng;
-      setClickedPosition([lat, lng]);
-      setShowAddDialog(true);
-    });
+      const L = window.L;
+      if (!L) {
+        console.error('Leaflet not loaded');
+        return;
+      }
+
+      try {
+        const map = L.map(mapRef.current!, {
+          center: KAZAKHSTAN_CENTER,
+          zoom: 5,
+          minZoom: 4,
+          maxZoom: 18,
+          maxBounds: KAZAKHSTAN_BOUNDS,
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(map);
+
+        markersLayerRef.current = L.layerGroup().addTo(map);
+        mapInstanceRef.current = map;
+        
+        map.on('click', (e: any) => {
+          const { lat, lng } = e.latlng;
+          
+          if (isMarkModeRef.current || editableRef.current) {
+            setClickedPosition([lat, lng]);
+            setShowAddDialog(true);
+          }
+          
+          onMapClickRef.current?.(lat, lng);
+        });
+
+        map.on('load', () => {
+          setIsMapLoading(false);
+        });
+        
+        setTimeout(() => {
+          map.invalidateSize();
+          setIsMapLoading(false);
+        }, 300);
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        setIsMapLoading(false);
+      }
+    };
+
+    if (window.L) {
+      initMap();
+    } else {
+      let attempts = 0;
+      const maxAttempts = 50;
+      const checkLeaflet = setInterval(() => {
+        attempts++;
+        if (window.L) {
+          clearInterval(checkLeaflet);
+          initMap();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkLeaflet);
+          setIsMapLoading(false);
+          console.error('Leaflet failed to load');
+        }
+      }, 100);
+      return () => clearInterval(checkLeaflet);
+    }
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
     };
   }, []);
-  
-  // DOM-обработчик клика как резервный вариант
-  const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    // Проверяем режим отметки или редактирования
-    if ((!isMarkMode && !editable) || !mapInstanceRef.current) return;
-    
-    // Проверяем, что клик не на элементах управления
-    const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('input') || target.closest('.leaflet-control') || target.closest('[role="dialog"]')) {
-      return;
-    }
-    
-    // Leaflet обработчик уже должен был сработать, но на всякий случай проверяем
-    // Не вызываем повторно если диалог уже открыт
-    if (showAddDialog) return;
-    
-    // Получаем координаты клика относительно контейнера карты
-    const rect = mapRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Преобразуем пиксели в координаты карты
-    const map = mapInstanceRef.current;
-    const point = map.containerPointToLatLng([x, y]);
-    
-    setClickedPosition([point.lat, point.lng]);
-    setShowAddDialog(true);
-    onMapClick?.(point.lat, point.lng);
-  }, [isMarkMode, editable, onMapClick, showAddDialog]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
@@ -262,14 +274,13 @@ export function LeafletMap({
         const deleteBtn = popupContent.querySelector('.delete-btn');
         
         editBtn?.addEventListener('click', () => {
-          setSelectedMarker(marker);
           onMarkerClick?.(marker);
         });
 
         deleteBtn?.addEventListener('click', () => {
           if (confirm('Удалить маркер?')) {
             onDeleteMarker?.(marker.id, marker.type);
-            leafletMarker.remove();
+            markersLayerRef.current.removeLayer(leafletMarker);
           }
         });
       }
@@ -308,7 +319,7 @@ export function LeafletMap({
         const { lat, lon } = data[0];
         mapInstanceRef.current?.flyTo([parseFloat(lat), parseFloat(lon)], 14);
         
-        if (editable) {
+        if (isMarkMode || editable) {
           setClickedPosition([parseFloat(lat), parseFloat(lon)]);
           setShowAddDialog(true);
         }
@@ -332,7 +343,7 @@ export function LeafletMap({
 
   const handleAddMarker = () => {
     if (clickedPosition) {
-      if (selectedExistingId && onSelectExisting) {
+      if (selectedExistingId && selectedExistingId !== '__empty__' && onSelectExisting) {
         onSelectExisting(newMarkerType, selectedExistingId, clickedPosition[0], clickedPosition[1]);
       } else if (onAddMarker) {
         onAddMarker({
@@ -348,6 +359,17 @@ export function LeafletMap({
     setIsMarkMode(false);
   };
 
+  const handleMarkModeToggle = () => {
+    const newMode = !isMarkMode;
+    setIsMarkMode(newMode);
+    if (newMode) {
+      toast({
+        title: 'Режим отметки включен',
+        description: 'Кликните на карту, чтобы отметить инцидент или объект',
+      });
+    }
+  };
+
   const existingItems = newMarkerType === 'incident' ? allIncidents : allObjects;
 
   return (
@@ -359,43 +381,22 @@ export function LeafletMap({
             value={searchAddress}
             onChange={(e) => setSearchAddress(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-64"
+            className="w-48 md:w-64"
+            data-testid="input-map-search"
           />
-          <Button onClick={handleSearch} disabled={isSearching} size="icon">
-            <Search className="w-4 h-4" />
+          <Button onClick={handleSearch} disabled={isSearching} size="icon" data-testid="button-map-search">
+            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </Button>
         </div>
         
         <Button
           variant={isMarkMode ? "default" : "outline"}
-          onClick={() => {
-            setIsMarkMode(!isMarkMode);
-            if (!isMarkMode) {
-              toast({
-                title: 'Режим отметки',
-                description: 'Кликните на карту, чтобы отметить инцидент или объект',
-              });
-            }
-          }}
+          onClick={handleMarkModeToggle}
+          data-testid="button-mark-mode"
         >
           <MapPin className="w-4 h-4 mr-2" />
           Отметить на карте
         </Button>
-
-        {editable && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              toast({
-                title: 'Добавление маркера',
-                description: 'Кликните на карту, чтобы добавить маркер',
-              });
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить
-          </Button>
-        )}
       </div>
 
       <div className="absolute bottom-4 left-4 z-[1000] bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg">
@@ -412,10 +413,22 @@ export function LeafletMap({
         </div>
       </div>
 
+      {isMapLoading && (
+        <div className="absolute inset-0 z-[500] flex items-center justify-center bg-muted/80">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Загрузка карты...</span>
+          </div>
+        </div>
+      )}
+
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Отметить на карте</DialogTitle>
+            <DialogDescription>
+              Выберите тип объекта и элемент из списка для отметки на карте
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div>
@@ -424,7 +437,7 @@ export function LeafletMap({
                 setNewMarkerType(v);
                 setSelectedExistingId('');
               }}>
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-marker-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -437,7 +450,7 @@ export function LeafletMap({
             <div>
               <Label>Выберите из списка</Label>
               <Select value={selectedExistingId} onValueChange={setSelectedExistingId}>
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-existing-item">
                   <SelectValue placeholder={newMarkerType === 'incident' ? "Выберите инцидент..." : "Выберите объект..."} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
@@ -450,14 +463,14 @@ export function LeafletMap({
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="__empty__">Список пуст</SelectItem>
+                    <SelectItem value="__empty__" disabled>Список пуст</SelectItem>
                   )}
                 </SelectContent>
               </Select>
             </div>
 
             {clickedPosition && (
-              <div className="text-sm text-gray-500 bg-muted p-2 rounded">
+              <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
                 Выбранные координаты: {clickedPosition[0].toFixed(6)}, {clickedPosition[1].toFixed(6)}
               </div>
             )}
@@ -465,10 +478,14 @@ export function LeafletMap({
               <Button variant="outline" onClick={() => {
                 setShowAddDialog(false);
                 setSelectedExistingId('');
-              }}>
+              }} data-testid="button-cancel-mark">
                 Отмена
               </Button>
-              <Button onClick={handleAddMarker} disabled={!selectedExistingId || selectedExistingId === '__empty__'}>
+              <Button 
+                onClick={handleAddMarker} 
+                disabled={!selectedExistingId || selectedExistingId === '__empty__'}
+                data-testid="button-save-mark"
+              >
                 Сохранить отметку
               </Button>
             </div>
@@ -479,7 +496,7 @@ export function LeafletMap({
       <div 
         ref={mapRef} 
         className={`w-full h-full min-h-[500px] ${isMarkMode ? 'cursor-crosshair' : ''}`}
-        onClick={handleContainerClick}
+        data-testid="leaflet-map-container"
       />
     </div>
   );

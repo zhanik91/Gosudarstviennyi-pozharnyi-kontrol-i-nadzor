@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MapPin, Search } from 'lucide-react';
+import { MapPin, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,16 +28,21 @@ export function LocationPicker({ latitude, longitude, onLocationSelect, address 
   const [isOpen, setIsOpen] = useState(false);
   const [searchAddress, setSearchAddress] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isMapLoading, setIsMapLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!isOpen || !mapRef.current) return;
+  const initMap = useCallback(() => {
+    if (!window.L || !mapRef.current) {
+      setMapError('Leaflet не загружен');
+      return false;
+    }
 
-    const initMap = () => {
-      if (!window.L || !mapRef.current) return;
-
+    try {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markerRef.current = null;
       }
 
       const initialLat = latitude ? parseFloat(latitude) : KAZAKHSTAN_CENTER[0];
@@ -92,29 +97,61 @@ export function LocationPicker({ latitude, longitude, onLocationSelect, address 
 
       mapInstanceRef.current = map;
 
-      setTimeout(() => map.invalidateSize(), 100);
-    };
+      setTimeout(() => {
+        map.invalidateSize();
+        setIsMapLoading(false);
+      }, 200);
 
-    if (window.L) {
-      initMap();
-    } else {
-      const checkLeaflet = setInterval(() => {
-        if (window.L) {
-          clearInterval(checkLeaflet);
-          initMap();
-        }
-      }, 100);
-      return () => clearInterval(checkLeaflet);
+      return true;
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      setMapError('Ошибка инициализации карты');
+      setIsMapLoading(false);
+      return false;
+    }
+  }, [latitude, longitude, onLocationSelect, toast]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsMapLoading(true);
+      setMapError(null);
+      return;
     }
 
+    if (!mapRef.current) return;
+
+    const tryInitMap = () => {
+      if (window.L) {
+        initMap();
+      } else {
+        let attempts = 0;
+        const maxAttempts = 50;
+        const checkLeaflet = setInterval(() => {
+          attempts++;
+          if (window.L) {
+            clearInterval(checkLeaflet);
+            initMap();
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkLeaflet);
+            setMapError('Не удалось загрузить библиотеку карт. Обновите страницу.');
+            setIsMapLoading(false);
+          }
+        }, 100);
+        return () => clearInterval(checkLeaflet);
+      }
+    };
+
+    const timeoutId = setTimeout(tryInitMap, 100);
+
     return () => {
+      clearTimeout(timeoutId);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
         markerRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, initMap]);
 
   const handleSearch = async () => {
     const query = searchAddress || address;
@@ -173,12 +210,12 @@ export function LocationPicker({ latitude, longitude, onLocationSelect, address 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="w-full gap-2">
+        <Button type="button" variant="outline" className="w-full gap-2" data-testid="button-open-location-picker">
           <MapPin className="w-4 h-4" />
           {hasLocation ? `${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)}` : 'Указать на карте'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl" aria-describedby="location-picker-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="w-5 h-5" />
@@ -187,24 +224,62 @@ export function LocationPicker({ latitude, longitude, onLocationSelect, address 
         </DialogHeader>
         
         <div className="space-y-4">
+          <p id="location-picker-description" className="sr-only">
+            Выберите местоположение на карте кликом или найдите адрес через поиск
+          </p>
+          
           <div className="flex gap-2">
             <Input
               placeholder="Поиск по адресу..."
               value={searchAddress}
               onChange={(e) => setSearchAddress(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              data-testid="input-search-address"
             />
-            <Button type="button" onClick={handleSearch} disabled={isSearching}>
+            <Button type="button" onClick={handleSearch} disabled={isSearching} data-testid="button-search-address">
               <Search className="w-4 h-4 mr-2" />
               {isSearching ? 'Поиск...' : 'Найти'}
             </Button>
           </div>
 
-          <div 
-            ref={mapRef} 
-            className="h-[400px] rounded-lg border"
-            style={{ minHeight: '400px' }}
-          />
+          <div className="relative">
+            {isMapLoading && !mapError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted/80 rounded-lg">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">Загрузка карты...</span>
+                </div>
+              </div>
+            )}
+            
+            {mapError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted rounded-lg">
+                <div className="flex flex-col items-center gap-2 text-center p-4">
+                  <MapPin className="w-8 h-8 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{mapError}</span>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setMapError(null);
+                      setIsMapLoading(true);
+                      initMap();
+                    }}
+                  >
+                    Повторить
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div 
+              ref={mapRef} 
+              className="h-[400px] rounded-lg border bg-muted"
+              style={{ minHeight: '400px' }}
+              data-testid="location-picker-map"
+            />
+          </div>
 
           <p className="text-sm text-muted-foreground text-center">
             Кликните на карту для выбора места или используйте поиск по адресу
@@ -215,7 +290,7 @@ export function LocationPicker({ latitude, longitude, onLocationSelect, address 
               <span className="text-sm font-medium">
                 Выбрано: {parseFloat(latitude).toFixed(6)}, {parseFloat(longitude).toFixed(6)}
               </span>
-              <Button type="button" size="sm" onClick={() => setIsOpen(false)}>
+              <Button type="button" size="sm" onClick={() => setIsOpen(false)} data-testid="button-confirm-location">
                 Готово
               </Button>
             </div>
