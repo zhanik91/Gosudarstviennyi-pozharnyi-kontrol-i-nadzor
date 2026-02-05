@@ -4,6 +4,7 @@ import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { deadlineNotificationService } from "./services/deadline-notification.service";
+import { initAdminNotifications } from "./services/init-admin-notifications";
 
 const app = express();
 app.use(express.json());
@@ -47,6 +48,9 @@ app.use((req, res, next) => {
     console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✅ Database: ${process.env.SUPABASE_DATABASE_URL ? 'Supabase Connected' : 'Not configured'}\n`);
 
+    // Создать начальные уведомления для админа (если их нет)
+    initAdminNotifications();
+    
     // Запустить планировщик уведомлений о дедлайнах
     deadlineNotificationService.startScheduler();
   });
