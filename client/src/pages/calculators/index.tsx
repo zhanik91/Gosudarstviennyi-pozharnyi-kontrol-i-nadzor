@@ -59,20 +59,20 @@ export default function CalculatorsPage() {
   const getColorClasses = (color: string) => {
     const colors: Record<string, { bg: string; border: string; icon: string; button: string }> = {
       red: {
-        bg: "bg-red-50 dark:bg-red-900/20",
-        border: "border-red-200 dark:border-red-800",
+        bg: "bg-red-50 dark:bg-card",
+        border: "border-red-200 dark:border-red-900",
         icon: "text-red-500",
         button: "bg-red-500 hover:bg-red-600",
       },
       blue: {
-        bg: "bg-blue-50 dark:bg-blue-900/20",
-        border: "border-blue-200 dark:border-blue-800",
+        bg: "bg-blue-50 dark:bg-card",
+        border: "border-blue-200 dark:border-blue-900",
         icon: "text-blue-500",
         button: "bg-blue-500 hover:bg-blue-600",
       },
       orange: {
-        bg: "bg-orange-50 dark:bg-orange-900/20",
-        border: "border-orange-200 dark:border-orange-800",
+        bg: "bg-orange-50 dark:bg-card",
+        border: "border-orange-200 dark:border-orange-900",
         icon: "text-orange-500",
         button: "bg-orange-500 hover:bg-orange-600",
       },
@@ -141,19 +141,19 @@ export default function CalculatorsPage() {
         })}
       </div>
 
-      <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+      <Card className="bg-yellow-50 dark:bg-card border-yellow-200 dark:border-yellow-900">
         <CardContent className="p-6">
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center">
-                <span className="text-yellow-600 dark:text-yellow-200 font-semibold text-sm">!</span>
+              <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/50 rounded-full flex items-center justify-center">
+                <span className="text-yellow-600 dark:text-yellow-400 font-semibold text-sm">!</span>
               </div>
             </div>
             <div className="ml-4">
-              <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 Важное примечание
               </h3>
-              <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+              <p className="text-foreground/70 text-sm">
                 Калькуляторы дают ориентировочный результат на основе НПА РК. 
                 Окончательные решения принимаются по проектной документации и требуют согласования.
               </p>
