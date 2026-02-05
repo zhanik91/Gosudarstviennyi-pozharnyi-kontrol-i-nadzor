@@ -874,6 +874,31 @@ export const insertTicketSchema = createInsertSchema(tickets).omit({
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 
+// Реестр профессиональных противопожарных служб (ППС/НГПС)
+export const ppsRegistry = pgTable('pps_registry', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  registryNumber: integer('registry_number').notNull(), // Порядковый номер в реестре
+  name: varchar('name').notNull(), // Наименование организации
+  serviceType: varchar('service_type').notNull(), // Вид противопожарной службы
+  certificateNumber: varchar('certificate_number'), // Номер аттестата
+  certificateValidity: varchar('certificate_validity'), // Срок действия аттестата
+  address: text('address'), // Адрес
+  phone: varchar('phone'), // Телефон
+  region: varchar('region'), // Область (извлекается из адреса)
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export type PpsRegistry = typeof ppsRegistry.$inferSelect;
+export type InsertPpsRegistry = typeof ppsRegistry.$inferInsert;
+
+export const insertPpsRegistrySchema = createInsertSchema(ppsRegistry).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Export document schemas
 export * from './document-schema';
 

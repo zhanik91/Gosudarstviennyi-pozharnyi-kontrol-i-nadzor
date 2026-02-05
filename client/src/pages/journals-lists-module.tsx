@@ -7,10 +7,11 @@ import Footer from "@/components/layout/footer";
 import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
 import { Button } from "@/components/ui/button";
 import AuditConclusionsJournal from "@/pages/audit-conclusions-journal";
+import PpsRegistry from "@/pages/pps-registry";
 
 const tabs = [
-  { id: "audits", label: "📋 Журнал заключений аудитов", icon: FileText },
-  { id: "pps", label: "🧾 Профессиональные противопожарные службы", icon: ClipboardList },
+  { id: "audits", label: "Журнал заключений аудитов", icon: FileText },
+  { id: "pps", label: "Реестр ППС", icon: ClipboardList },
 ] as const;
 
 type TabType = (typeof tabs)[number]["id"];
@@ -98,37 +99,7 @@ export default function JournalsListsModule() {
 
         <div className="fade-in">
           {activeTab === "audits" && <AuditConclusionsJournal embedded />}
-          {activeTab === "pps" && (
-            <div className="rounded-2xl border border-border bg-card p-6 shadow space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Реестр профессиональных противопожарных служб
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Раздел готовится к запуску. Здесь будет список зарегистрированных служб, статусы
-                  лицензий и фильтры по регионам.
-                </p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4">
-                  <p className="text-sm font-medium text-foreground">Планируемые данные</p>
-                  <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                    <li>• Название службы и категория</li>
-                    <li>• Номер лицензии и срок действия</li>
-                    <li>• Контактные данные и регион</li>
-                  </ul>
-                </div>
-                <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4">
-                  <p className="text-sm font-medium text-foreground">Следующие шаги</p>
-                  <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                    <li>• Импорт реестра из ведомственной базы</li>
-                    <li>• Настройка уведомлений о продлении лицензий</li>
-                    <li>• Экспорт в Excel и PDF</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === "pps" && <PpsRegistry embedded />}
         </div>
         <Footer />
       </div>
