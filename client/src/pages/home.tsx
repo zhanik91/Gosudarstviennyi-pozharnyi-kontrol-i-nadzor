@@ -83,7 +83,7 @@ export default function Home() {
                 iconBg="bg-primary/20"
                 iconColor="text-primary"
                 title="Государственный учёт пожаров"
-                description="Регистрация пожаров, автозаполнение форм 1-7, интерактивная аналитика"
+                description="Журнал пожаров, формы отчетности 1-7, интерактивная аналитика, графики"
                 primaryAction={{
                   label: "Открыть модуль",
                   href: "/fire-module"
@@ -95,7 +95,7 @@ export default function Home() {
                 iconBg="bg-accent/20"
                 iconColor="text-accent"
                 title="Государственный контроль и надзор"
-                description="Реестр объектов, проверки, МОР с контролем сроков, талоны"
+                description="Реестр объектов, журнал проверок, контроль предписаний и МОР"
                 primaryAction={{
                   label: "Открыть модуль",
                   href: "/controlled-objects"
@@ -107,7 +107,7 @@ export default function Home() {
                 iconBg="bg-purple-500/20"
                 iconColor="text-purple-400"
                 title="Административная практика"
-                description="Регистрация админ. дел, протоколы, постановления, фотофиксация"
+                description="Журнал админ. дел, контроль выставления таллонов"
                 primaryAction={{
                   label: "Открыть модуль",
                   href: "/admin-practices"
