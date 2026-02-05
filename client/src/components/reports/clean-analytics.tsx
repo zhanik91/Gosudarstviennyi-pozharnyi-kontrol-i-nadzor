@@ -107,47 +107,7 @@ export default function CleanAnalytics() {
         </Card>
       )}
 
-      {/* Первый график - пожары по регионам на всю ширину */}
-      <Card data-testid="chart-regions-bar">
-        <CardHeader>
-          <CardTitle data-testid="title-regions-bar">Пожары по регионам</CardTitle>
-          <p className="text-sm text-muted-foreground" data-testid="desc-regions-bar">Форма 1-ОСП: количество пожаров по всем регионам</p>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div data-testid="status-loading-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
-              Загрузка...
-            </div>
-          ) : allRegions.length === 0 ? (
-            <div data-testid="status-empty-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
-              Нет данных за выбранный период
-            </div>
-          ) : (
-            <div style={{ maxHeight: 600, overflowY: 'auto' }}>
-              <ResponsiveContainer width="100%" height={Math.max(500, allRegions.length * 28)}>
-                <BarChart data={allRegions} layout="vertical" margin={{ left: 140, right: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                  <XAxis type="number" fontSize={12} tickFormatter={formatNumber} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="region" 
-                    fontSize={11} 
-                    width={135}
-                    tickFormatter={(v) => v.replace(" область", "").replace("Область ", "")}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [formatNumber(value), "Пожаров"]}
-                    labelFormatter={(label) => label}
-                  />
-                  <Bar dataKey="fires" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 4 карточки статистики - вертикально на всю ширину */}
+      {/* 4 карточки статистики - вертикально на всю ширину ПЕРЕД диаграммой */}
       <div className="flex flex-col gap-4" data-testid="cards-summary">
         <Card className="bg-gradient-to-r from-orange-500/10 to-orange-500/5 border-orange-500/20" data-testid="card-fires">
           <CardContent className="p-5">
@@ -229,6 +189,47 @@ export default function CleanAnalytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Первый график - пожары по регионам на всю ширину, вертикальные столбцы */}
+      <Card data-testid="chart-regions-bar">
+        <CardHeader>
+          <CardTitle data-testid="title-regions-bar">Пожары по регионам</CardTitle>
+          <p className="text-sm text-muted-foreground" data-testid="desc-regions-bar">Форма 1-ОСП: количество пожаров по всем регионам</p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div data-testid="status-loading-regions" className="flex items-center justify-center h-[400px] text-muted-foreground">
+              Загрузка...
+            </div>
+          ) : allRegions.length === 0 ? (
+            <div data-testid="status-empty-regions" className="flex items-center justify-center h-[400px] text-muted-foreground">
+              Нет данных за выбранный период
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={allRegions} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={true} />
+                  <XAxis 
+                    dataKey="region" 
+                    fontSize={10}
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    tickFormatter={(v) => v.replace(" область", "").replace("Область ", "")}
+                  />
+                  <YAxis fontSize={11} tickFormatter={formatNumber} />
+                  <Tooltip 
+                    formatter={(value: number) => [formatNumber(value), "Пожаров"]}
+                    labelFormatter={(label) => label}
+                  />
+                  <Bar dataKey="fires" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Дополнительные графики - 2 колонки */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="charts-grid">
