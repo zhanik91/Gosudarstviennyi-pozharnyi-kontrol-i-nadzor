@@ -1533,7 +1533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // === РЕЕСТР ППС (Профессиональные противопожарные службы) ===
-  const { ppsRegistry } = await import('@shared/schema');
+  const { ppsRegistry, auditOrgRegistry } = await import('@shared/schema');
 
   // Получить все записи реестра ППС
   app.get('/api/pps-registry', isAuthenticated, async (req: any, res) => {
@@ -1597,6 +1597,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error('Error deleting pps registry entry:', error);
+      res.status(500).json({ message: 'Ошибка удаления записи' });
+    }
+  });
+
+  // === РЕЕСТР ОРГАНИЗАЦИЙ ПО АУДИТУ ===
+  
+  // Получить все записи реестра организаций по аудиту
+  app.get('/api/audit-org-registry', isAuthenticated, async (req: any, res) => {
+    try {
+      const result = await db.select().from(auditOrgRegistry).orderBy(desc(auditOrgRegistry.createdAt));
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching audit org registry:', error);
+      res.status(500).json({ message: 'Ошибка загрузки реестра организаций по аудиту' });
+    }
+  });
+
+  // Добавить запись в реестр организаций по аудиту
+  app.post('/api/audit-org-registry', isAuthenticated, canWriteRegistry, async (req: any, res) => {
+    try {
+      const { name, applicationNumber, certificateInfo, address, phone, directorName, region } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: 'Наименование обязательно' });
+      }
+      const maxNum = await db.select({ max: sql<number>`COALESCE(MAX(registry_number), 0)` }).from(auditOrgRegistry);
+      const nextRegistryNumber = (maxNum[0]?.max || 0) + 1;
+      const [entry] = await db.insert(auditOrgRegistry).values({
+        registryNumber: nextRegistryNumber,
+        name,
+        applicationNumber,
+        certificateInfo,
+        address,
+        phone,
+        directorName,
+        region,
+        isActive: true,
+      }).returning();
+      res.json(entry);
+    } catch (error) {
+      console.error('Error creating audit org registry entry:', error);
+      res.status(500).json({ message: 'Ошибка добавления в реестр организаций по аудиту' });
+    }
+  });
+
+  // Обновить запись реестра организаций по аудиту
+  app.put('/api/audit-org-registry/:id', isAuthenticated, canWriteRegistry, async (req: any, res) => {
+    try {
+      const [entry] = await db.update(auditOrgRegistry)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(auditOrgRegistry.id, req.params.id))
+        .returning();
+      if (!entry) {
+        return res.status(404).json({ message: 'Запись не найдена' });
+      }
+      res.json(entry);
+    } catch (error) {
+      console.error('Error updating audit org registry entry:', error);
+      res.status(500).json({ message: 'Ошибка обновления записи' });
+    }
+  });
+
+  // Удалить запись реестра организаций по аудиту
+  app.delete('/api/audit-org-registry/:id', isAuthenticated, canWriteRegistry, async (req: any, res) => {
+    try {
+      await db.delete(auditOrgRegistry).where(eq(auditOrgRegistry.id, req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting audit org registry entry:', error);
       res.status(500).json({ message: 'Ошибка удаления записи' });
     }
   });

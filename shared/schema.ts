@@ -899,6 +899,31 @@ export const insertPpsRegistrySchema = createInsertSchema(ppsRegistry).omit({
   updatedAt: true,
 });
 
+// Реестр экспертных организаций аккредитованных на осуществление деятельности по аудиту
+export const auditOrgRegistry = pgTable('audit_org_registry', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  registryNumber: integer('registry_number').notNull(),
+  name: varchar('name').notNull(),
+  applicationNumber: varchar('application_number'),
+  certificateInfo: varchar('certificate_info'),
+  address: text('address'),
+  phone: varchar('phone'),
+  directorName: varchar('director_name'),
+  region: varchar('region'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export type AuditOrgRegistry = typeof auditOrgRegistry.$inferSelect;
+export type InsertAuditOrgRegistry = typeof auditOrgRegistry.$inferInsert;
+
+export const insertAuditOrgRegistrySchema = createInsertSchema(auditOrgRegistry).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Export document schemas
 export * from './document-schema';
 

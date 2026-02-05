@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ClipboardList, FileText } from "lucide-react";
+import { ArrowLeft, ClipboardList, FileText, Building2 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -8,10 +8,12 @@ import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
 import { Button } from "@/components/ui/button";
 import AuditConclusionsJournal from "@/pages/audit-conclusions-journal";
 import PpsRegistry from "@/pages/pps-registry";
+import AuditOrgRegistry from "@/pages/audit-org-registry";
 
 const tabs = [
   { id: "audits", label: "Журнал заключений аудитов", icon: FileText },
   { id: "pps", label: "Реестр ППС", icon: ClipboardList },
+  { id: "audit-orgs", label: "Реестр орг по аудиту", icon: Building2 },
 ] as const;
 
 type TabType = (typeof tabs)[number]["id"];
@@ -100,6 +102,7 @@ export default function JournalsListsModule() {
         <div className="fade-in">
           {activeTab === "audits" && <AuditConclusionsJournal embedded />}
           {activeTab === "pps" && <PpsRegistry embedded />}
+          {activeTab === "audit-orgs" && <AuditOrgRegistry embedded />}
         </div>
         <Footer />
       </div>
