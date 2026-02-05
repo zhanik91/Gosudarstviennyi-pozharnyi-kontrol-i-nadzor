@@ -235,9 +235,8 @@ export default function ReportsDashboard() {
         </div>
       </div>
 
-      <Tabs defaultValue="dashboard" className="space-y-6">
+      <Tabs defaultValue="1-osp" className="space-y-6">
         <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="dashboard">Дашборд</TabsTrigger>
           <TabsTrigger value="1-osp">1-ОСП</TabsTrigger>
           <TabsTrigger value="2-ssg">2-ССГ</TabsTrigger>
           <TabsTrigger value="3-spvp">3-СПВП</TabsTrigger>
@@ -246,132 +245,6 @@ export default function ReportsDashboard() {
           <TabsTrigger value="6-sspz">6-ССПЗ</TabsTrigger>
           <TabsTrigger value="co">7-CO</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="dashboard" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Всего форм</p>
-                    <p className="text-2xl font-bold">{reports.length}</p>
-                  </div>
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Готовы</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {reports.filter(r => r.status === 'completed').length}
-                    </p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">В работе</p>
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {reports.filter(r => r.status === 'draft').length}
-                    </p>
-                  </div>
-                  <Clock className="h-8 w-8 text-yellow-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Отправлены</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {reports.filter(r => r.status === 'submitted').length}
-                    </p>
-                  </div>
-                  <Send className="h-8 w-8 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Статус форм отчетности</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Срок подачи всех форм: до 27 числа отчетного месяца
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {reports.map((report) => {
-                  const IconComponent = report.icon;
-                  const summary = summaryData?.data?.forms?.[report.id];
-                  return (
-                    <div
-                      key={report.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-secondary/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <IconComponent className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">{report.index}</div>
-                          <div className="text-sm text-muted-foreground">{report.name}</div>
-                          <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                            <span className="inline-flex items-center gap-1">
-                              <Percent className="h-3 w-3" />
-                              {summary ? `${summary.completionPercent}% заполнено` : '—'}
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-red-600">
-                              <AlertCircle className="h-3 w-3" />
-                              {summary ? `${summary.validationErrors} ошибок` : '—'}
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-amber-600">
-                              <AlertTriangle className="h-3 w-3" />
-                              {summary ? `${summary.emptyFields} пустых` : '—'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <Badge className={getStatusColor(report.status)}>
-                          {getStatusIcon(report.status)}
-                          {getStatusText(report.status)}
-                        </Badge>
-                        <div className="text-sm text-muted-foreground">
-                          до {new Date(report.dueDate).toLocaleDateString('ru-RU')}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card">
-            <CardContent className="p-6">
-              <h3 className="font-semibold mb-2 text-foreground">Требования к отчетности</h3>
-              <div className="text-sm text-foreground space-y-1">
-                <p>• Формы заполняются на государственном и русском языках</p>
-                <p>• Ущерб указывается в тысячах тенге с точностью до одного десятичного знака</p>
-                <p>• Формы подписываются руководителем департамента</p>
-                <p>• Срок подачи: до 27 числа отчетного месяца</p>
-                <p>• Получатель: Комитет противопожарной службы МЧС РК</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="1-osp">{renderReportForm('1-osp')}</TabsContent>
         <TabsContent value="2-ssg">{renderReportForm('2-ssg')}</TabsContent>

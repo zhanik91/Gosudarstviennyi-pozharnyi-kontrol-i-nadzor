@@ -3314,100 +3314,27 @@ export default function ControlSupervisionPage() {
                   onChange={(e) => setInspectionForm((s) => ({ ...s, suspensionResumptionDates: e.target.value }))}
                 />
               </Field>
-              <Field label="Фактическая дата начала">
-                <input
-                  type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  value={inspectionForm.actualStartDate || ""}
-                  onChange={(e) => setInspectionForm((s) => ({ ...s, actualStartDate: e.target.value }))}
-                />
-              </Field>
-              <Field label="Фактическая дата завершения">
-                <input
-                  type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  value={inspectionForm.actualEndDate || ""}
-                  onChange={(e) => setInspectionForm((s) => ({ ...s, actualEndDate: e.target.value }))}
-                />
-              </Field>
-              <Field label="Результат">
-                <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  value={inspectionForm.result || ""}
-                  onChange={(e) => setInspectionForm((s) => ({ ...s, result: e.target.value }))}
-                />
-              </Field>
-              <Field label="Кол-во нарушений">
-                <input
-                  type="number"
-                  min={0}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  value={inspectionForm.violationsCount ?? ""}
-                  onChange={(e) => setInspectionForm((s) => ({
-                    ...s,
-                    violationsCount: e.target.value === "" ? null : Number(e.target.value),
-                  }))}
-                />
-              </Field>
-              <Field label="Крайний срок устранения">
-                <input
-                  type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  value={inspectionForm.violationsDeadline || ""}
-                  onChange={(e) => setInspectionForm((s) => ({ ...s, violationsDeadline: e.target.value }))}
-                />
-              </Field>
-              <Field label="Дата регистрации талона">
-                <input
-                  type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                  value={inspectionForm.ticketRegistrationDate || ""}
-                  onChange={(e) => setInspectionForm((s) => ({ ...s, ticketRegistrationDate: e.target.value }))}
-                />
-              </Field>
             </div>
 
             {inspectionErrors.general && (
               <p className="mt-3 text-sm text-red-400">{inspectionErrors.general}</p>
             )}
 
-            <div className="mt-5 flex items-center justify-between gap-3">
-              <div className="flex gap-2">
-                {canEdit && (
-                  <>
-                    <button
-                      className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium hover:bg-purple-500"
-                      onClick={handleCreateTicket}
-                      type="button"
-                    >
-                      🎫 Создать талон
-                    </button>
-                    <button
-                      className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500"
-                      onClick={handleCreateMOR}
-                      type="button"
-                    >
-                      ⚡ Принята МОР
-                    </button>
-                  </>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
-                  onClick={() => setOpenInspectionForm(false)}
-                  type="button"
-                >
-                  Отмена
-                </button>
-                <button
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
-                  onClick={onSaveInspection}
-                  type="button"
-                >
-                  Сохранить
-                </button>
-              </div>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                onClick={() => setOpenInspectionForm(false)}
+                type="button"
+              >
+                Отмена
+              </button>
+              <button
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                onClick={onSaveInspection}
+                type="button"
+              >
+                Сохранить
+              </button>
             </div>
           </Modal>
         )}
