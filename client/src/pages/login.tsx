@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Lock, User, Shield } from "lucide-react";
+import { Lock, User, Shield, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { AuroraBackground } from "@/components/ui/aurora-background";
@@ -24,6 +24,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
@@ -105,6 +106,7 @@ export default function LoginPage() {
                                   <Input
                                     {...field}
                                     placeholder="Введите логин"
+                                    autoComplete="username"
                                     className="pl-10 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 focus:bg-white/70 dark:focus:bg-black/40 transition-all duration-300 text-slate-900 dark:text-white placeholder:text-slate-500"
                                     disabled={isLoading}
                                   />
@@ -126,11 +128,25 @@ export default function LoginPage() {
                                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 group-hover:text-primary transition-colors" />
                                   <Input
                                     {...field}
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     placeholder="Введите пароль"
-                                    className="pl-10 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 focus:bg-white/70 dark:focus:bg-black/40 transition-all duration-300 text-slate-900 dark:text-white placeholder:text-slate-500"
+                                    autoComplete="current-password"
+                                    className="pl-10 pr-10 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 focus:bg-white/70 dark:focus:bg-black/40 transition-all duration-300 text-slate-900 dark:text-white placeholder:text-slate-500"
                                     disabled={isLoading}
                                   />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-primary transition-colors focus:outline-none"
+                                    tabIndex={-1}
+                                    data-testid="button-toggle-password"
+                                  >
+                                    {showPassword ? (
+                                      <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                      <Eye className="h-4 w-4" />
+                                    )}
+                                  </button>
                                 </div>
                               </FormControl>
                               <FormMessage />
