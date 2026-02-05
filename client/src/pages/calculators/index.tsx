@@ -83,11 +83,11 @@ export default function CalculatorsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-foreground mb-4 flex items-center justify-center">
-          <Calculator className="mr-4 w-10 h-10 text-primary" />
+        <h1 className="text-4xl font-extrabold text-foreground mb-4 flex items-center justify-center tracking-tight">
+          <Calculator className="mr-4 w-12 h-12 text-primary" />
           Калькуляторы пожарной безопасности
         </h1>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+        <p className="text-xl text-foreground font-semibold max-w-3xl mx-auto">
           Инструменты расчёта по НПА Республики Казахстан для специалистов МЧС
         </p>
       </div>
@@ -107,10 +107,10 @@ export default function CalculatorsPage() {
                   <Icon className={`w-8 h-8 ${color.icon}`} />
                   <Target className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <CardTitle className="text-lg font-semibold text-foreground">
+                <CardTitle className="text-2xl font-black text-black dark:text-white leading-tight">
                   {calc.title}
                 </CardTitle>
-                <CardDescription className="text-sm text-foreground/70">
+                <CardDescription className="text-lg text-black/90 dark:text-white/90 font-bold mt-2">
                   {calc.description}
                 </CardDescription>
               </CardHeader>
@@ -120,9 +120,9 @@ export default function CalculatorsPage() {
                     {calc.features.map((feature, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center text-xs text-foreground/60"
+                        className="flex items-center text-base text-black dark:text-white font-bold"
                       >
-                        <Zap className="w-3 h-3 mr-2" />
+                        <Zap className="w-4 h-4 mr-2 text-primary fill-primary/20" />
                         {feature}
                       </div>
                     ))}
@@ -150,11 +150,11 @@ export default function CalculatorsPage() {
               </div>
             </div>
             <div className="ml-4">
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <h3 className="text-2xl font-black text-black dark:text-white mb-2">
                 Важное примечание
               </h3>
-              <p className="text-foreground/70 text-sm">
-                Калькуляторы дают ориентировочный результат на основе НПА РК. 
+              <p className="text-black dark:text-white font-bold text-lg leading-relaxed">
+                Калькуляторы дают ориентировочный результат на основе НПА РК.
                 Окончательные решения принимаются по проектной документации и требуют согласования.
               </p>
             </div>

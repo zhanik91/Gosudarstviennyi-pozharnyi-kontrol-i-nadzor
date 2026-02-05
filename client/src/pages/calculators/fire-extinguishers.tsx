@@ -1091,11 +1091,11 @@ export default function FireExtinguishersCalculator() {
       </div>
 
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold mb-4 flex items-center justify-center">
-          <Calculator className="mr-3 w-8 h-8 text-red-500" />
+        <h1 className="text-4xl font-black mb-4 flex items-center justify-center text-black dark:text-white">
+          <Calculator className="mr-3 w-10 h-10 text-red-600" />
           Калькулятор первичных средств пожаротушения
         </h1>
-        <p className="text-muted-foreground uppercase text-[10px] tracking-wider font-semibold">
+        <p className="text-black dark:text-white uppercase text-xs tracking-widest font-black">
           согласно правилам пожарной безопасности рк
         </p>
       </div>
@@ -1236,17 +1236,17 @@ export default function FireExtinguishersCalculator() {
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-black text-sm">{fc}</span>
-                            <span className="text-xs text-slate-600 dark:text-slate-400">— {FIRE_CLASS_INFO[fc].description}</span>
+                            <span className="font-black text-base text-black dark:text-white">{fc}</span>
+                            <span className="text-sm text-black dark:text-white font-bold">— {FIRE_CLASS_INFO[fc].description}</span>
                           </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5 italic">
+                          <div className="text-xs text-black/80 dark:text-white/80 mt-1 font-semibold italic">
                             {FIRE_CLASS_INFO[fc].examples}
                           </div>
                         </div>
                       </div>
                     ))}
                   {objType === "PUBLIC" && (
-                    <p className="text-[9px] text-slate-400 text-center italic">
+                    <p className="text-xs text-black dark:text-white font-bold text-center italic mt-2">
                       Для общественных зданий обычно рассматриваются классы A и E (п. 1.2 Прил. 1)
                     </p>
                   )}
@@ -1415,10 +1415,10 @@ export default function FireExtinguishersCalculator() {
                           <div className="flex items-start">
                             <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-3 mt-0.5 shrink-0" />
                             <div className="text-sm leading-relaxed">
-                              <span className="font-black text-slate-900 dark:text-white uppercase text-[10px] bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-2">
+                              <span className="font-black text-black dark:text-white uppercase text-xs bg-slate-300 dark:bg-slate-700 px-2 py-1 rounded mr-2 border border-slate-400">
                                 {r.label}
                               </span>
-                              <span className="text-slate-700 dark:text-slate-300">{r.text}</span>
+                              <span className="text-black dark:text-white font-bold text-base">{r.text}</span>
                               {r.ref && (
                                 <div className="mt-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
                                   Источник: {r.ref}
@@ -1451,12 +1451,12 @@ export default function FireExtinguishersCalculator() {
                   {/* Примечания */}
                   {result.notes.length > 0 && (
                     <div className="p-5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-                      <h4 className="text-[10px] font-black mb-3 flex items-center text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                        <Info className="w-3 h-3 mr-2" /> ВАЖНО ИЗ ППБ:
+                      <h4 className="text-xs font-black mb-3 flex items-center text-black dark:text-white uppercase tracking-widest">
+                        <Info className="w-4 h-4 mr-2 text-blue-600" /> ВАЖНО ИЗ ППБ:
                       </h4>
                       <ul className="space-y-2">
                         {result.notes.map((n, i) => (
-                          <li key={i} className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic">• {n}</li>
+                          <li key={i} className="text-sm text-black dark:text-white font-bold leading-relaxed italic">• {n}</li>
                         ))}
                       </ul>
                     </div>

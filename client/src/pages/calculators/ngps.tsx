@@ -47,7 +47,7 @@ export default function NGPSCalculator() {
     const areaNum = parseFloat(area) || 0;
     const personnelNum = parseInt(personnel) || 0;
     const distanceNum = parseFloat(distanceToGPS) || 0;
-    
+
     const objectInfo = OBJECT_TYPES.find(o => o.value === objectType);
     const inPerechenList = objectInfo?.inList || false;
 
@@ -98,7 +98,7 @@ export default function NGPSCalculator() {
       recommendations.push(`Штат в смене: ${personnelPerShift} чел. (включая начальника караула)`);
       recommendations.push(`Общий штат: ${totalPersonnel} чел. (4 караула × ${personnelPerShift} чел.)`);
       recommendations.push("Допускается заключение договора с ГПС для частичного покрытия");
-      
+
       if (hasHazardous) {
         vehicles.push("Спецтехника для работы с опасными веществами");
         recommendations.push("Требуется дополнительное обучение личного состава для работы с ОВ");
@@ -133,7 +133,7 @@ export default function NGPSCalculator() {
 
   const exportResult = () => {
     if (!result) return;
-    
+
     const objectInfo = OBJECT_TYPES.find(o => o.value === objectType);
     const content = `РАСЧЁТ НЕОБХОДИМОСТИ НГПС
 ========================
@@ -185,11 +185,11 @@ ${result.legalBasis.map(l => `• ${l}`).join("\n")}
       </div>
 
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-4 flex items-center justify-center">
-          <Shield className="mr-3 w-8 h-8 text-blue-500" />
+        <h1 className="text-4xl font-black text-foreground mb-4 flex items-center justify-center">
+          <Shield className="mr-4 w-10 h-10 text-blue-600" />
           Калькулятор ПСС (НГПС)
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-black dark:text-white font-bold max-w-2xl mx-auto">
           Проверка обязательности негосударственной противопожарной службы
         </p>
       </div>
@@ -292,29 +292,28 @@ ${result.legalBasis.map(l => `• ${l}`).join("\n")}
           <CardContent>
             {result ? (
               <div className="space-y-6">
-                <div className={`p-6 rounded-lg text-center ${
-                  result.required 
-                    ? "bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800" 
+                <div className={`p-6 rounded-lg text-center ${result.required
+                    ? "bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800"
                     : "bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800"
-                }`}>
-                  <div className={`text-2xl font-bold mb-2 ${result.required ? "text-red-600" : "text-green-600"}`}>
+                  }`}>
+                  <div className={`text-3xl font-black mb-2 ${result.required ? "text-red-700 dark:text-red-500" : "text-green-700 dark:text-green-500"}`}>
                     {result.required ? "НГПС ТРЕБУЕТСЯ" : "НГПС НЕ ТРЕБУЕТСЯ"}
                   </div>
-                  <div className="text-sm text-muted-foreground">{result.reason}</div>
+                  <div className="text-base text-black dark:text-white font-bold">{result.reason}</div>
                 </div>
 
                 {result.required && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-                        <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-                        <div className="text-2xl font-bold text-blue-600">{result.personnelPerShift}</div>
-                        <div className="text-xs text-muted-foreground">чел. в смене</div>
+                      <div className="p-4 bg-blue-100/50 dark:bg-blue-900/30 rounded-lg text-center border border-blue-200">
+                        <Users className="w-8 h-8 mx-auto mb-2 text-blue-700" />
+                        <div className="text-3xl font-black text-blue-700 dark:text-blue-400">{result.personnelPerShift}</div>
+                        <div className="text-sm text-black dark:text-white font-bold">чел. в смене</div>
                       </div>
-                      <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
-                        <Users className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-                        <div className="text-2xl font-bold text-purple-600">{result.totalPersonnel}</div>
-                        <div className="text-xs text-muted-foreground">чел. всего</div>
+                      <div className="p-4 bg-purple-100/50 dark:bg-purple-900/30 rounded-lg text-center border border-purple-200">
+                        <Users className="w-8 h-8 mx-auto mb-2 text-purple-700" />
+                        <div className="text-3xl font-black text-purple-700 dark:text-purple-400">{result.totalPersonnel}</div>
+                        <div className="text-sm text-black dark:text-white font-bold">чел. всего</div>
                       </div>
                     </div>
 
@@ -336,14 +335,14 @@ ${result.legalBasis.map(l => `• ${l}`).join("\n")}
                 )}
 
                 <div className="space-y-2">
-                  <h4 className="font-medium flex items-center">
-                    <CheckCircle className="mr-2 w-4 h-4 text-green-500" />
+                  <h4 className="font-black text-lg flex items-center text-black dark:text-white">
+                    <CheckCircle className="mr-2 w-5 h-5 text-green-600" />
                     Рекомендации
                   </h4>
-                  <ul className="space-y-1 text-sm">
+                  <ul className="space-y-2 text-base font-bold text-black dark:text-white">
                     {result.recommendations.map((rec, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span className="text-green-500 mr-2">•</span>
+                        <span className="text-green-600 mr-2 font-black">•</span>
                         {rec}
                       </li>
                     ))}

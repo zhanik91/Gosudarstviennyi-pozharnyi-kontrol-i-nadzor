@@ -174,7 +174,7 @@ export default function ExplosionCategoryCalculator() {
 
   const exportResult = () => {
     if (!result) return;
-    
+
     const content = `ОПРЕДЕЛЕНИЕ КАТЕГОРИИ ПОМЕЩЕНИЯ ПО ВЗРЫВОПОЖАРООПАСНОСТИ
 =======================================================
 Дата: ${new Date().toLocaleDateString("ru-RU")}
@@ -222,11 +222,11 @@ ${result.recommendations.map(r => `• ${r}`).join("\n")}
       </div>
 
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-4 flex items-center justify-center">
-          <Flame className="mr-3 w-8 h-8 text-orange-500" />
+        <h1 className="text-4xl font-black text-foreground mb-4 flex items-center justify-center">
+          <Flame className="mr-4 w-10 h-10 text-orange-600" />
           Категория помещения по взрывопожароопасности
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-black dark:text-white font-bold max-w-2xl mx-auto">
           Определение категории по СП РК 2.02-101-2022
         </p>
       </div>
@@ -391,26 +391,26 @@ ${result.recommendations.map(r => `• ${r}`).join("\n")}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-muted rounded-lg text-center">
-                    <div className="text-2xl font-bold">{result.totalFireLoad.toFixed(0)}</div>
-                    <div className="text-xs text-muted-foreground">МДж (общая нагрузка)</div>
+                  <div className="p-4 bg-muted border border-border rounded-lg text-center">
+                    <div className="text-3xl font-black text-black dark:text-white">{result.totalFireLoad.toFixed(0)}</div>
+                    <div className="text-sm text-black dark:text-white font-bold">МДж (общая нагрузка)</div>
                   </div>
-                  <div className="p-4 bg-muted rounded-lg text-center">
-                    <div className="text-2xl font-bold">{result.specificFireLoad.toFixed(1)}</div>
-                    <div className="text-xs text-muted-foreground">МДж/м² (удельная)</div>
+                  <div className="p-4 bg-muted border border-border rounded-lg text-center">
+                    <div className="text-3xl font-black text-black dark:text-white">{result.specificFireLoad.toFixed(1)}</div>
+                    <div className="text-sm text-black dark:text-white font-bold">МДж/м² (удельная)</div>
                   </div>
                 </div>
 
                 {result.requirements.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-medium flex items-center text-red-600">
-                      <AlertTriangle className="mr-2 w-4 h-4" />
+                    <h4 className="font-black text-lg flex items-center text-red-700 dark:text-red-500">
+                      <AlertTriangle className="mr-2 w-5 h-5" />
                       Обязательные требования
                     </h4>
-                    <ul className="space-y-1 text-sm">
+                    <ul className="space-y-2 text-base font-bold text-black dark:text-white">
                       {result.requirements.map((req, idx) => (
                         <li key={idx} className="flex items-start">
-                          <span className="text-red-500 mr-2">•</span>
+                          <span className="text-red-600 mr-2 font-black">•</span>
                           {req}
                         </li>
                       ))}
@@ -419,14 +419,14 @@ ${result.recommendations.map(r => `• ${r}`).join("\n")}
                 )}
 
                 <div className="space-y-2">
-                  <h4 className="font-medium flex items-center">
-                    <CheckCircle className="mr-2 w-4 h-4 text-green-500" />
+                  <h4 className="font-black text-lg flex items-center text-green-700 dark:text-green-500">
+                    <CheckCircle className="mr-2 w-5 h-5" />
                     Рекомендации
                   </h4>
-                  <ul className="space-y-1 text-sm">
+                  <ul className="space-y-2 text-base font-bold text-black dark:text-white">
                     {result.recommendations.map((rec, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span className="text-green-500 mr-2">•</span>
+                        <span className="text-green-600 mr-2 font-black">•</span>
                         {rec}
                       </li>
                     ))}
