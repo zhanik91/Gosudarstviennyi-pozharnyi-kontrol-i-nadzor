@@ -51,9 +51,21 @@ class DeadlineNotificationService {
   private async getNotificationRecipients(createdBy: string | null, region: string | null): Promise<string[]> {
     const recipientIds: string[] = [];
 
-    // Добавить создателя
+    // Добавить создателя только если он существует в базе данных
     if (createdBy) {
-      recipientIds.push(createdBy);
+      try {
+        const [existingUser] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, createdBy))
+          .limit(1);
+        
+        if (existingUser) {
+          recipientIds.push(createdBy);
+        }
+      } catch (error) {
+        console.error('[DeadlineNotification] Error checking creator existence:', error);
+      }
     }
 
     try {
