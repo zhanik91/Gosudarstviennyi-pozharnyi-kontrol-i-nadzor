@@ -185,8 +185,16 @@ export function LeafletMap({
         
         setTimeout(() => {
           map.invalidateSize();
+        }, 100);
+        
+        setTimeout(() => {
+          map.invalidateSize();
           setIsMapLoading(false);
-        }, 300);
+        }, 500);
+        
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 1000);
       } catch (error) {
         console.error('Error initializing map:', error);
         setIsMapLoading(false);

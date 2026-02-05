@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 import { Plus, Trash2 } from "lucide-react";
-import { LocationPicker } from "@/components/maps/location-picker";
 
 // Updated schema to include victims array
 const ospIncidentSchema = insertIncidentSchema
@@ -561,18 +560,6 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                   )}
                 />
                 
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <FormLabel className="text-sm font-medium mb-2 block">Местоположение на карте</FormLabel>
-                  <LocationPicker
-                    latitude={form.watch("latitude")}
-                    longitude={form.watch("longitude")}
-                    address={form.watch("address")}
-                    onLocationSelect={(lat, lng) => {
-                      form.setValue("latitude", lat);
-                      form.setValue("longitude", lng);
-                    }}
-                  />
-                </div>
                 
                 <FormField
                   control={form.control}

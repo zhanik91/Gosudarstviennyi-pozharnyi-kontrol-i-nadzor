@@ -223,7 +223,7 @@ export default function InteractiveMaps() {
     <div className="container mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Интерактивные карты</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Карты (пробная версия)</h1>
           <p className="text-gray-600 dark:text-gray-400">Геоинформационная система анализа пожарной безопасности</p>
         </div>
         

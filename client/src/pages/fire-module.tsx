@@ -89,7 +89,7 @@ export default function FireModule() {
               { id: 'journal', label: 'Журнал', icon: '📋' },
               { id: 'forms', label: 'Формы', icon: '📄' },
               { id: 'charts', label: 'Диаграммы', icon: '📊' },
-              { id: 'maps', label: 'Карты', icon: '🗺️' },
+              { id: 'maps', label: 'Карты (пробная)', icon: '🗺️' },
               { id: 'packages', label: 'Пакеты', icon: '📦' }
             ].map((tab) => (
               <button
