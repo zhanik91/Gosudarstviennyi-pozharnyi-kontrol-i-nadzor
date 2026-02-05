@@ -250,6 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/simple', isAuthenticated, analyticsController.getSimpleAnalytics);
   app.get('/api/analytics/forms', isAuthenticated, analyticsController.getFormAnalytics);
   app.get('/api/analytics/advanced', isAuthenticated, analyticsController.getAdvancedAnalytics);
+  app.get('/api/analytics/charts', isAuthenticated, analyticsController.getReportFormsCharts);
 
   // === Audit Logs (Admin) ===
   app.get('/api/audit-logs', isAuthenticated, auditController.getLogs);

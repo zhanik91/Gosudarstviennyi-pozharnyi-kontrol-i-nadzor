@@ -7,7 +7,7 @@ import BreadcrumbNavigation from "@/components/ui/breadcrumb-navigation";
 import IncidentsJournal from "@/components/fire/incidents-journal";
 import ReportsDashboard from "@/components/reports/reports-dashboard";
 import ReportsPanel from "@/components/fire/reports-panel";
-import SimpleAnalytics from "@/components/reports/simple-analytics";
+import CleanAnalytics from "@/components/reports/clean-analytics";
 import PackagesPanel from "@/components/fire/packages-panel";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -119,7 +119,7 @@ export default function FireModule() {
           )}
           {activeTab === 'forms' && <ReportsDashboard />}
           {activeTab === 'reports' && <ReportsPanel />}
-          {activeTab === 'charts' && <SimpleAnalytics />}
+          {activeTab === 'charts' && <CleanAnalytics />}
           {activeTab === 'maps' && <InteractiveMaps />}
           {activeTab === 'packages' && <PackagesPanel />}
         </div>
