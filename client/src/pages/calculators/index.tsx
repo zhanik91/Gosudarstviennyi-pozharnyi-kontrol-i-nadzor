@@ -107,10 +107,10 @@ export default function CalculatorsPage() {
                   <Icon className={`w-8 h-8 ${color.icon}`} />
                   <Target className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <CardTitle className="text-lg font-semibold">
+                <CardTitle className="text-lg font-semibold text-foreground">
                   {calc.title}
                 </CardTitle>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-sm text-foreground/70">
                   {calc.description}
                 </CardDescription>
               </CardHeader>
@@ -120,7 +120,7 @@ export default function CalculatorsPage() {
                     {calc.features.map((feature, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center text-xs text-muted-foreground"
+                        className="flex items-center text-xs text-foreground/60"
                       >
                         <Zap className="w-3 h-3 mr-2" />
                         {feature}

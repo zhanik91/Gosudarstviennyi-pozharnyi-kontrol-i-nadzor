@@ -1324,7 +1324,7 @@ export default function FireExtinguishersCalculator() {
                   key="res"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6 pt-6 bg-white dark:bg-slate-950"
+                  className="space-y-6 pt-6"
                 >
                   {/* Основные огнетушители */}
                   <div className="grid grid-cols-2 gap-4">
@@ -1347,14 +1347,14 @@ export default function FireExtinguishersCalculator() {
                   </div>
 
                   {/* Итого и дистанция */}
-                  <div className="flex justify-between items-center p-4 bg-slate-900 dark:bg-white rounded-2xl shadow-lg">
+                  <div className="flex justify-between items-center p-4 bg-primary rounded-2xl shadow-lg">
                     <div>
-                      <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-2">ИТОГО:</span>
-                      <span className="text-2xl font-black text-white dark:text-slate-900">{result.totalCount} шт.</span>
+                      <span className="text-xs font-black text-primary-foreground/70 uppercase tracking-widest mr-2">ИТОГО:</span>
+                      <span className="text-2xl font-black text-primary-foreground">{result.totalCount} шт.</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-2">МАКС. ДИСТАНЦИЯ:</span>
-                      <span className="text-xl font-black text-white dark:text-slate-900">{result.maxDistance} м</span>
+                      <span className="text-xs font-black text-primary-foreground/70 uppercase tracking-widest mr-2">МАКС. ДИСТАНЦИЯ:</span>
+                      <span className="text-xl font-black text-primary-foreground">{result.maxDistance} м</span>
                     </div>
                   </div>
 
