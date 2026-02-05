@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, Download, Check, X, FileUp, FileSpreadsheet } from "lucide-react";
+import { Eye, Download, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { type Package } from "@shared/schema";
 
@@ -32,10 +32,6 @@ export default function PackagesPanel() {
   const [filterMode, setFilterMode] = useState<"all" | "mine" | "incoming">("all");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("");
-  const [importPeriod, setImportPeriod] = useState("");
-  const [importForm, setImportForm] = useState("1-osp");
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const [actionPackageId, setActionPackageId] = useState<string | null>(null);
@@ -243,7 +239,7 @@ export default function PackagesPanel() {
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
-
+    
     return (
       <Badge variant="secondary" className={config.className}>
         {config.label}
@@ -301,104 +297,9 @@ export default function PackagesPanel() {
     }
   };
 
-  const handleDownloadTemplate = async () => {
-    if (!importPeriod) {
-      toast({
-        title: "Ошибка",
-        description: "Укажите период для шаблона",
-        variant: "destructive",
-      });
-      return;
-    }
-    let url: string | null = null;
-    try {
-      const response = await apiRequest(
-        "GET",
-        `/api/reports/import-template?form=${importForm}&period=${importPeriod}`,
-      );
-      if (!response.ok) {
-        let errorMessage = "Не удалось скачать шаблон";
-        try {
-          const contentType = response.headers.get("content-type") || "";
-          if (contentType.includes("application/json")) {
-            const data = await response.json();
-            errorMessage = data?.msg || data?.message || JSON.stringify(data);
-          } else {
-            const text = await response.text();
-            if (text) {
-              errorMessage = text;
-            }
-          }
-        } catch (parseError) {
-          console.error("Failed to parse template download error", parseError);
-        }
-        throw new Error(errorMessage);
-      }
-      const blob = await response.blob();
-      url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `template_${importForm}_${importPeriod}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      if (url) {
-        window.URL.revokeObjectURL(url);
-      }
-    }
-  };
-
-  const handleImportSubmit = async () => {
-    if (!importFile || !importPeriod) {
-      toast({
-        title: "Ошибка",
-        description: "Выберите файл и укажите период",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsImporting(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", importFile);
-      formData.append("form", importForm);
-      formData.append("period", importPeriod);
-
-      const response = await fetch("/api/reports/import-bulk", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.msg || "Ошибка импорта");
-
-      toast({
-        title: "Успех",
-        description: `Успешно импортировано записей: ${result.count}`,
-      });
-      setImportFile(null);
-    } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
-
+      
       {/* Package Operations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-card border border-border">
@@ -419,7 +320,7 @@ export default function PackagesPanel() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button
+                <Button 
                   onClick={handleSubmitUp}
                   data-testid="button-submit-up"
                 >
@@ -448,7 +349,7 @@ export default function PackagesPanel() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button
+                <Button 
                   variant="secondary"
                   onClick={handleShowIncoming}
                   data-testid="button-show-incoming"
@@ -489,92 +390,6 @@ export default function PackagesPanel() {
                   )}
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Historical Data Import */}
-        <Card className="bg-card border border-border lg:col-span-2">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <FileUp className="w-5 h-5 text-primary" />
-              Импорт исторических данных
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Используйте этот раздел для загрузки агрегированных данных за прошлые периоды.
-              Это не создаст новых записей в журнале инцидентов, а напрямую заполнит отчетные формы.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-              <div className="space-y-2">
-                <Label>Тип формы</Label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={importForm}
-                  onChange={(e) => setImportForm(e.target.value)}
-                >
-                  <option value="1-osp">1-ОСП (Общие сведения)</option>
-                  <option value="2-ssg">2-ССГ (Горение)</option>
-                  <option value="3-spvp">3-СПВП (Причины)</option>
-                  <option value="4-sovp">4-СОВП (Объекты)</option>
-                  <option value="5-spzs">5-СПЖС (Жилой сектор)</option>
-                  <option value="6-sspz">6-ССПЗ (Степные пожары)</option>
-                  <option value="co">7-СО (Угарный газ)</option>
-                  <option value="admin-practice">Адм. практика (Форма 13)</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Период (YYYY-MM)</Label>
-                <Input
-                  placeholder="2023-01"
-                  value={importPeriod}
-                  onChange={(e) => setImportPeriod(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={handleDownloadTemplate}
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  Скачать шаблон
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-6 p-4 border-2 border-dashed border-border rounded-lg bg-muted/20">
-              <div className="flex flex-col items-center justify-center gap-4 py-4">
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm font-medium">Загрузите заполненный шаблон</span>
-                  <span className="text-xs text-muted-foreground">Поддерживаются файлы .xlsx</span>
-                </div>
-
-                <div className="flex items-center gap-3 w-full max-w-sm">
-                  <Input
-                    type="file"
-                    accept=".xlsx"
-                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                    className="cursor-pointer"
-                  />
-                  <Button
-                    onClick={handleImportSubmit}
-                    disabled={!importFile || isImporting}
-                    className="shrink-0"
-                  >
-                    {isImporting ? "Загрузка..." : "Импортировать"}
-                  </Button>
-                </div>
-
-                {importFile && (
-                  <div className="flex items-center gap-2 text-xs text-primary">
-                    <Check className="w-3 h-3" />
-                    Выбран файл: {importFile.name}
-                  </div>
-                )}
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -660,7 +475,7 @@ export default function PackagesPanel() {
                 packages.map((pkg: Package) => (
                   <tr key={pkg.id} data-testid={`row-package-${pkg.id}`}>
                     <td className="p-3 text-foreground">
-                      {pkg.createdAt ? format(new Date(pkg.createdAt), "dd.MM.yyyy HH:mm") : "-"}
+                      {format(new Date(pkg.createdAt), "dd.MM.yyyy HH:mm")}
                     </td>
                     <td className="p-3 text-foreground">
                       {pkg.period}
@@ -669,18 +484,18 @@ export default function PackagesPanel() {
                       {getStatusBadge(pkg.status)}
                     </td>
                     <td className="p-3 space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
                         className="text-primary hover:text-primary/80"
                         onClick={() => handleViewPackage(pkg.id)}
                         data-testid={`button-view-${pkg.id}`}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
                         className="text-accent hover:text-accent/80"
                         onClick={() => handleDownloadPackage(pkg)}
                         data-testid={`button-download-${pkg.id}`}
@@ -689,9 +504,9 @@ export default function PackagesPanel() {
                       </Button>
                       {pkg.status === 'submitted' && (
                         <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
                             className="text-green-400 hover:text-green-300"
                             onClick={() => openActionDialog("approve", pkg.id)}
                             disabled={approvePackageMutation.isPending}
@@ -699,9 +514,9 @@ export default function PackagesPanel() {
                           >
                             <Check className="w-4 h-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
                             className="text-destructive hover:text-destructive/80"
                             onClick={() => openActionDialog("reject", pkg.id)}
                             disabled={rejectPackageMutation.isPending}

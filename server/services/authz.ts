@@ -116,7 +116,7 @@ function applyScopeConditionInternal(
       console.warn(`OCHS user ${user.id} has no region assigned`);
       return sql`1 = 0`;
     }
-
+    
     // Если есть колонка района и у пользователя задан район - фильтруем по обоим
     if (user.district && districtColumn) {
       return and(
@@ -124,7 +124,7 @@ function applyScopeConditionInternal(
         eq(districtColumn, user.district)
       );
     }
-
+    
     // Если нет колонки района или у OCHS не задан район - фильтр только по региону
     return eq(regionColumn, user.region);
   }
@@ -145,7 +145,7 @@ export async function applyScope<T extends { where: (condition: SQL) => T }>(
 ): Promise<T> {
   const scopeCondition = applyScopeCondition(user, regionColumn, districtColumn);
   const conditions = [...extraConditions];
-
+  
   if (scopeCondition) {
     conditions.push(scopeCondition);
   }
@@ -166,38 +166,6 @@ export async function applyScope<T extends { where: (condition: SQL) => T }>(
 }
 
 /**
- * Сравнение иерархии организаций для проверки прав доступа
- */
-export function assertOrgScope(orgUnits: any[], userOrgId: string, targetOrgId: string) {
-  if (userOrgId === targetOrgId) return;
-
-  // Проверяем, является ли targetOrgId потомком userOrgId
-  const findChildren = (id: string): string[] => {
-    const children = orgUnits.filter(o => o.parentId === id);
-    let ids = children.map(c => c.id);
-    children.forEach(c => {
-      ids = ids.concat(findChildren(c.id));
-    });
-    return ids;
-  };
-
-  const allowedIds = [userOrgId, ...findChildren(userOrgId)];
-  if (!allowedIds.includes(targetOrgId)) {
-    throw new Error('Access denied to this organization unit');
-  }
-}
-
-/**
- * Проверяет права на доступ к данным подчиненных подразделений
- */
-export function assertTreeAccess(role: string) {
-  const r = role.toUpperCase();
-  if (r === 'DISTRICT' || r === 'OCHS') {
-    throw new Error('District level users cannot access child organization data');
-  }
-}
-
-/**
  * Middleware для проверки доступа к данным
  */
 export function scopeMiddleware() {
@@ -208,7 +176,7 @@ export function scopeMiddleware() {
 
     req.scopeUser = toScopeUser(req.user);
     req.userLevel = getUserLevel(req.user);
-
+    
     next();
   };
 }
@@ -222,7 +190,5 @@ export default {
   canEdit,
   applyScopeCondition,
   applyScope,
-  assertOrgScope,
-  assertTreeAccess,
   scopeMiddleware
 };
