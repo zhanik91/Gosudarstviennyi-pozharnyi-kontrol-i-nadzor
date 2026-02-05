@@ -194,8 +194,6 @@ export default function AdvancedAnalytics() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="2025-12">Декабрь 2025</SelectItem>
-                  <SelectItem value="2025-11">Ноябрь 2025</SelectItem>
-                  <SelectItem value="2025-10">Октябрь 2025</SelectItem>
                   <SelectItem value="2026-01">Январь 2026</SelectItem>
                 </SelectContent>
               </Select>
