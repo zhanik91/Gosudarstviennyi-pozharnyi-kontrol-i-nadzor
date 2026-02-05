@@ -189,7 +189,7 @@ ${result.legalBasis.map(l => `• ${l}`).join("\n")}
           <Shield className="mr-4 w-10 h-10 text-blue-600" />
           Калькулятор ПСС (НГПС)
         </h1>
-        <p className="text-xl text-black dark:text-white font-bold max-w-2xl mx-auto">
+        <p className="text-xl text-white font-bold max-w-2xl mx-auto">
           Проверка обязательности негосударственной противопожарной службы
         </p>
       </div>
@@ -293,8 +293,8 @@ ${result.legalBasis.map(l => `• ${l}`).join("\n")}
             {result ? (
               <div className="space-y-6">
                 <div className={`p-6 rounded-lg text-center ${result.required
-                    ? "bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800"
-                    : "bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800"
+                  ? "bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800"
+                  : "bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800"
                   }`}>
                   <div className={`text-3xl font-black mb-2 ${result.required ? "text-red-700 dark:text-red-500" : "text-green-700 dark:text-green-500"}`}>
                     {result.required ? "НГПС ТРЕБУЕТСЯ" : "НГПС НЕ ТРЕБУЕТСЯ"}

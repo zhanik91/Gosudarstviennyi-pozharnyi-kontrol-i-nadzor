@@ -1091,11 +1091,11 @@ export default function FireExtinguishersCalculator() {
       </div>
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-black mb-4 flex items-center justify-center text-black dark:text-white">
+        <h1 className="text-4xl font-black mb-4 flex items-center justify-center text-white">
           <Calculator className="mr-3 w-10 h-10 text-red-600" />
           Калькулятор первичных средств пожаротушения
         </h1>
-        <p className="text-black dark:text-white uppercase text-xs tracking-widest font-black">
+        <p className="text-white uppercase text-xs tracking-widest font-black">
           согласно правилам пожарной безопасности рк
         </p>
       </div>

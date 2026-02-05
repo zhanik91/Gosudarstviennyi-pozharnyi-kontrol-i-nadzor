@@ -226,7 +226,7 @@ ${result.recommendations.map(r => `• ${r}`).join("\n")}
           <Flame className="mr-4 w-10 h-10 text-orange-600" />
           Категория помещения по взрывопожароопасности
         </h1>
-        <p className="text-xl text-black dark:text-white font-bold max-w-2xl mx-auto">
+        <p className="text-xl text-white font-bold max-w-2xl mx-auto">
           Определение категории по СП РК 2.02-101-2022
         </p>
       </div>
