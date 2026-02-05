@@ -233,15 +233,15 @@ const PRESCRIPTION_STATUS_STYLES: Record<PrescriptionStatus, string> = {
   in_progress: "bg-amber-500/20 text-amber-300",
   fulfilled: "bg-emerald-500/20 text-emerald-300",
   overdue: "bg-red-500/20 text-red-300",
-  canceled: "bg-slate-500/20 text-slate-300",
+  canceled: "bg-muted text-muted-foreground",
 };
 
 const MEASURE_STATUS_STYLES: Record<MeasureStatus, string> = {
-  draft: "bg-slate-500/20 text-slate-300",
+  draft: "bg-muted text-muted-foreground",
   issued: "bg-blue-500/20 text-blue-300",
   in_progress: "bg-amber-500/20 text-amber-300",
   completed: "bg-emerald-500/20 text-emerald-300",
-  canceled: "bg-slate-500/20 text-slate-300",
+  canceled: "bg-muted text-muted-foreground",
 };
 
 const REPORT_PERIODS = [
@@ -425,7 +425,7 @@ function getMORDeadlineStatus(measureDate: string | null): {
   if (!measureDate) {
     return {
       status: 'none',
-      colorClass: 'text-slate-500',
+      colorClass: 'text-muted-foreground',
       color: '#64748b',
       icon: '—',
       text: 'Дата не указана',
@@ -438,7 +438,7 @@ function getMORDeadlineStatus(measureDate: string | null): {
   if (!deadline) {
     return {
       status: 'none',
-      colorClass: 'text-slate-500',
+      colorClass: 'text-muted-foreground',
       color: '#64748b',
       icon: '—',
       text: 'Некорректная дата',
@@ -1521,7 +1521,7 @@ export default function ControlSupervisionPage() {
 
   /** ===== UI ===== */
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Заголовок */}
         <header className="flex items-center justify-between">
@@ -1529,7 +1529,7 @@ export default function ControlSupervisionPage() {
             <h1 className="text-2xl font-semibold">
               Государственный контроль и надзор
             </h1>
-            <p className="text-slate-400">
+            <p className="text-muted-foreground">
               Реестр подконтрольных объектов, контроль соблюдения требований пожарной безопасности
             </p>
           </div>
@@ -1543,7 +1543,7 @@ export default function ControlSupervisionPage() {
               </button>
             )}
             <button
-              className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700"
+              className="rounded-2xl bg-muted px-4 py-2 text-sm font-medium hover:bg-accent"
               onClick={() => {
                 setRegionFilter(isMchsUser ? "Все" : (userRegion || "Все"));
                 if (isMchsUser || isDchsUser) {
@@ -1560,7 +1560,7 @@ export default function ControlSupervisionPage() {
           </div>
         </header>
 
-        <div className="border-b border-slate-800">
+        <div className="border-b border-border">
           <nav className="flex space-x-8 overflow-x-auto">
             {[
               { id: "registry", label: "📋 Реестр объектов" },
@@ -1574,7 +1574,7 @@ export default function ControlSupervisionPage() {
                 onClick={() => handleTabChange(tab.id as TabType)}
                 className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium transition-colors ${activeTab === tab.id
                   ? "border-blue-500 text-blue-400"
-                  : "border-transparent text-slate-400 hover:text-slate-100 hover:border-slate-600"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                   }`}
                 type="button"
               >
@@ -1587,20 +1587,20 @@ export default function ControlSupervisionPage() {
         {activeTab === "registry" && (
           <>
             {/* Счётчик */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+            <div className="rounded-2xl border border-border bg-card p-4 text-sm">
               Всего объектов:&nbsp;<span className="font-semibold">{filtered.length}</span>
             </div>
 
             {/* Панель фильтров */}
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+            <section className="rounded-2xl border border-border bg-card p-4 shadow space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                 <div>
-                  <label className="text-xs text-slate-400">Регион</label>
+                  <label className="text-xs text-muted-foreground">Регион</label>
                   <select
                     value={regionFilter}
                     onChange={(e) => { setRegionFilter(e.target.value); setDistrictFilter("Все"); }}
                     disabled={shouldLockRegion}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
                     {availableRegions.map(r => <option key={r}>{r}</option>)}
@@ -1608,12 +1608,12 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <label className="text-xs text-muted-foreground">Район / ГОС</label>
                   <select
                     value={districtFilter}
                     onChange={(e) => setDistrictFilter(e.target.value)}
                     disabled={shouldLockDistrict}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
                     {availableDistricts.map(d => <option key={d}>{d}</option>)}
@@ -1622,7 +1622,7 @@ export default function ControlSupervisionPage() {
                 <button
                   type="button"
                   onClick={() => setShowAdditionalFilters((prev) => !prev)}
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 transition hover:border-slate-500"
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground transition hover:border-border"
                 >
                   Дополнительные фильтры
                 </button>
@@ -1631,11 +1631,11 @@ export default function ControlSupervisionPage() {
               {showAdditionalFilters && (
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                   <div>
-                    <label className="text-xs text-slate-400">Объективный критерий (риск)</label>
+                    <label className="text-xs text-muted-foreground">Объективный критерий (риск)</label>
                     <select
                       value={levelFilter}
                       onChange={(e) => { setLevelFilter(e.target.value as any); setCatFilter("Все"); }}
-                      className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     >
                       <option value="Все">Все</option>
                       <option value="Высокая">Высокая</option>
@@ -1645,11 +1645,11 @@ export default function ControlSupervisionPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs text-slate-400">Наименование объективного критерия</label>
+                    <label className="text-xs text-muted-foreground">Наименование объективного критерия</label>
                     <select
                       value={catFilter}
                       onChange={(e) => setCatFilter(e.target.value)}
-                      className="block min-w-[320px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="block min-w-[320px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     >
                       <option>Все</option>
                       {(levelFilter === "Все" ? [] : CATS[levelFilter]).map(c => (
@@ -1659,11 +1659,11 @@ export default function ControlSupervisionPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs text-slate-400">Статус</label>
+                    <label className="text-xs text-muted-foreground">Статус</label>
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value as any)}
-                      className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="block min-w-[180px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     >
                       <option value="Все">Все</option>
                       {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -1673,20 +1673,20 @@ export default function ControlSupervisionPage() {
               )}
 
               <div>
-                <label className="text-xs text-slate-400">Поиск: субъект / объект / БИН / адрес</label>
+                <label className="text-xs text-muted-foreground">Поиск: субъект / объект / БИН / адрес</label>
                 <div className="relative">
                   <input
                     placeholder="Начните ввод…"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-8 text-sm"
                   />
-                  <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
+                  <span className="pointer-events-none absolute right-2 top-2.5 text-muted-foreground">🔎</span>
                 </div>
               </div>
 
               <div className="flex items-end gap-3">
-                <button className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                <button className="rounded-lg border border-border bg-muted px-3 py-2 text-sm hover:bg-muted"
                   onClick={() => fileRef.current?.click()}>
                   ⬆️ Импорт
                 </button>
@@ -1705,10 +1705,10 @@ export default function ControlSupervisionPage() {
             </section>
 
             {/* Таблица */}
-            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+            <section className="overflow-x-auto rounded-2xl border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-900/60">
-                  <tr className="text-left text-slate-300">
+                <thead className="bg-muted">
+                  <tr className="text-left text-muted-foreground">
                     <th className="px-3 py-3">№</th>
                     <th className="px-3 py-3">Регион</th>
                     <th className="px-3 py-3">Район/город</th>
@@ -1724,11 +1724,11 @@ export default function ControlSupervisionPage() {
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">Данных нет</td></tr>
                   ) : filtered.map((r, idx) => {
                     const cat = CATS[r.objectiveLevel].find(c => c.id === r.objectiveCategoryId);
                     return (
-                      <tr key={r.id} className="border-t border-slate-800 hover:bg-slate-900/40">
+                      <tr key={r.id} className="border-t border-border hover:bg-card">
                         <td className="px-3 py-2">{idx + 1}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{r.region}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{r.district || "—"}</td>
@@ -1752,14 +1752,14 @@ export default function ControlSupervisionPage() {
                         <td className="px-3 py-2 whitespace-nowrap">
                           <div className="flex gap-2">
                             {canEdit && (
-                              <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                              <button className="rounded-lg bg-muted px-2 py-1 text-xs hover:bg-accent"
                                 onClick={() => onEdit(r.id)}>Редактировать</button>
                             )}
-                            <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                            <button className="rounded-lg bg-muted px-2 py-1 text-xs hover:bg-accent"
                               onClick={() => { setForm(r); setEditingId(r.id); setOpenCharacteristics(true); }}>
                               Характеристика
                             </button>
-                            <button className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                            <button className="rounded-lg bg-muted px-2 py-1 text-xs hover:bg-accent"
                               onClick={() => { setForm(r); setEditingId(r.id); setOpenSubjective(true); }}>
                               Субъективные
                             </button>
@@ -1827,7 +1827,7 @@ export default function ControlSupervisionPage() {
         {activeTab === "inspections" && (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+              <div className="rounded-2xl border border-border bg-card p-4 text-sm">
                 Всего проверок:&nbsp;
                 <span className="font-semibold">
                   {isLoadingInspections ? "Загрузка..." : inspectionsRows.length}
@@ -1858,15 +1858,15 @@ export default function ControlSupervisionPage() {
               </div>
             </div>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+            <section className="rounded-2xl border border-border bg-card p-4 shadow space-y-3">
               <div className="flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Регион</label>
+                  <label className="text-xs text-muted-foreground">Регион</label>
                   <select
                     value={inspectionRegion}
                     onChange={(e) => { setInspectionRegion(e.target.value); setInspectionDistrict("Все"); }}
                     disabled={shouldLockRegion}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
                     {availableRegions.map(r => <option key={r}>{r}</option>)}
@@ -1874,12 +1874,12 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <label className="text-xs text-muted-foreground">Район / ГОС</label>
                   <select
                     value={inspectionDistrict}
                     onChange={(e) => setInspectionDistrict(e.target.value)}
                     disabled={shouldLockDistrict}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
                     {getDistrictOptions(inspectionRegion).map(d => <option key={d}>{d}</option>)}
@@ -1887,11 +1887,11 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Статус</label>
+                  <label className="text-xs text-muted-foreground">Статус</label>
                   <select
                     value={inspectionStatus}
                     onChange={(e) => setInspectionStatus(e.target.value)}
-                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[180px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option value="Все">Все</option>
                     {INSPECTION_STATUSES.map((status) => (
@@ -1901,11 +1901,11 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Тип проверки</label>
+                  <label className="text-xs text-muted-foreground">Тип проверки</label>
                   <select
                     value={inspectionType}
                     onChange={(e) => setInspectionType(e.target.value)}
-                    className="block min-w-[200px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[200px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option value="Все">Все</option>
                     {INSPECTION_TYPES.map((type) => (
@@ -1915,20 +1915,20 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Дата проверки</label>
+                  <label className="text-xs text-muted-foreground">Дата проверки</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="date"
                       value={inspectionDateFrom}
                       onChange={(e) => setInspectionDateFrom(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     />
-                    <span className="text-slate-500">—</span>
+                    <span className="text-muted-foreground">—</span>
                     <input
                       type="date"
                       value={inspectionDateTo}
                       onChange={(e) => setInspectionDateTo(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -1936,31 +1936,31 @@ export default function ControlSupervisionPage() {
 
               <div className="flex flex-wrap gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Номер проверки</label>
+                  <label className="text-xs text-muted-foreground">Номер проверки</label>
                   <input
                     placeholder="Например: 123/2024"
                     value={inspectionNumber}
                     onChange={(e) => setInspectionNumber(e.target.value)}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
                 <div className="flex-1 min-w-[240px]">
-                  <label className="text-xs text-slate-400">Поиск: номер / БИН / ИИН / субъект / адрес</label>
+                  <label className="text-xs text-muted-foreground">Поиск: номер / БИН / ИИН / субъект / адрес</label>
                   <div className="relative">
                     <input
                       placeholder="Начните ввод…"
                       value={inspectionSearch}
                       onChange={(e) => setInspectionSearch(e.target.value)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-8 text-sm"
                     />
-                    <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
+                    <span className="pointer-events-none absolute right-2 top-2.5 text-muted-foreground">🔎</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
-                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                  className="rounded-lg border border-border bg-muted px-3 py-2 text-sm hover:bg-muted"
                   onClick={resetInspectionFilters}
                   type="button"
                 >
@@ -1969,10 +1969,10 @@ export default function ControlSupervisionPage() {
               </div>
             </section>
 
-            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+            <section className="overflow-x-auto rounded-2xl border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-900/60">
-                  <tr className="text-left text-slate-300">
+                <thead className="bg-muted">
+                  <tr className="text-left text-muted-foreground">
                     <th className="px-3 py-3">№</th>
                     <th className="px-3 py-3">Номер проверки</th>
                     <th className="px-3 py-3">Дата проверки</th>
@@ -2007,13 +2007,13 @@ export default function ControlSupervisionPage() {
                 <tbody>
                   {isLoadingInspections ? (
                     <tr>
-                      <td colSpan={canEdit ? 29 : 28} className="px-3 py-10 text-center text-slate-400">
+                      <td colSpan={canEdit ? 29 : 28} className="px-3 py-10 text-center text-muted-foreground">
                         Загрузка...
                       </td>
                     </tr>
                   ) : inspectionsRows.length === 0 ? (
                     <tr>
-                      <td colSpan={canEdit ? 29 : 28} className="px-3 py-10 text-center text-slate-400">
+                      <td colSpan={canEdit ? 29 : 28} className="px-3 py-10 text-center text-muted-foreground">
                         Данных нет
                       </td>
                     </tr>
@@ -2021,7 +2021,7 @@ export default function ControlSupervisionPage() {
                     const statusLabel = INSPECTION_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
                     const typeLabel = INSPECTION_TYPES.find((t) => t.value === item.type)?.label ?? item.type;
                     return (
-                      <tr key={item.id} className="border-t border-slate-800 hover:bg-slate-900/40">
+                      <tr key={item.id} className="border-t border-border hover:bg-card">
                         <td className="px-3 py-2">{idx + 1}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.number}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.inspectionDate)}</td>
@@ -2090,7 +2090,7 @@ export default function ControlSupervisionPage() {
                                     </span>
                                   )}
                                   {linkedPrescriptions === 0 && linkedMeasures === 0 && linkedCases === 0 && (
-                                    <span className="text-slate-500 text-xs">—</span>
+                                    <span className="text-muted-foreground text-xs">—</span>
                                   )}
                                 </>
                               );
@@ -2101,7 +2101,7 @@ export default function ControlSupervisionPage() {
                           <td className="px-3 py-2 whitespace-nowrap">
                             <div className="flex gap-2">
                               <button
-                                className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                                className="rounded-lg bg-muted px-2 py-1 text-xs hover:bg-accent"
                                 onClick={() => onEditInspection(item.id)}
                                 type="button"
                               >
@@ -2135,7 +2135,7 @@ export default function ControlSupervisionPage() {
         {activeTab === "measures" && (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+              <div className="rounded-2xl border border-border bg-card p-4 text-sm">
                 Всего мер:&nbsp;
                 <span className="font-semibold">
                   {isLoadingMeasures ? "Загрузка..." : measuresData.length}
@@ -2144,15 +2144,15 @@ export default function ControlSupervisionPage() {
             </div>
 
             {/* Фильтры для мер */}
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+            <section className="rounded-2xl border border-border bg-card p-4 shadow space-y-3">
               <div className="flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Регион</label>
+                  <label className="text-xs text-muted-foreground">Регион</label>
                   <select
                     value={measureRegion}
                     onChange={(e) => { setMeasureRegion(e.target.value); setMeasureDistrict("Все"); }}
                     disabled={shouldLockRegion}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
                     {availableRegions.map(r => <option key={r}>{r}</option>)}
@@ -2160,12 +2160,12 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <label className="text-xs text-muted-foreground">Район / ГОС</label>
                   <select
                     value={measureDistrict}
                     onChange={(e) => setMeasureDistrict(e.target.value)}
                     disabled={shouldLockDistrict}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
                     {getDistrictOptions(measureRegion).map(d => <option key={d}>{d}</option>)}
@@ -2173,11 +2173,11 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Тип меры</label>
+                  <label className="text-xs text-muted-foreground">Тип меры</label>
                   <select
                     value={measureType}
                     onChange={(e) => setMeasureType(e.target.value)}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option>Все</option>
                     <option>Приостановление деятельности</option>
@@ -2189,11 +2189,11 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Статус</label>
+                  <label className="text-xs text-muted-foreground">Статус</label>
                   <select
                     value={measureStatus}
                     onChange={(e) => setMeasureStatus(e.target.value)}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option>Все</option>
                     <option>Принято</option>
@@ -2206,51 +2206,51 @@ export default function ControlSupervisionPage() {
 
               <div className="flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Дата с</label>
+                  <label className="text-xs text-muted-foreground">Дата с</label>
                   <input
                     type="date"
                     value={measureDateFrom}
                     onChange={(e) => setMeasureDateFrom(e.target.value)}
-                    className="block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Дата до</label>
+                  <label className="text-xs text-muted-foreground">Дата до</label>
                   <input
                     type="date"
                     value={measureDateTo}
                     onChange={(e) => setMeasureDateTo(e.target.value)}
-                    className="block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">№ Проверки</label>
+                  <label className="text-xs text-muted-foreground">№ Проверки</label>
                   <input
                     type="text"
                     value={measureInspectionNumber}
                     onChange={(e) => setMeasureInspectionNumber(e.target.value)}
                     placeholder="Введите номер..."
-                    className="block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
 
                 <div className="flex-1 min-w-[200px]">
-                  <label className="text-xs text-slate-400">Поиск</label>
+                  <label className="text-xs text-muted-foreground">Поиск</label>
                   <input
                     type="text"
                     value={measureSearch}
                     onChange={(e) => setMeasureSearch(e.target.value)}
                     placeholder="Номер, описание..."
-                    className="block w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   />
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
-                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                  className="rounded-lg border border-border bg-muted px-3 py-2 text-sm hover:bg-muted"
                   onClick={() => {
                     setMeasureRegion("Все");
                     setMeasureDistrict("Все");
@@ -2269,10 +2269,10 @@ export default function ControlSupervisionPage() {
             </section>
 
             {/* Таблица мер */}
-            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+            <section className="overflow-x-auto rounded-2xl border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-900/60">
-                  <tr className="text-left text-slate-300">
+                <thead className="bg-muted">
+                  <tr className="text-left text-muted-foreground">
                     <th className="px-3 py-3">№</th>
                     <th className="px-3 py-3">Тип меры</th>
                     <th className="px-3 py-3">Номер акта</th>
@@ -2289,13 +2289,13 @@ export default function ControlSupervisionPage() {
                 <tbody>
                   {isLoadingMeasures ? (
                     <tr>
-                      <td colSpan={11} className="px-3 py-8 text-center text-slate-400">
+                      <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
                         Загрузка мер...
                       </td>
                     </tr>
                   ) : measuresData.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="px-3 py-8 text-center text-slate-400">
+                      <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">
                         Меры не найдены
                       </td>
                     </tr>
@@ -2305,7 +2305,7 @@ export default function ControlSupervisionPage() {
                       return (
                         <tr
                           key={measure.id || index}
-                          className="border-t border-slate-800 hover:bg-slate-900/40"
+                          className="border-t border-border hover:bg-card"
                         >
                           <td className="px-3 py-2 whitespace-nowrap">{index + 1}</td>
                           <td className="px-3 py-2">{measure.type || "—"}</td>
@@ -2331,7 +2331,7 @@ export default function ControlSupervisionPage() {
                               <span>{deadlineInfo.text}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 max-w-xs truncate" title={measure.description}>
+                          <td className="px-3 py-2 max-w-xs truncate" title={measure.description || undefined}>
                             {measure.description || "—"}
                           </td>
                           <td className="px-3 py-2">{measure.status || "—"}</td>
@@ -2349,7 +2349,7 @@ export default function ControlSupervisionPage() {
         )}
 
         {activeTab === "preventive" && (
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow">
             <div className="flex flex-wrap gap-3">
               <button
                 className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
@@ -2358,7 +2358,7 @@ export default function ControlSupervisionPage() {
                 Создать — сформировать списки
               </button>
               <button
-                className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700"
+                className="rounded-xl bg-muted px-4 py-2 text-sm font-medium hover:bg-accent"
                 type="button"
               >
                 Проанализировать субъективные критерии
@@ -2372,9 +2372,9 @@ export default function ControlSupervisionPage() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-semibold">Предписания</h2>
-                <span className="text-sm text-slate-400">Раздел перенесён в «Меры ОР».</span>
+                <span className="text-sm text-muted-foreground">Раздел перенесён в «Меры ОР».</span>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+              <div className="rounded-2xl border border-border bg-card p-4 text-sm">
                 Всего предписаний:&nbsp;
                 <span className="font-semibold">
                   {isLoadingPrescriptions ? "Загрузка..." : prescriptionsData.length}
@@ -2382,15 +2382,15 @@ export default function ControlSupervisionPage() {
               </div>
             </div>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+            <section className="rounded-2xl border border-border bg-card p-4 shadow space-y-3">
               <div className="flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Регион</label>
+                  <label className="text-xs text-muted-foreground">Регион</label>
                   <select
                     value={prescriptionRegion}
                     onChange={(e) => { setPrescriptionRegion(e.target.value); setPrescriptionDistrict("Все"); }}
                     disabled={shouldLockRegion}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
                     {availableRegions.map(r => <option key={r}>{r}</option>)}
@@ -2398,12 +2398,12 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <label className="text-xs text-muted-foreground">Район / ГОС</label>
                   <select
                     value={prescriptionDistrict}
                     onChange={(e) => setPrescriptionDistrict(e.target.value)}
                     disabled={shouldLockDistrict}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
                     {getDistrictOptions(prescriptionRegion).map(d => <option key={d}>{d}</option>)}
@@ -2411,11 +2411,11 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Статус</label>
+                  <label className="text-xs text-muted-foreground">Статус</label>
                   <select
                     value={prescriptionStatus}
                     onChange={(e) => setPrescriptionStatus(e.target.value)}
-                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[180px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option value="Все">Все</option>
                     {PRESCRIPTION_STATUSES.map((status) => (
@@ -2425,51 +2425,51 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Дата выдачи</label>
+                  <label className="text-xs text-muted-foreground">Дата выдачи</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="date"
                       value={prescriptionDateFrom}
                       onChange={(e) => setPrescriptionDateFrom(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     />
-                    <span className="text-slate-500">—</span>
+                    <span className="text-muted-foreground">—</span>
                     <input
                       type="date"
                       value={prescriptionDateTo}
                       onChange={(e) => setPrescriptionDateTo(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-slate-400">Номер проверки</label>
+                <label className="text-xs text-muted-foreground">Номер проверки</label>
                 <input
                   placeholder="Например: 123/2024"
                   value={prescriptionInspectionNumber}
                   onChange={(e) => setPrescriptionInspectionNumber(e.target.value)}
-                  className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-400">Поиск: номер / БИН / ИИН / описание</label>
+                <label className="text-xs text-muted-foreground">Поиск: номер / БИН / ИИН / описание</label>
                 <div className="relative">
                   <input
                     placeholder="Начните ввод…"
                     value={prescriptionSearch}
                     onChange={(e) => setPrescriptionSearch(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-8 text-sm"
                   />
-                  <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
+                  <span className="pointer-events-none absolute right-2 top-2.5 text-muted-foreground">🔎</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
-                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                  className="rounded-lg border border-border bg-muted px-3 py-2 text-sm hover:bg-muted"
                   onClick={resetPrescriptionFilters}
                   type="button"
                 >
@@ -2478,10 +2478,10 @@ export default function ControlSupervisionPage() {
               </div>
             </section>
 
-            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+            <section className="overflow-x-auto rounded-2xl border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-900/60">
-                  <tr className="text-left text-slate-300">
+                <thead className="bg-muted">
+                  <tr className="text-left text-muted-foreground">
                     <th className="px-3 py-3">№</th>
                     <th className="px-3 py-3">Дата выдачи</th>
                     <th className="px-3 py-3">Номер</th>
@@ -2497,13 +2497,13 @@ export default function ControlSupervisionPage() {
                 </thead>
                 <tbody>
                   {isLoadingPrescriptions ? (
-                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">Загрузка...</td></tr>
                   ) : prescriptionsData.length === 0 ? (
-                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">Данных нет</td></tr>
                   ) : prescriptionsData.map((item, idx) => {
                     const statusLabel = PRESCRIPTION_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
                     return (
-                      <tr key={item.id} className="border-t border-slate-800 hover:bg-slate-900/40">
+                      <tr key={item.id} className="border-t border-border hover:bg-card">
                         <td className="px-3 py-2">{idx + 1}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.issueDate)}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.number}</td>
@@ -2527,22 +2527,22 @@ export default function ControlSupervisionPage() {
             <div className="pt-4">
               <h2 className="text-lg font-semibold">Меры реагирования</h2>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm">
+            <div className="rounded-2xl border border-border bg-card p-4 text-sm">
               Всего мер реагирования:&nbsp;
               <span className="font-semibold">
                 {isLoadingMeasures ? "Загрузка..." : measuresData.length}
               </span>
             </div>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+            <section className="rounded-2xl border border-border bg-card p-4 shadow space-y-3">
               <div className="flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Регион</label>
+                  <label className="text-xs text-muted-foreground">Регион</label>
                   <select
                     value={measureRegion}
                     onChange={(e) => { setMeasureRegion(e.target.value); setMeasureDistrict("Все"); }}
                     disabled={shouldLockRegion}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {isMchsUser && <option>Все</option>}
                     {availableRegions.map(r => <option key={r}>{r}</option>)}
@@ -2550,12 +2550,12 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Район / ГОС</label>
+                  <label className="text-xs text-muted-foreground">Район / ГОС</label>
                   <select
                     value={measureDistrict}
                     onChange={(e) => setMeasureDistrict(e.target.value)}
                     disabled={shouldLockDistrict}
-                    className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     {(isMchsUser || isDchsUser) && <option>Все</option>}
                     {getDistrictOptions(measureRegion).map(d => <option key={d}>{d}</option>)}
@@ -2563,11 +2563,11 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Статус</label>
+                  <label className="text-xs text-muted-foreground">Статус</label>
                   <select
                     value={measureStatus}
                     onChange={(e) => setMeasureStatus(e.target.value)}
-                    className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[180px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option value="Все">Все</option>
                     {MEASURE_STATUSES.map((status) => (
@@ -2577,11 +2577,11 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Тип меры</label>
+                  <label className="text-xs text-muted-foreground">Тип меры</label>
                   <select
                     value={measureType}
                     onChange={(e) => setMeasureType(e.target.value)}
-                    className="block min-w-[200px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    className="block min-w-[200px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option value="Все">Все</option>
                     {MEASURE_TYPES.map((type) => (
@@ -2591,51 +2591,51 @@ export default function ControlSupervisionPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Дата меры</label>
+                  <label className="text-xs text-muted-foreground">Дата меры</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="date"
                       value={measureDateFrom}
                       onChange={(e) => setMeasureDateFrom(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     />
-                    <span className="text-slate-500">—</span>
+                    <span className="text-muted-foreground">—</span>
                     <input
                       type="date"
                       value={measureDateTo}
                       onChange={(e) => setMeasureDateTo(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-slate-400">Номер проверки</label>
+                <label className="text-xs text-muted-foreground">Номер проверки</label>
                 <input
                   placeholder="Например: 123/2024"
                   value={measureInspectionNumber}
                   onChange={(e) => setMeasureInspectionNumber(e.target.value)}
-                  className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-400">Поиск: номер / БИН / ИИН / описание</label>
+                <label className="text-xs text-muted-foreground">Поиск: номер / БИН / ИИН / описание</label>
                 <div className="relative">
                   <input
                     placeholder="Начните ввод…"
                     value={measureSearch}
                     onChange={(e) => setMeasureSearch(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-8 text-sm"
                   />
-                  <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">🔎</span>
+                  <span className="pointer-events-none absolute right-2 top-2.5 text-muted-foreground">🔎</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
-                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                  className="rounded-lg border border-border bg-muted px-3 py-2 text-sm hover:bg-muted"
                   onClick={resetMeasureFilters}
                   type="button"
                 >
@@ -2644,10 +2644,10 @@ export default function ControlSupervisionPage() {
               </div>
             </section>
 
-            <section className="overflow-x-auto rounded-2xl border border-slate-800">
+            <section className="overflow-x-auto rounded-2xl border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-900/60">
-                  <tr className="text-left text-slate-300">
+                <thead className="bg-muted">
+                  <tr className="text-left text-muted-foreground">
                     <th className="px-3 py-3">№</th>
                     <th className="px-3 py-3">Дата</th>
                     <th className="px-3 py-3">Номер</th>
@@ -2663,14 +2663,14 @@ export default function ControlSupervisionPage() {
                 </thead>
                 <tbody>
                   {isLoadingMeasures ? (
-                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">Загрузка...</td></tr>
                   ) : measuresData.length === 0 ? (
-                    <tr><td colSpan={11} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                    <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">Данных нет</td></tr>
                   ) : measuresData.map((item, idx) => {
                     const statusLabel = MEASURE_STATUSES.find((s) => s.value === item.status)?.label ?? item.status;
                     const typeLabel = MEASURE_TYPES.find((t) => t.value === item.type)?.label ?? item.type;
                     return (
-                      <tr key={item.id} className="border-t border-slate-800 hover:bg-slate-900/40">
+                      <tr key={item.id} className="border-t border-border hover:bg-card">
                         <td className="px-3 py-2">{idx + 1}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{formatDate(item.measureDate)}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{item.number}</td>
@@ -2695,13 +2695,13 @@ export default function ControlSupervisionPage() {
 
         {activeTab === "reports" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div className="flex items-center justify-between border-b border-border pb-2">
               <div className="flex space-x-4">
                 <button
                   onClick={() => setReportType("general")}
                   className={`px-3 py-1 text-sm font-medium transition-colors ${reportType === "general"
                     ? "text-blue-400 border-b-2 border-blue-500"
-                    : "text-slate-400 hover:text-slate-200"
+                    : "text-muted-foreground hover:text-muted-foreground"
                     }`}
                 >
                   Общая статистика
@@ -2710,7 +2710,7 @@ export default function ControlSupervisionPage() {
                   onClick={() => setReportType("form-13-kps")}
                   className={`px-3 py-1 text-sm font-medium transition-colors ${reportType === "form-13-kps"
                     ? "text-blue-400 border-b-2 border-blue-500"
-                    : "text-slate-400 hover:text-slate-200"
+                    : "text-muted-foreground hover:text-muted-foreground"
                     }`}
                 >
                   Форма №13-КПС
@@ -2722,14 +2722,14 @@ export default function ControlSupervisionPage() {
               <Form13KPS />
             ) : (
               <>
-                <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow space-y-3">
+                <section className="rounded-2xl border border-border bg-card p-4 shadow space-y-3">
                   <div className="flex flex-wrap items-end gap-3">
                     <div>
-                      <label className="text-xs text-slate-400">Период агрегации</label>
+                      <label className="text-xs text-muted-foreground">Период агрегации</label>
                       <select
                         value={reportPeriod}
                         onChange={(e) => setReportPeriod(e.target.value)}
-                        className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        className="block min-w-[180px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       >
                         {REPORT_PERIODS.map((period) => (
                           <option key={period.value} value={period.value}>{period.label}</option>
@@ -2738,12 +2738,12 @@ export default function ControlSupervisionPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs text-slate-400">Регион</label>
+                      <label className="text-xs text-muted-foreground">Регион</label>
                       <select
                         value={reportRegion}
                         onChange={(e) => { setReportRegion(e.target.value); setReportDistrict("Все"); }}
                         disabled={shouldLockRegion}
-                        className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       >
                         {isMchsUser && <option>Все</option>}
                         {availableRegions.map(r => <option key={r}>{r}</option>)}
@@ -2751,12 +2751,12 @@ export default function ControlSupervisionPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs text-slate-400">Район / ГОС</label>
+                      <label className="text-xs text-muted-foreground">Район / ГОС</label>
                       <select
                         value={reportDistrict}
                         onChange={(e) => setReportDistrict(e.target.value)}
                         disabled={shouldLockDistrict}
-                        className="block min-w-[220px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        className="block min-w-[220px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       >
                         {(isMchsUser || isDchsUser) && <option>Все</option>}
                         {getDistrictOptions(reportRegion).map(d => <option key={d}>{d}</option>)}
@@ -2764,11 +2764,11 @@ export default function ControlSupervisionPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs text-slate-400">Статус проверок</label>
+                      <label className="text-xs text-muted-foreground">Статус проверок</label>
                       <select
                         value={reportStatus}
                         onChange={(e) => setReportStatus(e.target.value)}
-                        className="block min-w-[180px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                        className="block min-w-[180px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       >
                         <option value="Все">Все</option>
                         {INSPECTION_STATUSES.map((status) => (
@@ -2778,20 +2778,20 @@ export default function ControlSupervisionPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs text-slate-400">Период дат</label>
+                      <label className="text-xs text-muted-foreground">Период дат</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="date"
                           value={reportDateFrom}
                           onChange={(e) => setReportDateFrom(e.target.value)}
-                          className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                         />
-                        <span className="text-slate-500">—</span>
+                        <span className="text-muted-foreground">—</span>
                         <input
                           type="date"
                           value={reportDateTo}
                           onChange={(e) => setReportDateTo(e.target.value)}
-                          className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                         />
                       </div>
                     </div>
@@ -2799,7 +2799,7 @@ export default function ControlSupervisionPage() {
 
                   <div className="flex items-center gap-3">
                     <button
-                      className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                      className="rounded-lg border border-border bg-muted px-3 py-2 text-sm hover:bg-muted"
                       onClick={resetReportFilters}
                       type="button"
                     >
@@ -2809,40 +2809,40 @@ export default function ControlSupervisionPage() {
                 </section>
 
                 <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-7">
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                    <p className="text-xs uppercase text-slate-400">Всего проверок</p>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Всего проверок</p>
                     <p className="text-2xl font-semibold">{reportTotals.totalCount}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                    <p className="text-xs uppercase text-slate-400">Запланировано</p>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Запланировано</p>
                     <p className="text-2xl font-semibold">{reportTotals.plannedCount}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                    <p className="text-xs uppercase text-slate-400">Завершено</p>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Завершено</p>
                     <p className="text-2xl font-semibold">{reportTotals.completedCount}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                    <p className="text-xs uppercase text-slate-400">Плановые</p>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Плановые</p>
                     <p className="text-2xl font-semibold">{reportTotals.scheduledCount}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                    <p className="text-xs uppercase text-slate-400">Внеплановые</p>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Внеплановые</p>
                     <p className="text-2xl font-semibold">{reportTotals.unscheduledCount}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                    <p className="text-xs uppercase text-slate-400">С нарушениями</p>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs uppercase text-muted-foreground">С нарушениями</p>
                     <p className="text-2xl font-semibold">{reportTotals.withViolationsCount}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                    <p className="text-xs uppercase text-slate-400">С предписаниями</p>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-xs uppercase text-muted-foreground">С предписаниями</p>
                     <p className="text-2xl font-semibold">{reportTotals.withPrescriptionsCount}</p>
                   </div>
                 </div>
 
-                <section className="overflow-x-auto rounded-2xl border border-slate-800">
+                <section className="overflow-x-auto rounded-2xl border border-border">
                   <table className="min-w-[1200px] text-sm">
-                    <thead className="bg-slate-900/60">
-                      <tr className="text-left text-slate-300">
+                    <thead className="bg-muted">
+                      <tr className="text-left text-muted-foreground">
                         <th className="px-3 py-3">Период</th>
                         <th className="px-3 py-3">Всего</th>
                         <th className="px-3 py-3">Запланировано</th>
@@ -2857,11 +2857,11 @@ export default function ControlSupervisionPage() {
                     </thead>
                     <tbody>
                       {isLoadingReports ? (
-                        <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Загрузка...</td></tr>
+                        <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">Загрузка...</td></tr>
                       ) : reportRows.length === 0 ? (
-                        <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-400">Данных нет</td></tr>
+                        <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">Данных нет</td></tr>
                       ) : reportRows.map((row) => (
-                        <tr key={row.period} className="border-t border-slate-800 hover:bg-slate-900/40">
+                        <tr key={row.period} className="border-t border-border hover:bg-card">
                           <td className="px-3 py-2 whitespace-nowrap">{formatDate(row.period)}</td>
                           <td className="px-3 py-2">{row.totalCount}</td>
                           <td className="px-3 py-2">{row.plannedCount}</td>
@@ -2892,7 +2892,7 @@ export default function ControlSupervisionPage() {
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <Field label="Регион">
                     <select
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.region}
                       onChange={(e) => setForm(s => ({ ...s, region: e.target.value, district: "" }))}
                       disabled={shouldLockRegion}
@@ -2902,7 +2902,7 @@ export default function ControlSupervisionPage() {
                   </Field>
                   <Field label="Район / ГОС">
                     <select
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.district}
                       onChange={(e) => setForm(s => ({ ...s, district: e.target.value }))}
                       disabled={shouldLockDistrict}
@@ -2914,7 +2914,7 @@ export default function ControlSupervisionPage() {
 
                   <Field label="Категория предпринимательства">
                     <select
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.entrepreneurshipCategory}
                       onChange={(e) => setForm(s => ({ ...s, entrepreneurshipCategory: e.target.value as BizCat }))}
                     >
@@ -2923,7 +2923,7 @@ export default function ControlSupervisionPage() {
                   </Field>
                   <Field label="Статус">
                     <select
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.status}
                       onChange={(e) => setForm(s => ({ ...s, status: e.target.value as Status }))}
                     >
@@ -2933,7 +2933,7 @@ export default function ControlSupervisionPage() {
 
                   <Field label="Наименование субъекта" error={errors.subjectName}>
                     <input
-                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectName ? "border-red-600" : "border-border"} bg-background`}
                       value={form.subjectName}
                       onChange={(e) => setForm(s => ({ ...s, subjectName: e.target.value }))}
                     />
@@ -2941,7 +2941,7 @@ export default function ControlSupervisionPage() {
                   <Field label="ИИН/БИН" error={errors.subjectBIN}>
                     <input
                       inputMode="numeric" maxLength={12} placeholder="12 цифр"
-                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectBIN ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.subjectBIN ? "border-red-600" : "border-border"} bg-background`}
                       value={form.subjectBIN}
                       onChange={(e) => setForm(s => ({ ...s, subjectBIN: e.target.value.replace(/[^0-9]/g, "") }))}
                     />
@@ -2949,14 +2949,14 @@ export default function ControlSupervisionPage() {
 
                   <Field label="Наименование объекта" error={errors.objectName}>
                     <input
-                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectName ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectName ? "border-red-600" : "border-border"} bg-background`}
                       value={form.objectName}
                       onChange={(e) => setForm(s => ({ ...s, objectName: e.target.value }))}
                     />
                   </Field>
                   <Field label="Адрес" error={errors.address}>
                     <input
-                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.address ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.address ? "border-red-600" : "border-border"} bg-background`}
                       value={form.address}
                       onChange={(e) => setForm(s => ({ ...s, address: e.target.value }))}
                     />
@@ -2964,7 +2964,7 @@ export default function ControlSupervisionPage() {
 
                   <Field label="Объективный критерий (риск)">
                     <select
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.objectiveLevel}
                       onChange={(e) => setForm(s => ({ ...s, objectiveLevel: e.target.value as ObjectiveLevel, objectiveCategoryId: "" }))}
                     >
@@ -2975,7 +2975,7 @@ export default function ControlSupervisionPage() {
                   </Field>
                   <Field label="Наименование объективного критерия" error={errors.objectiveCategoryId}>
                     <select
-                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectiveCategoryId ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm ${errors.objectiveCategoryId ? "border-red-600" : "border-border"} bg-background`}
                       value={form.objectiveCategoryId}
                       onChange={(e) => setForm(s => ({ ...s, objectiveCategoryId: e.target.value }))}
                     >
@@ -2984,15 +2984,15 @@ export default function ControlSupervisionPage() {
                     </select>
                   </Field>
 
-                  <div className="md:col-span-2 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                  <div className="md:col-span-2 rounded-lg border border-border bg-card p-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-sm text-slate-400">
+                      <div className="text-sm text-muted-foreground">
                         Настроить детально:
                       </div>
                       <div className="flex gap-2">
-                        <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
+                        <button className="rounded-lg bg-muted px-3 py-2 text-sm hover:bg-accent" type="button"
                           onClick={() => setOpenCharacteristics(true)}>Характеристика объекта</button>
-                        <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button"
+                        <button className="rounded-lg bg-muted px-3 py-2 text-sm hover:bg-accent" type="button"
                           onClick={() => setOpenSubjective(true)}>Субъективные критерии</button>
                       </div>
                     </div>
@@ -3012,7 +3012,7 @@ export default function ControlSupervisionPage() {
                     )}
                   </div>
                   <div className="flex gap-3">
-                    <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenForm(false)}>Отмена</button>
+                    <button className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent" onClick={() => setOpenForm(false)}>Отмена</button>
                     <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500" onClick={onSave}>Сохранить</button>
                   </div>
                 </div>
@@ -3027,32 +3027,32 @@ export default function ControlSupervisionPage() {
                     checked={form.characteristics.hasPrivateFireService}
                     onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasPrivateFireService: v } }))} />
                   <Field label="Вид сооружения">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.buildingType}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, buildingType: e.target.value } }))} />
                   </Field>
                   <Field label="Этажность (в метрах)">
-                    <input inputMode="decimal" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input inputMode="decimal" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.heightMeters}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heightMeters: e.target.value === "" ? "" : Number((e.target.value || "").toString().replace(",", ".")) } }))} />
                   </Field>
                   <Field label="Стены">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.walls}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, walls: e.target.value } }))} />
                   </Field>
                   <Field label="Перегородки">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.partitions}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, partitions: e.target.value } }))} />
                   </Field>
                   <Field label="Отопление">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.heating}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, heating: e.target.value } }))} />
                   </Field>
                   <Field label="Освещение">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.lighting}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, lighting: e.target.value } }))} />
                   </Field>
@@ -3066,7 +3066,7 @@ export default function ControlSupervisionPage() {
                     checked={form.characteristics.hasParking}
                     onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasParking: v } }))} />
                   <Field label="Первичные средства пожаротушения">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.primaryExtinguishing}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, primaryExtinguishing: e.target.value } }))} />
                   </Field>
@@ -3077,23 +3077,23 @@ export default function ControlSupervisionPage() {
                     checked={form.characteristics.hasAPS}
                     onChange={(v) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, hasAPS: v } }))} />
                   <Field label="Обслуживающая организация АПС">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.apsServiceOrg}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, apsServiceOrg: e.target.value } }))} />
                   </Field>
                   <Field label="Наружное противопожарное водоснабжение">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.outsideWater}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, outsideWater: e.target.value } }))} />
                   </Field>
                   <Field label="Внутреннее противопожарное водоснабжение">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.characteristics.insideWater}
                       onChange={(e) => setForm(s => ({ ...s, characteristics: { ...s.characteristics, insideWater: e.target.value } }))} />
                   </Field>
                 </div>
                 <div className="mt-5 flex justify-end">
-                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                  <button className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent"
                     onClick={() => setOpenCharacteristics(false)}>Готово</button>
                 </div>
               </Modal>
@@ -3104,12 +3104,12 @@ export default function ControlSupervisionPage() {
               <Modal title="Субъективные критерии" onClose={() => setOpenSubjective(false)}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <Field label="Нарушения по предыдущей проверке (кол-во)">
-                    <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input inputMode="numeric" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.subjective.prevViolations}
                       onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, prevViolations: Number(e.target.value || 0) } }))} />
                   </Field>
                   <Field label="Пожары/ЧС за 12 месяцев (кол-во)">
-                    <input inputMode="numeric" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input inputMode="numeric" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.subjective.incidents12m}
                       onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, incidents12m: Number(e.target.value || 0) } }))} />
                   </Field>
@@ -3117,13 +3117,13 @@ export default function ControlSupervisionPage() {
                     checked={form.subjective.powerOverload}
                     onChange={(v) => setForm(s => ({ ...s, subjective: { ...s.subjective, powerOverload: v } }))} />
                   <Field label="Прочие неблагоприятные факторы">
-                    <input className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                    <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={form.subjective.otherRiskNotes}
                       onChange={(e) => setForm(s => ({ ...s, subjective: { ...s.subjective, otherRiskNotes: e.target.value } }))} />
                   </Field>
                 </div>
                 <div className="mt-5 flex justify-end">
-                  <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                  <button className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent"
                     onClick={() => setOpenSubjective(false)}>Готово</button>
                 </div>
               </Modal>
@@ -3132,11 +3132,11 @@ export default function ControlSupervisionPage() {
             {/* Подтверждение удаления */}
             {confirmId && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setConfirmId(null)}>
-                <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="w-full max-w-md rounded-2xl border border-border bg-background p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                   <h3 className="text-lg font-semibold">Удалить запись?</h3>
-                  <p className="mt-2 text-sm text-slate-300">Действие необратимо.</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Действие необратимо.</p>
                   <div className="mt-5 flex justify-end gap-3">
-                    <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setConfirmId(null)}>Отмена</button>
+                    <button className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent" onClick={() => setConfirmId(null)}>Отмена</button>
                     <button className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium hover:bg-red-500" onClick={onDelete}>Удалить</button>
                   </div>
                 </div>
@@ -3153,7 +3153,7 @@ export default function ControlSupervisionPage() {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Field label="Номер проверки" error={inspectionErrors.number}>
                 <input
-                  className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.number ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.number ? "border-red-600" : "border-border"} bg-background`}
                   value={inspectionForm.number}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, number: e.target.value }))}
                 />
@@ -3161,14 +3161,14 @@ export default function ControlSupervisionPage() {
               <Field label="Дата проверки" error={inspectionErrors.inspectionDate}>
                 <input
                   type="date"
-                  className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.inspectionDate ? "border-red-600" : "border-slate-700"} bg-slate-950`}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm ${inspectionErrors.inspectionDate ? "border-red-600" : "border-border"} bg-background`}
                   value={inspectionForm.inspectionDate}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionDate: e.target.value }))}
                 />
               </Field>
               <Field label="Тип проверки">
                 <select
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.type}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, type: e.target.value as InspectionType }))}
                 >
@@ -3179,7 +3179,7 @@ export default function ControlSupervisionPage() {
               </Field>
               <Field label="Статус">
                 <select
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.status}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, status: e.target.value as InspectionStatus }))}
                 >
@@ -3191,7 +3191,7 @@ export default function ControlSupervisionPage() {
 
               <Field label="Регион">
                 <select
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.region || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, region: e.target.value, district: "" }))}
                   disabled={shouldLockRegion}
@@ -3202,7 +3202,7 @@ export default function ControlSupervisionPage() {
               </Field>
               <Field label="Район / ГОС">
                 <select
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.district || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, district: e.target.value }))}
                   disabled={shouldLockDistrict}
@@ -3215,7 +3215,7 @@ export default function ControlSupervisionPage() {
               <Field label="БИН">
                 <input
                   inputMode="numeric"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.bin || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, bin: e.target.value.replace(/[^0-9]/g, "") }))}
                 />
@@ -3223,21 +3223,21 @@ export default function ControlSupervisionPage() {
               <Field label="ИИН">
                 <input
                   inputMode="numeric"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.iin || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, iin: e.target.value.replace(/[^0-9]/g, "") }))}
                 />
               </Field>
               <Field label="Субъект">
                 <input
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.subjectName || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, subjectName: e.target.value }))}
                 />
               </Field>
               <Field label="Адрес">
                 <input
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.address || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, address: e.target.value }))}
                 />
@@ -3245,7 +3245,7 @@ export default function ControlSupervisionPage() {
 
               <Field label="№ проверки УКПСиСУ">
                 <input
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.ukpsisuCheckNumber || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuCheckNumber: e.target.value }))}
                 />
@@ -3253,63 +3253,63 @@ export default function ControlSupervisionPage() {
               <Field label="Дата регистрации УКПСиСУ">
                 <input
                   type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.ukpsisuRegistrationDate || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, ukpsisuRegistrationDate: e.target.value }))}
                 />
               </Field>
               <Field label="Назначивший орган">
                 <input
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.assigningAuthority || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, assigningAuthority: e.target.value }))}
                 />
               </Field>
               <Field label="Орган регистрации">
                 <input
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.registrationAuthority || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, registrationAuthority: e.target.value }))}
                 />
               </Field>
               <Field label="Вид проверки">
                 <input
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.inspectionKind || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionKind: e.target.value }))}
                 />
               </Field>
               <Field label="Проверяемые объекты">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.inspectedObjects || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, inspectedObjects: e.target.value }))}
                 />
               </Field>
               <Field label="Основание">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.basis || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, basis: e.target.value }))}
                 />
               </Field>
               <Field label="Сроки проведения">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.inspectionPeriod || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, inspectionPeriod: e.target.value }))}
                 />
               </Field>
               <Field label="Сроки продления">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.extensionPeriod || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, extensionPeriod: e.target.value }))}
                 />
               </Field>
               <Field label="Даты приостановления/возобновления">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={inspectionForm.suspensionResumptionDates || ""}
                   onChange={(e) => setInspectionForm((s) => ({ ...s, suspensionResumptionDates: e.target.value }))}
                 />
@@ -3322,7 +3322,7 @@ export default function ControlSupervisionPage() {
 
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
-                className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent"
                 onClick={() => setOpenInspectionForm(false)}
                 type="button"
               >
@@ -3345,7 +3345,7 @@ export default function ControlSupervisionPage() {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Field label="Вид меры">
                 <select
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={morForm.type}
                   onChange={(e) => setMORForm((s: any) => ({ ...s, type: e.target.value as MeasureType }))}
                 >
@@ -3358,7 +3358,7 @@ export default function ControlSupervisionPage() {
               </Field>
               <Field label="Номер акта">
                 <input
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={morForm.number}
                   onChange={(e) => setMORForm((s: any) => ({ ...s, number: e.target.value }))}
                   placeholder="№ акта"
@@ -3367,14 +3367,14 @@ export default function ControlSupervisionPage() {
               <Field label="Дата принятия меры">
                 <input
                   type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={morForm.measureDate}
                   onChange={(e) => setMORForm((s: any) => ({ ...s, measureDate: e.target.value }))}
                 />
               </Field>
               <Field label="Описание">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   rows={3}
                   value={morForm.description}
                   onChange={(e) => setMORForm((s: any) => ({ ...s, description: e.target.value }))}
@@ -3383,7 +3383,7 @@ export default function ControlSupervisionPage() {
               </Field>
             </div>
             <div className="mt-5 flex items-center justify-end gap-3">
-              <button className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" onClick={() => setOpenMORForm(false)}>Отмена</button>
+              <button className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent" onClick={() => setOpenMORForm(false)}>Отмена</button>
               <button className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium hover:bg-orange-500" onClick={onSaveMOR}>Сохранитьацию МОР</button>
             </div>
           </Modal>
@@ -3396,7 +3396,7 @@ export default function ControlSupervisionPage() {
               <Field label="Номер талона">
                 <input
                   type="text"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   placeholder="Например: Т-123/2024"
                   value={ticketForm.ticketNumber}
                   onChange={(e) => setTicketForm((s) => ({ ...s, ticketNumber: e.target.value }))}
@@ -3405,7 +3405,7 @@ export default function ControlSupervisionPage() {
               <Field label="Дата регистрации">
                 <input
                   type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={ticketForm.registrationDate}
                   onChange={(e) => setTicketForm((s) => ({ ...s, registrationDate: e.target.value }))}
                 />
@@ -3438,7 +3438,7 @@ export default function ControlSupervisionPage() {
               </Field>
               <Field label="Описание нарушений">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   rows={4}
                   placeholder="Опишите выявленные нарушения (если имеются)"
                   value={ticketForm.violationsDescription}
@@ -3447,7 +3447,7 @@ export default function ControlSupervisionPage() {
               </Field>
               <Field label="Корректирующие действия">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   rows={3}
                   placeholder="Укажите предписанные корректирующие действия"
                   value={ticketForm.correctiveActions}
@@ -3457,7 +3457,7 @@ export default function ControlSupervisionPage() {
               <Field label="Срок устранения">
                 <input
                   type="date"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   value={ticketForm.deadline}
                   onChange={(e) => setTicketForm((s) => ({ ...s, deadline: e.target.value }))}
                 />
@@ -3465,7 +3465,7 @@ export default function ControlSupervisionPage() {
               <Field label="Ответственное лицо">
                 <input
                   type="text"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   placeholder="ФИО ответственного лица"
                   value={ticketForm.responsible}
                   onChange={(e) => setTicketForm((s) => ({ ...s, responsible: e.target.value }))}
@@ -3473,7 +3473,7 @@ export default function ControlSupervisionPage() {
               </Field>
               <Field label="Примечания">
                 <textarea
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   rows={2}
                   placeholder="Дополнительные примечания"
                   value={ticketForm.notes}
@@ -3483,7 +3483,7 @@ export default function ControlSupervisionPage() {
             </div>
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
-                className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent"
                 onClick={() => setOpenTicketModal(false)}
               >
                 Отмена
@@ -3517,11 +3517,11 @@ export default function ControlSupervisionPage() {
 function Modal({ title, onClose, children }: { title?: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-4xl rounded-2xl border border-border bg-background p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         {title ? (
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">{title}</h2>
-            <button className="rounded-lg bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700" onClick={onClose}>
+            <button className="rounded-lg bg-muted px-3 py-1 text-sm hover:bg-accent" onClick={onClose}>
               Закрыть
             </button>
           </div>
@@ -3535,7 +3535,7 @@ function Modal({ title, onClose, children }: { title?: string; onClose: () => vo
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
+      <span className="mb-1 block text-muted-foreground">{label}</span>
       {children}
       {error ? <span className="mt-1 block text-xs text-red-500">{error}</span> : null}
     </label>
@@ -3547,11 +3547,11 @@ function Check({ label, checked, onChange }: { label: string; checked: boolean; 
     <label className="flex items-center gap-2 text-sm cursor-pointer">
       <input
         type="checkbox"
-        className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-blue-600"
+        className="h-4 w-4 rounded border-border bg-background accent-blue-600"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
-      <span className="text-slate-300 select-none">{label}</span>
+      <span className="text-muted-foreground select-none">{label}</span>
     </label>
   );
 }

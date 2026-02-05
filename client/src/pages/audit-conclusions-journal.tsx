@@ -101,11 +101,11 @@ function CalendarPopup({
   };
 
   return (
-    <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-slate-800 bg-slate-950 p-3 shadow-2xl">
+    <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-background p-3 shadow-2xl">
       <div className="mb-2 flex items-center justify-between">
         <button
           onClick={() => nav(-1)}
-          className="rounded-md bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+          className="rounded-md bg-muted px-2 py-1 text-xs hover:bg-accent"
         >
           ◀
         </button>
@@ -116,12 +116,12 @@ function CalendarPopup({
         </div>
         <button
           onClick={() => nav(1)}
-          className="rounded-md bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+          className="rounded-md bg-muted px-2 py-1 text-xs hover:bg-accent"
         >
           ▶
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
         {daysShort.map((d) => (
           <div key={d} className="py-1">
             {d}
@@ -130,7 +130,7 @@ function CalendarPopup({
       </div>
       <div className="mt-1 grid grid-cols-7 gap-1 text-center">
         {Array.from({ length: firstDayIndex(year, month) }).map((_, i) => (
-          <div key={`e${i}`} className="py-2 text-sm text-slate-600">
+          <div key={`e${i}`} className="py-2 text-sm text-muted-foreground">
             {" "}
           </div>
         ))}
@@ -146,7 +146,7 @@ function CalendarPopup({
               key={day}
               onClick={() => selectDay(day)}
               disabled={!!disabled}
-              className={`rounded-md px-0.5 py-1 text-sm hover:bg-slate-800 ${
+              className={`rounded-md px-0.5 py-1 text-sm hover:bg-muted ${
                 disabled
                   ? "cursor-not-allowed opacity-40 hover:bg-transparent"
                   : ""
@@ -160,7 +160,7 @@ function CalendarPopup({
       <div className="mt-2 text-right">
         <button
           onClick={onClose}
-          className="rounded-md bg-slate-800 px-3 py-1 text-xs hover:bg-slate-700"
+          className="rounded-md bg-muted px-3 py-1 text-xs hover:bg-accent"
         >
           Закрыть
         </button>
@@ -187,15 +187,15 @@ function DateField({
   const [open, setOpen] = useState(false);
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
+      <span className="mb-1 block text-muted-foreground">{label}</span>
       <div className="relative flex items-center">
         <input
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={`w-full rounded-lg border px-3 py-2 pr-10 text-sm ${
-            error ? "border-red-600" : "border-slate-700"
-          } bg-slate-950`}
+            error ? "border-red-600" : "border-border"
+          } bg-background`}
           min={min}
           max={max}
           placeholder="гггг-мм-дд"
@@ -203,7 +203,7 @@ function DateField({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="absolute right-2 rounded-md bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+          className="absolute right-2 rounded-md bg-muted px-2 py-1 text-xs hover:bg-accent"
           title="Открыть календарь"
         >
           📅
@@ -575,8 +575,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
 
   return (
     <div
-      className={`bg-slate-950 text-slate-100 p-6 ${
-        embedded ? "rounded-2xl border border-slate-800" : "min-h-screen"
+      className={`bg-background text-foreground p-6 ${
+        embedded ? "rounded-2xl border border-border" : "min-h-screen"
       }`}
     >
       <div className="mx-auto max-w-7xl space-y-6">
@@ -597,7 +597,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               ➕ Добавить в журнал
             </button>
             <button
-              className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-700"
+              className="rounded-2xl bg-muted px-4 py-2 text-sm font-medium hover:bg-accent"
               onClick={() => {
                 setPeriodFrom("");
                 setPeriodTo("");
@@ -610,7 +610,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
           </div>
         </header>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow">
+        <section className="rounded-2xl border border-border bg-card p-4 shadow">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div className="flex flex-wrap items-end gap-3">
               <div className="w-60">
@@ -630,19 +630,19 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               <div className="flex items-center gap-2">
                 <button
                   onClick={thisYear}
-                  className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs hover:bg-slate-800"
+                  className="rounded-md border border-border bg-muted px-3 py-2 text-xs hover:bg-muted"
                 >
                   Этот год
                 </button>
                 <button
                   onClick={prevQuarter}
-                  className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs hover:bg-slate-800"
+                  className="rounded-md border border-border bg-muted px-3 py-2 text-xs hover:bg-muted"
                 >
                   Прошлый квартал
                 </button>
                 <button
                   onClick={() => setRange("", "")}
-                  className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs hover:bg-slate-800"
+                  className="rounded-md border border-border bg-muted px-3 py-2 text-xs hover:bg-muted"
                 >
                   Очистить период
                 </button>
@@ -650,11 +650,11 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
             </div>
             <div className="flex flex-wrap items-end gap-3">
               <div className="w-56">
-                <label className="text-xs text-slate-400">Вид заключения</label>
+                <label className="text-xs text-muted-foreground">Вид заключения</label>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as any)}
-                  className="block w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
                   <option value="">Все заключения</option>
                   <option value="Положительное">Положительное</option>
@@ -666,14 +666,14 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
                   placeholder="Поиск: субъект / объект / БИН·ИИН / экспертная организация"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-96 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-96 rounded-lg border border-border bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
-                <span className="pointer-events-none absolute right-2 top-2.5 text-slate-500">
+                <span className="pointer-events-none absolute right-2 top-2.5 text-muted-foreground">
                   🔎
                 </span>
               </div>
               <button
-                className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+                className="rounded-lg border border-border bg-muted px-3 py-2 text-sm hover:bg-muted"
                 onClick={() => fileInputRef.current?.click()}
                 title="Импорт XLSX/CSV"
               >
@@ -706,10 +706,10 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
           </div>
         </section>
 
-        <section className="overflow-x-auto rounded-2xl border border-slate-800">
+        <section className="overflow-x-auto rounded-2xl border border-border">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-900/60">
-              <tr className="text-left text-slate-300">
+            <thead className="bg-muted">
+              <tr className="text-left text-muted-foreground">
                 <th className="px-3 py-3">№</th>
                 <th className="px-3 py-3">Наименование субъекта контроля</th>
                 <th className="px-3 py-3">БИН</th>
@@ -729,7 +729,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
                 <tr>
                   <td
                     colSpan={12}
-                    className="px-3 py-10 text-center text-slate-400"
+                    className="px-3 py-10 text-center text-muted-foreground"
                   >
                     Журнал пуст. Нажмите «Добавить в журнал» или «Импорт» для
                     загрузки данных.
@@ -739,7 +739,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
                 filtered.map((e, idx) => (
                   <tr
                     key={e.id}
-                    className="border-t border-slate-800 hover:bg-slate-900/40"
+                    className="border-t border-border hover:bg-card"
                   >
                     <td className="px-3 py-2">{idx + 1}</td>
                     <td className="px-3 py-2">{e.subjectName}</td>
@@ -761,7 +761,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
                     <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex gap-2">
                         <button
-                          className="rounded-lg bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                          className="rounded-lg bg-muted px-2 py-1 text-xs hover:bg-accent"
                           onClick={() => onEdit(e.id)}
                         >
                           Изменить
@@ -782,7 +782,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
         </section>
 
         {filtered.length > 0 && (
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm text-slate-300">
+          <section className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
             <div>
               Всего записей: <span className="font-semibold">{filtered.length}</span>
             </div>
@@ -796,7 +796,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl"
+            className="w-full max-w-4xl rounded-2xl border border-border bg-background p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -804,7 +804,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
                 {editingId ? "Редактировать запись" : "Добавить запись"}
               </h2>
               <button
-                className="rounded-lg bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700"
+                className="rounded-lg bg-muted px-3 py-1 text-sm hover:bg-accent"
                 onClick={() => setOpen(false)}
               >
                 Закрыть
@@ -815,8 +815,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               <Field label="Наименование субъекта контроля" error={errors.subjectName}>
                 <input
                   className={`w-full rounded-lg border px-3 py-2 text-sm ${
-                    errors.subjectName ? "border-red-600" : "border-slate-700"
-                  } bg-slate-950`}
+                    errors.subjectName ? "border-red-600" : "border-border"
+                  } bg-background`}
                   value={form.subjectName}
                   onChange={(e) =>
                     setForm((s) => ({ ...s, subjectName: e.target.value }))
@@ -831,8 +831,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
                   maxLength={12}
                   placeholder="12 цифр"
                   className={`w-full rounded-lg border px-3 py-2 text-sm ${
-                    errors.subjectBIN ? "border-red-600" : "border-slate-700"
-                  } bg-slate-950`}
+                    errors.subjectBIN ? "border-red-600" : "border-border"
+                  } bg-background`}
                   value={form.subjectBIN}
                   onChange={(e) =>
                     setForm((s) => ({
@@ -846,8 +846,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               <Field label="Наименование объекта контроля" error={errors.objectName}>
                 <input
                   className={`w-full rounded-lg border px-3 py-2 text-sm ${
-                    errors.objectName ? "border-red-600" : "border-slate-700"
-                  } bg-slate-950`}
+                    errors.objectName ? "border-red-600" : "border-border"
+                  } bg-background`}
                   value={form.objectName}
                   onChange={(e) =>
                     setForm((s) => ({ ...s, objectName: e.target.value }))
@@ -858,8 +858,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               <Field label="Адрес объекта контроля" error={errors.objectAddress}>
                 <input
                   className={`w-full rounded-lg border px-3 py-2 text-sm ${
-                    errors.objectAddress ? "border-red-600" : "border-slate-700"
-                  } bg-slate-950`}
+                    errors.objectAddress ? "border-red-600" : "border-border"
+                  } bg-background`}
                   value={form.objectAddress}
                   onChange={(e) =>
                     setForm((s) => ({ ...s, objectAddress: e.target.value }))
@@ -870,8 +870,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               <Field label="Экспертная организация" error={errors.expertOrg}>
                 <input
                   className={`w-full rounded-lg border px-3 py-2 text-sm ${
-                    errors.expertOrg ? "border-red-600" : "border-slate-700"
-                  } bg-slate-950`}
+                    errors.expertOrg ? "border-red-600" : "border-border"
+                  } bg-background`}
                   value={form.expertOrg}
                   onChange={(e) =>
                     setForm((s) => ({ ...s, expertOrg: e.target.value }))
@@ -882,8 +882,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               <Field label="Вид заключения" error={errors.conclusionType}>
                 <select
                   className={`w-full rounded-lg border px-3 py-2 text-sm ${
-                    errors.conclusionType ? "border-red-600" : "border-slate-700"
-                  } bg-slate-950`}
+                    errors.conclusionType ? "border-red-600" : "border-border"
+                  } bg-background`}
                   value={form.conclusionType}
                   onChange={(e) =>
                     setForm((s) => ({
@@ -906,8 +906,8 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
                   className={`w-full rounded-lg border px-3 py-2 text-sm ${
                     errors.conclusionNumber
                       ? "border-red-600"
-                      : "border-slate-700"
-                  } bg-slate-950`}
+                      : "border-border"
+                  } bg-background`}
                   value={form.conclusionNumber}
                   onChange={(e) =>
                     setForm((s) => ({
@@ -934,11 +934,11 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
               />
 
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-300">
+                <span className="mb-1 block text-muted-foreground">
                   Период освобождения от профильных проверок (авто)
                 </span>
                 <input
-                  className="w-full cursor-not-allowed rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-slate-400"
+                  className="w-full cursor-not-allowed rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
                   value={form.exemptionPeriod}
                   readOnly
                 />
@@ -947,7 +947,7 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
 
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
-                className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent"
                 onClick={() => setOpen(false)}
               >
                 Отмена
@@ -969,14 +969,14 @@ export default function AuditJournalPage({ embedded = false }: AuditJournalPageP
           onClick={onCancelDelete}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl"
+            className="w-full max-w-md rounded-2xl border border-border bg-background p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold">Удалить запись?</h3>
-            <p className="mt-2 text-sm text-slate-300">Действие необратимо.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Действие необратимо.</p>
             <div className="mt-5 flex justify-end gap-3">
               <button
-                className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+                className="rounded-xl bg-muted px-4 py-2 text-sm hover:bg-accent"
                 onClick={onCancelDelete}
               >
                 Отмена
@@ -1006,7 +1006,7 @@ function Field({
 }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
+      <span className="mb-1 block text-muted-foreground">{label}</span>
       {children}
       {error ? (
         <span className="mt-1 block text-xs text-red-500">{error}</span>
