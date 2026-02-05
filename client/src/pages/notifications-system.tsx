@@ -142,21 +142,6 @@ export default function NotificationsSystem() {
     }
   });
 
-  // Создание демо-уведомлений для презентации
-  const createDemoMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/notifications/create-demo', {});
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      alert(`Создано ${data.count} тестовых уведомлений для демонстрации`);
-    },
-    onError: (error) => {
-      alert('Ошибка создания тестовых уведомлений');
-      console.error(error);
-    }
-  });
 
   const handleCreateNotification = () => {
     if (!newNotification.title || !newNotification.message) {
@@ -182,16 +167,6 @@ export default function NotificationsSystem() {
         </div>
         
         <div className="flex gap-2">
-          <Button
-            data-testid="button-create-demo-notifications"
-            variant="outline"
-            onClick={() => createDemoMutation.mutate()}
-            disabled={createDemoMutation.isPending}
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            {createDemoMutation.isPending ? 'Создание...' : 'Демо уведомления'}
-          </Button>
-          
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button data-testid="button-create-notification" className="bg-blue-600 hover:bg-blue-700">
