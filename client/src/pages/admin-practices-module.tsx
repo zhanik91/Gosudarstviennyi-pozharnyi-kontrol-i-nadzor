@@ -12,7 +12,7 @@ import AdminPracticeReport from "@/components/admin-practices/admin-practice-rep
 
 const tabs = [
   { id: "journal", label: "📋 Журнал административной практики", icon: ClipboardList },
-  { id: "reports", label: "📷 Отчёты (фото)", icon: FileText },
+  { id: "reports", label: "📋 Отчёты", icon: FileText },
   { id: "practice-report", label: "📊 Отчет адм. практики", icon: BarChart3 },
 ] as const;
 

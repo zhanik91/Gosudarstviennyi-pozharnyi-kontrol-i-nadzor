@@ -119,7 +119,7 @@ export default function Home() {
                 iconBg="bg-orange-500/20"
                 iconColor="text-orange-400"
                 title="Журналы"
-                description="Ведомственные и объектовые журналы, учёт ППС и инструктажей"
+                description="Журнал аудитов, ППС и др."
                 primaryAction={{
                   label: "Открыть модуль",
                   href: "/journals-lists",
