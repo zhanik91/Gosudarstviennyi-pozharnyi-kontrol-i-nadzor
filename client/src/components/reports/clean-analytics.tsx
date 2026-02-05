@@ -181,7 +181,8 @@ export default function CleanAnalytics() {
                 Нет данных за выбранный период
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={Math.max(500, allRegions.length * 28)}>
+              <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+              <ResponsiveContainer width="100%" height={Math.max(500, Math.min(600, allRegions.length * 28))}>
                 <BarChart data={allRegions} layout="vertical" margin={{ left: 120 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                   <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
@@ -199,6 +200,7 @@ export default function CleanAnalytics() {
                   <Bar dataKey="fires" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -287,7 +289,8 @@ export default function CleanAnalytics() {
                 Нет данных за выбранный период
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={Math.max(400, allRegions.length * 22)}>
+              <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+              <ResponsiveContainer width="100%" height={Math.max(400, Math.min(600, allRegions.length * 22))}>
                 <BarChart 
                   data={[...form1Regions].sort((a, b) => (b.deaths + b.injured) - (a.deaths + a.injured))}
                   layout="vertical"
@@ -308,6 +311,7 @@ export default function CleanAnalytics() {
                   <Bar dataKey="injured" name="Травмированные" fill="#f59e0b" stackId="a" />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -320,7 +324,8 @@ export default function CleanAnalytics() {
             <p className="text-sm text-muted-foreground" data-testid="desc-form2-regions">Все регионы</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={Math.max(400, form2Regions.length * 28)}>
+            <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+            <ResponsiveContainer width="100%" height={Math.max(400, Math.min(600, form2Regions.length * 28))}>
               <BarChart data={form2Regions} layout="vertical" margin={{ left: 120 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
@@ -335,6 +340,7 @@ export default function CleanAnalytics() {
                 <Bar dataKey="total" fill="#22c55e" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       )}
