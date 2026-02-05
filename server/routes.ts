@@ -316,6 +316,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Создание тестовых уведомлений для демонстрации
+  app.post('/api/notifications/create-demo', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.username;
+      if (!userId) {
+        return res.status(401).json({ message: 'Пользователь не авторизован' });
+      }
+
+      const demoNotifications = [
+        {
+          id: crypto.randomUUID(),
+          userId,
+          title: 'Срок меры реагирования истекает',
+          message: 'Завтра истекает срок МОР №МОР-2026-001 по проверке ТОО "Астана Строй"',
+          type: 'warning' as const,
+          isRead: false,
+          data: { deadlineType: 'measure_due', entityNumber: 'МОР-2026-001', region: 'Астана' },
+          createdAt: new Date(),
+        },
+        {
+          id: crypto.randomUUID(),
+          userId,
+          title: 'Срок предписания',
+          message: 'Завтра истекает срок исполнения предписания №ПР-2026-045 (устранение нарушений пожарной безопасности)',
+          type: 'warning' as const,
+          isRead: false,
+          data: { deadlineType: 'prescription_due', entityNumber: 'ПР-2026-045', region: 'Алматы' },
+          createdAt: new Date(Date.now() - 300000),
+        },
+        {
+          id: crypto.randomUUID(),
+          userId,
+          title: 'Срок закрытия проверки',
+          message: 'Завтра истекает срок закрытия проверки №ПР-2026-112 (ТЦ "Mega Silk Way")',
+          type: 'warning' as const,
+          isRead: false,
+          data: { deadlineType: 'inspection_closing', entityNumber: 'ПР-2026-112', region: 'Астана' },
+          createdAt: new Date(Date.now() - 600000),
+        },
+        {
+          id: crypto.randomUUID(),
+          userId,
+          title: 'Проверка успешно завершена',
+          message: 'Проверка №ПР-2026-089 по объекту "Школа №45" завершена без нарушений',
+          type: 'success' as const,
+          isRead: false,
+          data: { entityNumber: 'ПР-2026-089', region: 'Караганда' },
+          createdAt: new Date(Date.now() - 1800000),
+        },
+        {
+          id: crypto.randomUUID(),
+          userId,
+          title: 'Новое адм. дело требует решения',
+          message: 'Поступило адм. дело №АД-2026-023 по ст.410 КоАП РК (нарушение требований пож. безопасности)',
+          type: 'info' as const,
+          isRead: false,
+          data: { entityNumber: 'АД-2026-023', region: 'Шымкент' },
+          createdAt: new Date(Date.now() - 3600000),
+        },
+      ];
+
+      let created = 0;
+      for (const notification of demoNotifications) {
+        try {
+          await storage.createNotification(notification);
+          created++;
+        } catch (err) {
+          console.error('[Demo notifications] Error creating notification:', err);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Создано ${created} тестовых уведомлений для демонстрации`,
+        count: created 
+      });
+    } catch (error) {
+      console.error('Error creating demo notifications:', error);
+      res.status(500).json({ message: 'Ошибка создания тестовых уведомлений' });
+    }
+  });
+
   // === ИНТЕРАКТИВНЫЕ КАРТЫ & Forecasts (Stub/Logic) ===
   app.get('/api/maps/data', isAuthenticated, async (req: any, res) => {
     try {
