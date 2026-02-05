@@ -28,7 +28,7 @@ export const sessions = pgTable(
 );
 
 // User roles enum
-export const userRoleEnum = pgEnum('user_role', ['MCHS', 'DCHS', 'DISTRICT']);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'MCHS', 'DCHS', 'OCHS', 'DISTRICT']);
 
 // Organization types enum
 export const orgUnitTypeEnum = pgEnum('org_unit_type', ['MCHS', 'DCHS', 'DISTRICT']);

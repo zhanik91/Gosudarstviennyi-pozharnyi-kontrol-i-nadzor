@@ -14,13 +14,15 @@ import { ErrorDisplay } from "@/components/ui/error-boundary";
 import { Users, Shield, Edit, Trash2, Plus, RefreshCw, AlertTriangle, Download, Key } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-type RoleOption = "ALL" | "MCHS" | "DCHS" | "DISTRICT";
+type RoleOption = "ALL" | "admin" | "MCHS" | "DCHS" | "OCHS" | "DISTRICT";
 type StatusOption = "ALL" | "ACTIVE" | "BLOCKED";
 
 const roleLabels: Record<RoleOption, string> = {
   ALL: "Все роли",
+  admin: "Администратор",
   MCHS: "МЧС",
   DCHS: "ДЧС",
+  OCHS: "ОЧС",
   DISTRICT: "Район",
 };
 
@@ -658,8 +660,10 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DISTRICT">Район</SelectItem>
+                  <SelectItem value="OCHS">ОЧС</SelectItem>
                   <SelectItem value="DCHS">ДЧС</SelectItem>
                   <SelectItem value="MCHS">МЧС</SelectItem>
+                  <SelectItem value="admin">Администратор</SelectItem>
                 </SelectContent>
               </Select>
             </div>
