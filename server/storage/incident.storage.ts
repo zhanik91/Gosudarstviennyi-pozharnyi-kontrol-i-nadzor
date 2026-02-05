@@ -533,86 +533,10 @@ export class IncidentStorage {
     const labelOrFallback = (value?: string | null, fallback?: string | null) =>
       value || fallback || "Не указано";
 
-    // Check for imported data in reportForms first
-    let useImportedForm1Data = false;
-    let importedForm1Monthly: { month: string; count: number; deaths: number; injured: number; damage: number }[] = [];
-    let importedForm1Locality: { locality: string; label: string; count: number; deaths: number; injured: number; damage: number }[] = [];
-    let importedForm1Regions: { label: string; count: number; deaths: number; injured: number; damage: number }[] = [];
-    let importedForm1Totals = { deaths: 0, injured: 0, damage: 0 };
+    // NOTE: Imported data from reportForms is used in getReportFormData API, 
+    // not here in analytics to avoid performance issues with heavy JOINs
 
-    // Try to get imported data from reportForms for the current period
-    const importedForms = await db
-      .select({
-        data: reportForms.data,
-        regionName: orgUnits.regionName,
-      })
-      .from(reportForms)
-      .innerJoin(orgUnits, eq(reportForms.orgUnitId, orgUnits.id))
-      .where(
-        and(
-          eq(reportForms.form, "1-osp"),
-          eq(reportForms.period, currentPeriod.periodFromKey)
-        )
-      );
-
-    if (importedForms.length > 0) {
-      useImportedForm1Data = true;
-      
-      // Filter by region if specified
-      const relevantForms = params.region && params.region !== "all"
-        ? importedForms.filter(f => f.regionName === params.region)
-        : importedForms;
-
-      // Aggregate totals from all regions
-      let totalFires = 0, totalCitiesFires = 0, totalRuralFires = 0;
-      let totalDeaths = 0, totalCitiesDeaths = 0, totalRuralDeaths = 0;
-      let totalInjured = 0, totalDamage = 0;
-
-      for (const form of relevantForms) {
-        const data = form.data as Record<string, number>;
-        if (!data) continue;
-
-        totalFires += Number(data.fires_total || 0);
-        totalCitiesFires += Number(data.fires_cities || 0);
-        totalRuralFires += Number(data.fires_rural || 0);
-        totalDeaths += Number(data.deaths_total || 0);
-        totalCitiesDeaths += Number(data.deaths_cities || 0);
-        totalRuralDeaths += Number(data.deaths_rural || 0);
-        totalInjured += Number(data.injured_total || 0);
-        totalDamage += Number(data.damage_total || 0);
-      }
-
-      // Create monthly data (single month from imported data)
-      importedForm1Monthly = [{
-        month: currentPeriod.periodFromKey,
-        count: totalFires,
-        deaths: totalDeaths,
-        injured: totalInjured,
-        damage: totalDamage,
-      }];
-
-      // Create locality data
-      importedForm1Locality = [
-        { locality: "cities", label: "Город", count: totalCitiesFires, deaths: totalCitiesDeaths, injured: 0, damage: 0 },
-        { locality: "rural", label: "Село", count: totalRuralFires, deaths: totalRuralDeaths, injured: 0, damage: 0 },
-      ];
-
-      // Create region data from imported forms
-      importedForm1Regions = relevantForms.map(form => {
-        const data = form.data as Record<string, number>;
-        return {
-          label: form.regionName || "Не указан",
-          count: Number(data?.fires_total || 0),
-          deaths: Number(data?.deaths_total || 0),
-          injured: Number(data?.injured_total || 0),
-          damage: Number(data?.damage_total || 0),
-        };
-      }).sort((a, b) => b.count - a.count);
-
-      importedForm1Totals = { deaths: totalDeaths, injured: totalInjured, damage: totalDamage };
-    }
-
-    const form1MonthlyRows = useImportedForm1Data ? [] : await db
+    const form1MonthlyRows = await db
       .select({
         month: sql<string>`to_char(date_time, 'YYYY-MM')`,
         count: sql<number>`count(*)`,
@@ -632,7 +556,7 @@ export class IncidentStorage {
       .groupBy(sql`to_char(date_time, 'YYYY-MM')`)
       .orderBy(sql`to_char(date_time, 'YYYY-MM')`);
 
-    const form1LocalityRows = useImportedForm1Data ? [] : await db
+    const form1LocalityRows = await db
       .select({
         locality: incidents.locality,
         count: sql<number>`count(*)`,
@@ -644,7 +568,7 @@ export class IncidentStorage {
       .where(and(...baseConditions, inArray(incidents.incidentType, ospIncidentTypes)))
       .groupBy(incidents.locality);
 
-    const form1RegionRows = useImportedForm1Data ? [] : await db
+    const form1RegionRows = await db
       .select({
         region: incidents.region,
         count: sql<number>`count(*)`,
@@ -657,16 +581,14 @@ export class IncidentStorage {
       .groupBy(incidents.region)
       .orderBy(sql`count(*) DESC`);
 
-    const form1Totals = useImportedForm1Data 
-      ? importedForm1Totals
-      : form1LocalityRows.reduce(
-          (acc, row) => ({
-            deaths: acc.deaths + Number(row.deaths || 0),
-            injured: acc.injured + Number(row.injured || 0),
-            damage: acc.damage + Number(row.damage || 0),
-          }),
-          { deaths: 0, injured: 0, damage: 0 }
-        );
+    const form1Totals = form1LocalityRows.reduce(
+      (acc, row) => ({
+        deaths: acc.deaths + Number(row.deaths || 0),
+        injured: acc.injured + Number(row.injured || 0),
+        damage: acc.damage + Number(row.damage || 0),
+      }),
+      { deaths: 0, injured: 0, damage: 0 }
+    );
 
     const form2CauseRows = await db
       .select({
@@ -1006,26 +928,22 @@ export class IncidentStorage {
     return {
       period: periodLabel,
       form1: {
-        monthly: useImportedForm1Data 
-          ? importedForm1Monthly 
-          : form1MonthlyRows.map((row) => ({
-              month: row.month,
-              count: Number(row.count) || 0,
-              deaths: Number(row.deaths) || 0,
-              injured: Number(row.injured) || 0,
-              damage: Number(row.damage) || 0,
-            })),
-        locality: useImportedForm1Data 
-          ? importedForm1Locality 
-          : form1LocalityRows.map((row) => ({
-              locality: row.locality ?? "unknown",
-              label: row.locality === "cities" ? "Город" : row.locality === "rural" ? "Село" : "Не указано",
-              count: Number(row.count) || 0,
-              deaths: Number(row.deaths) || 0,
-              injured: Number(row.injured) || 0,
-              damage: Number(row.damage) || 0,
-            })),
-        regions: useImportedForm1Data ? importedForm1Regions : form1Regions,
+        monthly: form1MonthlyRows.map((row) => ({
+          month: row.month,
+          count: Number(row.count) || 0,
+          deaths: Number(row.deaths) || 0,
+          injured: Number(row.injured) || 0,
+          damage: Number(row.damage) || 0,
+        })),
+        locality: form1LocalityRows.map((row) => ({
+          locality: row.locality ?? "unknown",
+          label: row.locality === "cities" ? "Город" : row.locality === "rural" ? "Село" : "Не указано",
+          count: Number(row.count) || 0,
+          deaths: Number(row.deaths) || 0,
+          injured: Number(row.injured) || 0,
+          damage: Number(row.damage) || 0,
+        })),
+        regions: form1Regions,
         totals: form1Totals,
       },
       form2: {
