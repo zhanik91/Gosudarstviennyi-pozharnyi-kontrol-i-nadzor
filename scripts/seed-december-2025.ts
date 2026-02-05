@@ -264,7 +264,7 @@ async function seedJanuary2026Incidents() {
     defaultOrgId = newOrg.id;
   }
 
-  const demoIncidents = [];
+  const demoIncidents: Array<typeof incidents.$inferInsert> = [];
   const regions = Object.keys(DISTRICTS_BY_REGION);
 
   for (let i = 0; i < 15; i++) {
