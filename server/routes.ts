@@ -1532,6 +1532,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === РЕЕСТР ППС (Профессиональные противопожарные службы) ===
+  const { ppsRegistry } = await import('@shared/schema');
+
+  // Получить все записи реестра ППС
+  app.get('/api/pps-registry', isAuthenticated, async (req: any, res) => {
+    try {
+      const result = await db.select().from(ppsRegistry).orderBy(desc(ppsRegistry.createdAt));
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching pps registry:', error);
+      res.status(500).json({ message: 'Ошибка загрузки реестра ППС' });
+    }
+  });
+
+  // Добавить запись в реестр ППС
+  app.post('/api/pps-registry', isAuthenticated, canWriteRegistry, async (req: any, res) => {
+    try {
+      const { name, serviceType, certificateNumber, certificateValidity, address, phone, region } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: 'Наименование обязательно' });
+      }
+      const maxNum = await db.select({ max: sql<number>`COALESCE(MAX(registry_number), 0)` }).from(ppsRegistry);
+      const nextRegistryNumber = (maxNum[0]?.max || 0) + 1;
+      const [entry] = await db.insert(ppsRegistry).values({
+        registryNumber: nextRegistryNumber,
+        name,
+        serviceType: serviceType || 'с выездной техникой',
+        certificateNumber,
+        certificateValidity,
+        address,
+        phone,
+        region,
+        isActive: true,
+      }).returning();
+      res.json(entry);
+    } catch (error) {
+      console.error('Error creating pps registry entry:', error);
+      res.status(500).json({ message: 'Ошибка добавления в реестр ППС' });
+    }
+  });
+
+  // Обновить запись реестра ППС
+  app.put('/api/pps-registry/:id', isAuthenticated, canWriteRegistry, async (req: any, res) => {
+    try {
+      const [entry] = await db.update(ppsRegistry)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(ppsRegistry.id, req.params.id))
+        .returning();
+      if (!entry) {
+        return res.status(404).json({ message: 'Запись не найдена' });
+      }
+      res.json(entry);
+    } catch (error) {
+      console.error('Error updating pps registry entry:', error);
+      res.status(500).json({ message: 'Ошибка обновления записи' });
+    }
+  });
+
+  // Удалить запись реестра ППС
+  app.delete('/api/pps-registry/:id', isAuthenticated, canWriteRegistry, async (req: any, res) => {
+    try {
+      await db.delete(ppsRegistry).where(eq(ppsRegistry.id, req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting pps registry entry:', error);
+      res.status(500).json({ message: 'Ошибка удаления записи' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

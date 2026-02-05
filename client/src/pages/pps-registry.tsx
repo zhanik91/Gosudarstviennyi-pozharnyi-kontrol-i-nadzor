@@ -5,8 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Building2, Phone, MapPin, FileCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Search, Building2, Phone, MapPin, FileCheck, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { ppsRegistryData, type PpsRegistryItem } from "@/data/pps-registry-data";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 
 interface PpsRegistryProps {
   embedded?: boolean;
@@ -46,9 +53,58 @@ export default function PpsRegistry({ embedded = false }: PpsRegistryProps) {
   const [selectedRegion, setSelectedRegion] = useState("Все регионы");
   const [selectedServiceType, setSelectedServiceType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const [newEntry, setNewEntry] = useState({
+    name: "",
+    serviceType: "с выездной техникой",
+    certificateNumber: "",
+    certificateValidity: "",
+    address: "",
+    phone: "",
+    region: "",
+  });
+
+  const { data: dbEntries = [], isLoading: isLoadingDb } = useQuery<PpsRegistryItem[]>({
+    queryKey: ["/api/pps-registry"],
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (data: typeof newEntry) => {
+      return apiRequest("POST", "/api/pps-registry", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pps-registry"] });
+      setIsAddDialogOpen(false);
+      setNewEntry({
+        name: "",
+        serviceType: "с выездной техникой",
+        certificateNumber: "",
+        certificateValidity: "",
+        address: "",
+        phone: "",
+        region: "",
+      });
+      toast({ title: "Запись добавлена", description: "Новая организация успешно добавлена в реестр" });
+    },
+    onError: () => {
+      toast({ title: "Ошибка", description: "Не удалось добавить запись", variant: "destructive" });
+    },
+  });
+
+  const allData = useMemo(() => {
+    const combined = [...ppsRegistryData];
+    dbEntries.forEach((entry) => {
+      if (!combined.find((e) => e.id === entry.id)) {
+        combined.push(entry);
+      }
+    });
+    return combined;
+  }, [dbEntries]);
 
   const filteredData = useMemo(() => {
-    return ppsRegistryData.filter((item) => {
+    return allData.filter((item) => {
       const matchesSearch =
         searchQuery === "" ||
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -64,7 +120,7 @@ export default function PpsRegistry({ embedded = false }: PpsRegistryProps) {
 
       return matchesSearch && matchesRegion && matchesServiceType;
     });
-  }, [searchQuery, selectedRegion, selectedServiceType]);
+  }, [allData, searchQuery, selectedRegion, selectedServiceType]);
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const paginatedData = filteredData.slice(
@@ -83,27 +139,153 @@ export default function PpsRegistry({ embedded = false }: PpsRegistryProps) {
   };
 
   const stats = useMemo(() => {
-    const withTech = ppsRegistryData.filter(
+    const withTech = allData.filter(
       (i) => i.serviceType.toLowerCase().includes("с выездной техникой") && !i.serviceType.toLowerCase().includes("без")
     ).length;
-    const withoutTech = ppsRegistryData.filter(
+    const withoutTech = allData.filter(
       (i) => i.serviceType.toLowerCase().includes("без выездной") && !i.serviceType.toLowerCase().includes("с выездной")
     ).length;
-    const combined = ppsRegistryData.length - withTech - withoutTech;
-    return { total: ppsRegistryData.length, withTech, withoutTech, combined };
-  }, []);
+    const combined = allData.length - withTech - withoutTech;
+    return { total: allData.length, withTech, withoutTech, combined };
+  }, [allData]);
+
+  const currentDate = format(new Date(), "d MMMM yyyy", { locale: ru });
+
+  const handleAddEntry = () => {
+    if (!newEntry.name.trim()) {
+      toast({ title: "Ошибка", description: "Введите наименование организации", variant: "destructive" });
+      return;
+    }
+    addMutation.mutate(newEntry);
+  };
 
   return (
     <div className={embedded ? "" : "container mx-auto px-4 py-6"}>
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="w-5 h-5" />
-            Реестр профессиональных противопожарных служб
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Данные реестра НГПС по состоянию на октябрь 2025 года
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Реестр профессиональных противопожарных служб
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Данные реестра НГПС по состоянию на {currentDate}
+              </p>
+            </div>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-pps">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Добавить службу
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Добавить организацию в реестр</DialogTitle>
+                  <DialogDescription>
+                    Заполните информацию о новой противопожарной службе
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Наименование организации *</Label>
+                    <Input
+                      id="name"
+                      value={newEntry.name}
+                      onChange={(e) => setNewEntry({ ...newEntry, name: e.target.value })}
+                      placeholder="ТОО «Пример»"
+                      data-testid="input-pps-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="serviceType">Вид службы</Label>
+                    <Select
+                      value={newEntry.serviceType}
+                      onValueChange={(value) => setNewEntry({ ...newEntry, serviceType: value })}
+                    >
+                      <SelectTrigger data-testid="select-pps-add-service-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="с выездной техникой">С выездной техникой</SelectItem>
+                        <SelectItem value="без выездной техники">Без выездной техники</SelectItem>
+                        <SelectItem value="с выездной техникой и без выездной техники">Комбинированная</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="certificateNumber">Номер аттестата</Label>
+                      <Input
+                        id="certificateNumber"
+                        value={newEntry.certificateNumber}
+                        onChange={(e) => setNewEntry({ ...newEntry, certificateNumber: e.target.value })}
+                        placeholder="KZ-0001"
+                        data-testid="input-pps-certificate"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="certificateValidity">Срок действия</Label>
+                      <Input
+                        id="certificateValidity"
+                        value={newEntry.certificateValidity}
+                        onChange={(e) => setNewEntry({ ...newEntry, certificateValidity: e.target.value })}
+                        placeholder="до 31.12.2027"
+                        data-testid="input-pps-validity"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Регион</Label>
+                    <Select
+                      value={newEntry.region}
+                      onValueChange={(value) => setNewEntry({ ...newEntry, region: value })}
+                    >
+                      <SelectTrigger data-testid="select-pps-add-region">
+                        <SelectValue placeholder="Выберите регион" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REGIONS.filter((r) => r !== "Все регионы").map((region) => (
+                          <SelectItem key={region} value={region}>
+                            {region}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Адрес</Label>
+                    <Input
+                      id="address"
+                      value={newEntry.address}
+                      onChange={(e) => setNewEntry({ ...newEntry, address: e.target.value })}
+                      placeholder="г. Астана, ул. Примерная, 1"
+                      data-testid="input-pps-address"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Телефон</Label>
+                    <Input
+                      id="phone"
+                      value={newEntry.phone}
+                      onChange={(e) => setNewEntry({ ...newEntry, phone: e.target.value })}
+                      placeholder="+7 (777) 123-45-67"
+                      data-testid="input-pps-phone"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} data-testid="button-cancel-pps">
+                    Отмена
+                  </Button>
+                  <Button onClick={handleAddEntry} disabled={addMutation.isPending} data-testid="button-save-pps">
+                    {addMutation.isPending ? "Сохранение..." : "Сохранить"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -176,7 +358,7 @@ export default function PpsRegistry({ embedded = false }: PpsRegistryProps) {
           </div>
 
           <div className="text-sm text-muted-foreground">
-            Найдено: {filteredData.length} из {ppsRegistryData.length}
+            Найдено: {filteredData.length} из {allData.length}
           </div>
 
           <div className="rounded-md border overflow-x-auto">
