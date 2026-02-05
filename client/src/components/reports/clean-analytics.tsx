@@ -61,9 +61,9 @@ export default function CleanAnalytics() {
   const form1Totals = data?.form1?.totals || { fires: 0, deaths: 0, injured: 0, damage: 0 };
   const form2Regions = data?.form2?.regions || [];
 
-  const top10Regions = form1Regions.slice(0, 10);
+  const allRegions = form1Regions;
   
-  const pieData = form1Regions.slice(0, 8).map((r, i) => ({
+  const pieData = form1Regions.map((r, i) => ({
     name: r.region.replace(" область", "").replace("Область ", ""),
     value: r.fires,
     fill: COLORS[i % COLORS.length],
@@ -168,21 +168,21 @@ export default function CleanAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="charts-grid">
         <Card data-testid="chart-regions-bar">
           <CardHeader>
-            <CardTitle data-testid="title-regions-bar">Пожары по регионам (ТОП-10)</CardTitle>
-            <p className="text-sm text-muted-foreground" data-testid="desc-regions-bar">Форма 1-ОСП: количество пожаров по регионам</p>
+            <CardTitle data-testid="title-regions-bar">Пожары по регионам</CardTitle>
+            <p className="text-sm text-muted-foreground" data-testid="desc-regions-bar">Форма 1-ОСП: количество пожаров по всем регионам</p>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div data-testid="status-loading-regions" className="flex items-center justify-center h-[350px] text-muted-foreground">
+              <div data-testid="status-loading-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
                 Загрузка...
               </div>
-            ) : top10Regions.length === 0 ? (
-              <div data-testid="status-empty-regions" className="flex items-center justify-center h-[350px] text-muted-foreground">
+            ) : allRegions.length === 0 ? (
+              <div data-testid="status-empty-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
                 Нет данных за выбранный период
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={top10Regions} layout="vertical" margin={{ left: 120 }}>
+              <ResponsiveContainer width="100%" height={Math.max(500, allRegions.length * 28)}>
+                <BarChart data={allRegions} layout="vertical" margin={{ left: 120 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                   <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
                   <YAxis 
@@ -275,32 +275,33 @@ export default function CleanAnalytics() {
         <Card data-testid="chart-regions-victims">
           <CardHeader>
             <CardTitle data-testid="title-regions-victims">Последствия по регионам</CardTitle>
-            <p className="text-sm text-muted-foreground" data-testid="desc-regions-victims">ТОП-5 регионов по количеству жертв</p>
+            <p className="text-sm text-muted-foreground" data-testid="desc-regions-victims">Все регионы по количеству жертв</p>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div data-testid="status-loading-casualties" className="flex items-center justify-center h-[300px] text-muted-foreground">
+              <div data-testid="status-loading-casualties" className="flex items-center justify-center h-[400px] text-muted-foreground">
                 Загрузка...
               </div>
-            ) : top10Regions.slice(0, 5).length === 0 ? (
-              <div data-testid="status-empty-casualties" className="flex items-center justify-center h-[300px] text-muted-foreground">
+            ) : allRegions.length === 0 ? (
+              <div data-testid="status-empty-casualties" className="flex items-center justify-center h-[400px] text-muted-foreground">
                 Нет данных за выбранный период
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={Math.max(400, allRegions.length * 22)}>
                 <BarChart 
-                  data={form1Regions.slice(0, 5).sort((a, b) => (b.deaths + b.injured) - (a.deaths + a.injured))}
-                  margin={{ bottom: 60 }}
+                  data={[...form1Regions].sort((a, b) => (b.deaths + b.injured) - (a.deaths + a.injured))}
+                  layout="vertical"
+                  margin={{ left: 120 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                  <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
+                  <YAxis 
+                    type="category" 
                     dataKey="region" 
-                    fontSize={9} 
-                    angle={-45}
-                    textAnchor="end"
-                    tickFormatter={(v) => v.replace(" область", "").replace("Область ", "").substring(0, 12)}
+                    fontSize={10}
+                    width={115}
+                    tickFormatter={(v) => v.replace(" область", "").replace("Область ", "")}
                   />
-                  <YAxis fontSize={11} tickFormatter={formatNumber} />
                   <Tooltip formatter={(value: number, name: string) => [formatNumber(value), name === "deaths" ? "Погибшие" : "Травмированные"]} />
                   <Legend verticalAlign="top" />
                   <Bar dataKey="deaths" name="Погибшие" fill="#ef4444" stackId="a" />
@@ -316,11 +317,11 @@ export default function CleanAnalytics() {
         <Card data-testid="chart-form2-regions">
           <CardHeader>
             <CardTitle data-testid="title-form2-regions">Происшествия без пожара (Форма 2-ССГ)</CardTitle>
-            <p className="text-sm text-muted-foreground" data-testid="desc-form2-regions">Распределение по регионам</p>
+            <p className="text-sm text-muted-foreground" data-testid="desc-form2-regions">Все регионы</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={form2Regions.slice(0, 10)} layout="vertical" margin={{ left: 120 }}>
+            <ResponsiveContainer width="100%" height={Math.max(400, form2Regions.length * 28)}>
+              <BarChart data={form2Regions} layout="vertical" margin={{ left: 120 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
                 <YAxis 

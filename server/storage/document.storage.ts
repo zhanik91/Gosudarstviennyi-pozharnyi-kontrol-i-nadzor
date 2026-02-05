@@ -126,12 +126,9 @@ export class DocumentStorage {
   }
 
   async getAdminCasesCount(): Promise<number> {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const [result] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(adminCases)
-      .where(sql`${adminCases.caseDate} >= ${startOfMonth}`);
+      .from(adminCases);
     return Number(result?.count ?? 0);
   }
 
