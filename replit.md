@@ -140,3 +140,14 @@ Preferred communication style: Simple, everyday language.
   - Added proper map.invalidateSize() call after initialization
   - Preserved onMapClick callback for external integrations
   - Added DialogDescription for accessibility
+
+## February 5, 2026 - Theme Color Fixes
+- **control-supervision.tsx**: Replaced all hardcoded slate colors with semantic theme tokens
+  - `bg-slate-950` → `bg-background`
+  - `bg-slate-900/40` → `bg-card`
+  - `bg-slate-800/900` → `bg-muted`
+  - `text-slate-*` → `text-foreground`, `text-muted-foreground`
+  - `border-slate-*` → `border-border`
+  - `hover:bg-slate-*` → `hover:bg-accent`
+- **audit-conclusions-journal.tsx**: Same color token replacements applied
+- Both pages now correctly support light/dark theme switching via CSS variables
