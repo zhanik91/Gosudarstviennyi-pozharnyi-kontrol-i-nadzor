@@ -107,90 +107,32 @@ export default function CleanAnalytics() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="cards-summary">
-        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20" data-testid="card-fires">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500/20 rounded-lg">
-                <Flame className="w-5 h-5 text-orange-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground" data-testid="label-fires">Всего пожаров</p>
-                <p className="text-2xl font-bold text-foreground" data-testid="text-fires-total">{formatNumber(form1Totals.fires)}</p>
-              </div>
+      {/* Первый график - пожары по регионам на всю ширину */}
+      <Card data-testid="chart-regions-bar">
+        <CardHeader>
+          <CardTitle data-testid="title-regions-bar">Пожары по регионам</CardTitle>
+          <p className="text-sm text-muted-foreground" data-testid="desc-regions-bar">Форма 1-ОСП: количество пожаров по всем регионам</p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div data-testid="status-loading-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
+              Загрузка...
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20" data-testid="card-deaths">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-500/20 rounded-lg">
-                <Users className="w-5 h-5 text-red-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground" data-testid="label-deaths">Погибшие</p>
-                <p className="text-2xl font-bold text-foreground" data-testid="text-deaths-total">{formatNumber(form1Totals.deaths)}</p>
-              </div>
+          ) : allRegions.length === 0 ? (
+            <div data-testid="status-empty-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
+              Нет данных за выбранный период
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20" data-testid="card-injured">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/20 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground" data-testid="label-injured">Травмированные</p>
-                <p className="text-2xl font-bold text-foreground" data-testid="text-injured-total">{formatNumber(form1Totals.injured)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20" data-testid="card-damage">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground" data-testid="label-damage">Ущерб</p>
-                <p className="text-xl font-bold text-foreground" data-testid="text-damage-total">{formatDamage(form1Totals.damage)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="charts-grid">
-        <Card data-testid="chart-regions-bar">
-          <CardHeader>
-            <CardTitle data-testid="title-regions-bar">Пожары по регионам</CardTitle>
-            <p className="text-sm text-muted-foreground" data-testid="desc-regions-bar">Форма 1-ОСП: количество пожаров по всем регионам</p>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div data-testid="status-loading-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
-                Загрузка...
-              </div>
-            ) : allRegions.length === 0 ? (
-              <div data-testid="status-empty-regions" className="flex items-center justify-center h-[500px] text-muted-foreground">
-                Нет данных за выбранный период
-              </div>
-            ) : (
-              <div style={{ maxHeight: 600, overflowY: 'auto' }}>
-              <ResponsiveContainer width="100%" height={Math.max(500, Math.min(600, allRegions.length * 28))}>
-                <BarChart data={allRegions} layout="vertical" margin={{ left: 120 }}>
+          ) : (
+            <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+              <ResponsiveContainer width="100%" height={Math.max(500, allRegions.length * 28)}>
+                <BarChart data={allRegions} layout="vertical" margin={{ left: 140, right: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                  <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
+                  <XAxis type="number" fontSize={12} tickFormatter={formatNumber} />
                   <YAxis 
                     type="category" 
                     dataKey="region" 
-                    fontSize={10} 
-                    width={115}
+                    fontSize={11} 
+                    width={135}
                     tickFormatter={(v) => v.replace(" область", "").replace("Область ", "")}
                   />
                   <Tooltip 
@@ -200,11 +142,96 @@ export default function CleanAnalytics() {
                   <Bar dataKey="fires" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 4 карточки статистики - вертикально на всю ширину */}
+      <div className="flex flex-col gap-4" data-testid="cards-summary">
+        <Card className="bg-gradient-to-r from-orange-500/10 to-orange-500/5 border-orange-500/20" data-testid="card-fires">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-orange-500/20 rounded-lg">
+                  <Flame className="w-6 h-6 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground" data-testid="label-fires">Всего пожаров за период</p>
+                  <p className="text-3xl font-bold text-foreground" data-testid="text-fires-total">{formatNumber(form1Totals.fires)}</p>
+                </div>
               </div>
-            )}
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Среднее на регион</p>
+                <p className="text-lg font-semibold text-orange-500">{allRegions.length > 0 ? formatNumber(Math.round(form1Totals.fires / allRegions.length)) : 0}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
+        <Card className="bg-gradient-to-r from-red-500/10 to-red-500/5 border-red-500/20" data-testid="card-deaths">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-red-500/20 rounded-lg">
+                  <Users className="w-6 h-6 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground" data-testid="label-deaths">Погибшие при пожарах</p>
+                  <p className="text-3xl font-bold text-foreground" data-testid="text-deaths-total">{formatNumber(form1Totals.deaths)}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">На 100 пожаров</p>
+                <p className="text-lg font-semibold text-red-500">{form1Totals.fires > 0 ? (form1Totals.deaths / form1Totals.fires * 100).toFixed(1) : 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-amber-500/10 to-amber-500/5 border-amber-500/20" data-testid="card-injured">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-500/20 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground" data-testid="label-injured">Травмированные при пожарах</p>
+                  <p className="text-3xl font-bold text-foreground" data-testid="text-injured-total">{formatNumber(form1Totals.injured)}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">На 100 пожаров</p>
+                <p className="text-lg font-semibold text-amber-500">{form1Totals.fires > 0 ? (form1Totals.injured / form1Totals.fires * 100).toFixed(1) : 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-blue-500/10 to-blue-500/5 border-blue-500/20" data-testid="card-damage">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-500/20 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground" data-testid="label-damage">Материальный ущерб</p>
+                  <p className="text-2xl font-bold text-foreground" data-testid="text-damage-total">{formatDamage(form1Totals.damage)}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Средний на пожар</p>
+                <p className="text-lg font-semibold text-blue-500">{form1Totals.fires > 0 ? formatDamage(Math.round(form1Totals.damage / form1Totals.fires)) : "0 тыс. ₸"}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Дополнительные графики - 2 колонки */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="charts-grid">
         <Card data-testid="chart-regions-pie">
           <CardHeader>
             <CardTitle data-testid="title-regions-pie">Распределение пожаров по регионам</CardTitle>
@@ -243,66 +270,74 @@ export default function CleanAnalytics() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="charts-victims-grid">
         <Card data-testid="chart-victims-bar">
           <CardHeader>
-            <CardTitle data-testid="title-victims-bar">Жертвы пожаров</CardTitle>
+            <CardTitle data-testid="title-victims-bar">Структура жертв</CardTitle>
             <p className="text-sm text-muted-foreground" data-testid="desc-victims-bar">Погибшие и травмированные за период</p>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div data-testid="status-loading-victims" className="flex items-center justify-center h-[300px] text-muted-foreground">
+              <div data-testid="status-loading-victims" className="flex items-center justify-center h-[350px] text-muted-foreground">
                 Загрузка...
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={victimData} layout="vertical" margin={{ left: 80 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                  <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
-                  <YAxis type="category" dataKey="name" fontSize={12} width={75} />
-                  <Tooltip formatter={(value: number) => [formatNumber(value), "Человек"]} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+              <ResponsiveContainer width="100%" height={350}>
+                <PieChart>
+                  <Pie
+                    data={victimData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    innerRadius={40}
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${formatNumber(value)}`}
+                    labelLine={true}
+                    fontSize={12}
+                  >
                     {victimData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
-                  </Bar>
-                </BarChart>
+                  </Pie>
+                  <Tooltip formatter={(value: number) => [formatNumber(value), "Человек"]} />
+                  <Legend />
+                </PieChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
+      </div>
 
-        <Card data-testid="chart-regions-victims">
-          <CardHeader>
-            <CardTitle data-testid="title-regions-victims">Последствия по регионам</CardTitle>
-            <p className="text-sm text-muted-foreground" data-testid="desc-regions-victims">Все регионы по количеству жертв</p>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div data-testid="status-loading-casualties" className="flex items-center justify-center h-[400px] text-muted-foreground">
-                Загрузка...
-              </div>
-            ) : allRegions.length === 0 ? (
-              <div data-testid="status-empty-casualties" className="flex items-center justify-center h-[400px] text-muted-foreground">
-                Нет данных за выбранный период
-              </div>
-            ) : (
-              <div style={{ maxHeight: 600, overflowY: 'auto' }}>
-              <ResponsiveContainer width="100%" height={Math.max(400, Math.min(600, allRegions.length * 22))}>
+      {/* График последствий по регионам на всю ширину */}
+      <Card data-testid="chart-regions-victims">
+        <CardHeader>
+          <CardTitle data-testid="title-regions-victims">Последствия пожаров по регионам</CardTitle>
+          <p className="text-sm text-muted-foreground" data-testid="desc-regions-victims">Погибшие и травмированные по всем регионам</p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div data-testid="status-loading-casualties" className="flex items-center justify-center h-[400px] text-muted-foreground">
+              Загрузка...
+            </div>
+          ) : allRegions.length === 0 ? (
+            <div data-testid="status-empty-casualties" className="flex items-center justify-center h-[400px] text-muted-foreground">
+              Нет данных за выбранный период
+            </div>
+          ) : (
+            <div style={{ maxHeight: 600, overflowY: 'auto' }}>
+              <ResponsiveContainer width="100%" height={Math.max(400, allRegions.length * 24)}>
                 <BarChart 
                   data={[...form1Regions].sort((a, b) => (b.deaths + b.injured) - (a.deaths + a.injured))}
                   layout="vertical"
-                  margin={{ left: 120 }}
+                  margin={{ left: 140, right: 40 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                  <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
+                  <XAxis type="number" fontSize={12} tickFormatter={formatNumber} />
                   <YAxis 
                     type="category" 
                     dataKey="region" 
-                    fontSize={10}
-                    width={115}
+                    fontSize={11}
+                    width={135}
                     tickFormatter={(v) => v.replace(" область", "").replace("Область ", "")}
                   />
                   <Tooltip formatter={(value: number, name: string) => [formatNumber(value), name === "deaths" ? "Погибшие" : "Травмированные"]} />
@@ -311,12 +346,12 @@ export default function CleanAnalytics() {
                   <Bar dataKey="injured" name="Травмированные" fill="#f59e0b" stackId="a" />
                 </BarChart>
               </ResponsiveContainer>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
+      {/* Форма 2-ССГ на всю ширину */}
       {form2Regions.length > 0 && (
         <Card data-testid="chart-form2-regions">
           <CardHeader>
@@ -325,21 +360,21 @@ export default function CleanAnalytics() {
           </CardHeader>
           <CardContent>
             <div style={{ maxHeight: 600, overflowY: 'auto' }}>
-            <ResponsiveContainer width="100%" height={Math.max(400, Math.min(600, form2Regions.length * 28))}>
-              <BarChart data={form2Regions} layout="vertical" margin={{ left: 120 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                <XAxis type="number" fontSize={11} tickFormatter={formatNumber} />
-                <YAxis 
-                  type="category" 
-                  dataKey="region" 
-                  fontSize={10}
-                  width={115}
-                  tickFormatter={(v) => v.replace(" область", "").replace("Область ", "")}
-                />
-                <Tooltip formatter={(value: number) => [formatNumber(value), "Происшествий"]} />
-                <Bar dataKey="total" fill="#22c55e" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height={Math.max(400, form2Regions.length * 28)}>
+                <BarChart data={form2Regions} layout="vertical" margin={{ left: 140, right: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                  <XAxis type="number" fontSize={12} tickFormatter={formatNumber} />
+                  <YAxis 
+                    type="category" 
+                    dataKey="region" 
+                    fontSize={11}
+                    width={135}
+                    tickFormatter={(v) => v.replace(" область", "").replace("Область ", "")}
+                  />
+                  <Tooltip formatter={(value: number) => [formatNumber(value), "Происшествий"]} />
+                  <Bar dataKey="total" fill="#22c55e" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
