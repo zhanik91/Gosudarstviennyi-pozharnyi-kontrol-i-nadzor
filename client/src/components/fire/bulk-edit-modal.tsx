@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,9 +101,9 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, selectedCo
             <Edit className="h-5 w-5" />
             Массовое редактирование
           </DialogTitle>
-          <div className="text-sm text-muted-foreground">
-            <Badge variant="secondary">{selectedCount} записей выбрано</Badge>
-          </div>
+          <DialogDescription>
+            Редактирование {selectedCount} выбранных записей
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

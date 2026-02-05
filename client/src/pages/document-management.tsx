@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { FileText, Upload, Search, Download, Eye, Trash2, Edit, Filter } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
@@ -21,6 +21,7 @@ interface Document {
   status: 'draft' | 'pending' | 'approved' | 'rejected';
   orgUnitId: string;
   orgUnitName?: string;
+  organizationName?: string;
   period: string;
   fileUrl?: string;
   fileSize?: number;
@@ -177,6 +178,9 @@ export default function DocumentManagement() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Загрузка нового документа</DialogTitle>
+              <DialogDescription>
+                Выберите файл и заполните информацию о документе
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>

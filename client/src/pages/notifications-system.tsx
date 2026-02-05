@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Bell, Send, User, Calendar, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -175,6 +175,9 @@ export default function NotificationsSystem() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Новое уведомление</DialogTitle>
+              <DialogDescription>
+                Заполните форму для создания нового уведомления
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -485,8 +488,8 @@ export default function NotificationsSystem() {
                     </div>
                     
                     {/* Кнопки действий */}
-                    {workflow.status === 'pending' && user && 
-                     workflow.approvers.some(a => a.userId === user.id && a.level === workflow.currentLevel && a.status === 'pending') && (
+                    {workflow.status === 'pending' && user && (user as any).id &&
+                     workflow.approvers.some(a => a.userId === String((user as any).id) && a.level === workflow.currentLevel && a.status === 'pending') && (
                       <div className="flex flex-col gap-2 ml-4">
                         <Button
                           size="sm"

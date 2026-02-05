@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -136,9 +136,9 @@ export default function EmailNotificationModal({
             <Mail className="h-5 w-5" />
             Отправка уведомлений
           </DialogTitle>
-          <div className="text-sm text-muted-foreground">
-            <Badge variant="secondary">{selectedCount} происшествий</Badge>
-          </div>
+          <DialogDescription>
+            Отправка уведомлений для {selectedCount} происшествий
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -302,6 +302,9 @@ export default function AdminCaseForm({ open, onOpenChange, editData }: AdminCas
           <DialogTitle data-testid="text-form-title">
             {editData ? "Редактирование административного дела" : "Добавление административного дела"}
           </DialogTitle>
+          <DialogDescription>
+            Заполните форму для {editData ? "редактирования" : "создания"} административного дела
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
