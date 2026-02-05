@@ -265,6 +265,9 @@ export const incidents = pgTable("incidents", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("incidents_org_unit_id_idx").on(table.orgUnitId),
+  index("incidents_date_time_idx").on(table.dateTime),
+  index("incidents_incident_type_idx").on(table.incidentType),
+  index("incidents_region_idx").on(table.region),
 ]);
 
 // Detailed victims table for Forms 5 and 7
