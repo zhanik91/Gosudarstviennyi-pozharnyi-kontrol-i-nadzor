@@ -12,6 +12,18 @@ import {
 } from "@shared/fire-forms-data";
 import { REGION_NAMES } from "@shared/regions";
 import { resolveTimeOfDayBucket } from "@shared/time-of-day";
+import {
+  FORM_5_CONDITION_TO_ROW,
+  FORM_5_DEATH_CAUSE_TO_ROW,
+  FORM_5_DEATH_PLACE_TO_ROW,
+  FORM_5_SOCIAL_STATUS_TO_ROW,
+  FORM_7_DEAD_CONDITION_TO_ROW,
+  FORM_7_DEAD_SOCIAL_STATUS_TO_ROW,
+  FORM_7_INJURED_CONDITION_TO_ROW,
+  FORM_7_INJURED_SOCIAL_STATUS_TO_ROW,
+  mapCoObjectCodeToRowId,
+  normalizeIncidentVictimValue,
+} from "@shared/constants/incident-victim.constants";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
 import { applyScopeCondition, type ScopeUser } from "../services/authz";
@@ -1753,43 +1765,10 @@ export class IncidentStorage {
           }
         });
 
-        const socialStatusMap: Record<string, string> = {
-          worker: "2.1.1",
-          employee: "2.1.2",
-          entrepreneur: "2.1.3",
-          unemployed: "2.1.4",
-          pensioner: "2.1.5",
-          child: "2.1.6",
-          student_7_10: "2.1.7.1",
-          student_10_16: "2.1.7.2",
-          student: "2.1.8",
-          homeless: "2.1.9",
-          disabled: "2.1.10",
-        };
-
-        const conditionMap: Record<string, string> = {
-          alcohol: "3.1.1",
-          sleep: "3.1.2",
-          disability: "3.1.3",
-          unattended_children: "3.1.4",
-          panic: "3.1.5",
-          other: "3.1.6",
-        };
-
-        const deathCauseMap: Record<string, string> = {
-          high_temp: "4.1.1",
-          smoke: "4.1.2",
-          collapse: "4.1.3",
-          panic: "4.1.4",
-          gas_explosion: "4.1.5",
-          other: "4.1.6",
-        };
-
-        const deathPlaceMap: Record<string, string> = {
-          on_site: "5.1.1",
-          en_route: "5.1.2",
-          hospital: "5.1.3",
-        };
+        const socialStatusMap = FORM_5_SOCIAL_STATUS_TO_ROW;
+        const conditionMap = FORM_5_CONDITION_TO_ROW;
+        const deathCauseMap = FORM_5_DEATH_CAUSE_TO_ROW;
+        const deathPlaceMap = FORM_5_DEATH_PLACE_TO_ROW;
 
         victimRows.forEach((victim) => {
           if (victim.victimType !== "fire" || victim.status !== "dead") {
@@ -1808,14 +1787,18 @@ export class IncidentStorage {
           if (victim.ageGroup === "child") {
             addValue("2.3", locality, 1);
           }
-          if (victim.socialStatus && socialStatusMap[victim.socialStatus]) {
-            addValue(socialStatusMap[victim.socialStatus], locality, 1);
+          const socialStatus = normalizeIncidentVictimValue("socialStatus", victim.socialStatus);
+          const condition = normalizeIncidentVictimValue("condition", victim.condition);
+          const deathCause = normalizeIncidentVictimValue("deathCause", victim.deathCause);
+
+          if (socialStatus && socialStatusMap[socialStatus]) {
+            addValue(socialStatusMap[socialStatus], locality, 1);
           }
-          if (victim.condition && conditionMap[victim.condition]) {
-            addValue(conditionMap[victim.condition], locality, 1);
+          if (condition && conditionMap[condition]) {
+            addValue(conditionMap[condition], locality, 1);
           }
-          if (victim.deathCause && deathCauseMap[victim.deathCause]) {
-            addValue(deathCauseMap[victim.deathCause], locality, 1);
+          if (deathCause && deathCauseMap[deathCause]) {
+            addValue(deathCauseMap[deathCause], locality, 1);
           }
           if (victim.deathPlace && deathPlaceMap[victim.deathPlace]) {
             addValue(deathPlaceMap[victim.deathPlace], locality, 1);
@@ -1967,48 +1950,10 @@ export class IncidentStorage {
           }
           return values[rowId];
         };
-        const socialStatusMap: Record<string, string> = {
-          worker: "2.1",
-          employee: "2.2",
-          entrepreneur: "2.3",
-          unemployed: "2.4",
-          pensioner: "2.5",
-          child: "2.6",
-          student_7_10: "2.7.1",
-          student_10_16: "2.7.2",
-          student: "2.8",
-          homeless: "2.9",
-          prisoner: "2.10",
-          disabled: "2.11",
-        };
-        const injuredSocialStatusMap: Record<string, string> = {
-          worker: "12.1",
-          employee: "12.2",
-          entrepreneur: "12.3",
-          unemployed: "12.4",
-          pensioner: "12.5",
-          child: "12.6",
-          student_7_10: "12.7.1",
-          student_10_16: "12.7.2",
-          student: "12.8",
-          homeless: "12.9",
-          prisoner: "12.10",
-          disabled: "12.11",
-        };
-        const conditionMap: Record<string, string> = {
-          alcohol: "3.1",
-          sleep: "3.2",
-          disability: "3.3",
-          unattended_children: "3.4",
-          other: "3.5",
-        };
-        const injuredConditionMap: Record<string, string> = {
-          alcohol: "13.1",
-          sleep: "13.2",
-          disability: "13.3",
-          unattended_children: "13.4",
-          other: "13.5",
-        };
+        const socialStatusMap = FORM_7_DEAD_SOCIAL_STATUS_TO_ROW;
+        const injuredSocialStatusMap = FORM_7_INJURED_SOCIAL_STATUS_TO_ROW;
+        const conditionMap = FORM_7_DEAD_CONDITION_TO_ROW;
+        const injuredConditionMap = FORM_7_INJURED_CONDITION_TO_ROW;
 
         const incidentMap = new Map(incidentRows.map(i => [i.id, i]));
 
@@ -2019,29 +1964,7 @@ export class IncidentStorage {
           const incident = incidentMap.get(victim.incidentId);
           if (!incident) return;
 
-          // Helper to map object codes to Form 7 section 5 (objects)
-          // Simplified mapping: assumes incident.objectCode matches Form 7 row ID if present, or generic
-          const mapObject = (code?: string | null) => {
-             // Logic: Check if code exists in Form 7 rows 5.1-5.11
-             // If precise mapping needed: `if (code === '14.1') return '5.1';` etc.
-             // For this patch, we assume objectCode aligns or we use generic fallback.
-             // Since we don't have a strict map table in context, we skip auto-mapping if code doesn't match directly.
-             // However, to satisfy "Gap Analysis", we must at least ATTEMPT to map common ones.
-             // Example: "14.1" (private house) -> "5.1"
-             if (code?.startsWith('14.4')) return '5.1'; // Private house
-             if (code?.startsWith('14.1')) return '5.2'; // Multi-story
-             if (code?.startsWith('14.2')) return '5.2';
-             return null;
-          };
-          const objectRowId = mapObject(incident.objectCode);
-
-          // Helper for Place (Section 6)
-          const mapPlace = (place?: string | null) => {
-             // victim.deathPlace is enum: on_site, en_route, hospital.
-             // Form 7 Section 6 is detailed: "Living rooms", "Kitchen", etc.
-             // If we don't capture detailed room info, we can't fill this accurately yet.
-             return null;
-          };
+          const objectRowId = mapCoObjectCodeToRowId(incident.objectCode);
 
           const timeBucket = resolveTimeOfDayBucket({
             dateTime: incident.dateTime,
@@ -2079,11 +2002,14 @@ export class IncidentStorage {
             if (victim.gender === "female") ensure("1.2").killed_total += 1;
             if (victim.ageGroup === "child") ensure("1.3").killed_total += 1;
 
-            if (victim.socialStatus && socialStatusMap[victim.socialStatus]) {
-              ensure(socialStatusMap[victim.socialStatus]).killed_total += 1;
+            const socialStatus = normalizeIncidentVictimValue("socialStatus", victim.socialStatus);
+            const condition = normalizeIncidentVictimValue("condition", victim.condition);
+
+            if (socialStatus && socialStatusMap[socialStatus]) {
+              ensure(socialStatusMap[socialStatus]).killed_total += 1;
             }
-            if (victim.condition && conditionMap[victim.condition]) {
-              ensure(conditionMap[victim.condition]).killed_total += 1;
+            if (condition && conditionMap[condition]) {
+              ensure(conditionMap[condition]).killed_total += 1;
             }
 
             // Fill Object (5)
@@ -2100,17 +2026,17 @@ export class IncidentStorage {
             if (victim.gender === "female") ensure("11.2").injured_total += 1;
             if (victim.ageGroup === "child") ensure("11.3").injured_total += 1;
 
-            if (victim.socialStatus && injuredSocialStatusMap[victim.socialStatus]) {
-              ensure(injuredSocialStatusMap[victim.socialStatus]).injured_total += 1;
+            const socialStatus = normalizeIncidentVictimValue("socialStatus", victim.socialStatus);
+            const condition = normalizeIncidentVictimValue("condition", victim.condition);
+
+            if (socialStatus && injuredSocialStatusMap[socialStatus]) {
+              ensure(injuredSocialStatusMap[socialStatus]).injured_total += 1;
             }
-            if (victim.condition && injuredConditionMap[victim.condition]) {
-              ensure(injuredConditionMap[victim.condition]).injured_total += 1;
+            if (condition && injuredConditionMap[condition]) {
+              ensure(injuredConditionMap[condition]).injured_total += 1;
             }
 
-            // Fill Object (15) - offset from 5 by +10? No, IDs are explicit like 15.1
-            const injObjId = objectRowId ? `1${objectRowId}` : null; // 5.1 -> 15.1 hack?
             if (objectRowId) {
-               // Manual map since 5.1 -> 15.1 pattern works for structure but strings differ
                const suffix = objectRowId.split('.')[1];
                ensure(`15.${suffix}`).injured_total += 1;
             }

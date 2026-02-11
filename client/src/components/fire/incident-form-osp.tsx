@@ -15,6 +15,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { getTimeOfDayBucketFromDate } from "@shared/time-of-day";
+import {
+  VICTIM_AGE_GROUP_OPTIONS,
+  VICTIM_CONDITION_OPTIONS,
+  VICTIM_DEATH_CAUSE_OPTIONS,
+  VICTIM_DEATH_PLACE_OPTIONS,
+  VICTIM_GENDER_OPTIONS,
+  VICTIM_SOCIAL_STATUS_OPTIONS,
+  VICTIM_STATUS_OPTIONS,
+} from "@shared/constants/incident-victim.constants";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -131,61 +140,13 @@ const OBJECT_TYPES = KZ_OBJECT_TYPES.map(type => ({
   label: type.name
 }));
 
-// Victim Enums
-const GENDERS = [
-  { value: "male", label: "Мужской" },
-  { value: "female", label: "Женский" },
-];
-
-const AGE_GROUPS = [
-  { value: "child", label: "Ребенок (до 18)" },
-  { value: "adult", label: "Взрослый (18-60)" },
-  { value: "pensioner", label: "Пенсионер (>60)" },
-];
-
-const SOCIAL_STATUSES = [
-  { value: "worker", label: "Рабочий" },
-  { value: "employee", label: "Служащий" },
-  { value: "entrepreneur", label: "Предприниматель" },
-  { value: "unemployed", label: "Временно неработающий" },
-  { value: "pensioner", label: "Пенсионер" },
-  { value: "child_preschool", label: "Ребенок (дошкольник)" },
-  { value: "student_school", label: "Учащийся (школа)" },
-  { value: "student_uni", label: "Студент" },
-  { value: "homeless", label: "БОМЖ" },
-  { value: "disabled", label: "Лицо с инвалидностью" },
-];
-
-const VICTIM_STATUSES = [
-  { value: "dead", label: "Погиб" },
-  { value: "injured", label: "Травмирован" },
-  { value: "saved", label: "Спасен" },
-];
-
-const CONDITIONS = [
-  { value: "alcohol", label: "Алкогольное опьянение" },
-  { value: "sleep", label: "Состояние сна" },
-  { value: "disability", label: "Инвалидность" },
-  { value: "unsupervised_child", label: "Оставленные без присмотра дети" },
-  { value: "panic", label: "Паника" },
-  { value: "other", label: "Другое" },
-];
-
-const DEATH_CAUSES = [
-  { value: "high_temp", label: "Высокая температура" },
-  { value: "combustion_products", label: "Продукты горения" },
-  { value: "collapse", label: "Обрушение" },
-  { value: "psych", label: "Психологические факторы" },
-  { value: "gas_explosion", label: "Взрыв газа" },
-  { value: "other", label: "Другое" },
-];
-
-const DEATH_PLACES = [
-  { value: "on_site", label: "На месте происшествия" },
-  { value: "hospital", label: "В медицинском учреждении" },
-  { value: "en_route", label: "В пути (при транспортировке)" },
-  { value: "other", label: "Другое" },
-];
+const GENDERS = VICTIM_GENDER_OPTIONS;
+const AGE_GROUPS = VICTIM_AGE_GROUP_OPTIONS;
+const SOCIAL_STATUSES = VICTIM_SOCIAL_STATUS_OPTIONS;
+const VICTIM_STATUSES = VICTIM_STATUS_OPTIONS;
+const CONDITIONS = VICTIM_CONDITION_OPTIONS;
+const DEATH_CAUSES = VICTIM_DEATH_CAUSE_OPTIONS;
+const DEATH_PLACES = VICTIM_DEATH_PLACE_OPTIONS;
 
 interface IncidentFormOSPProps {
   onSuccess?: () => void;
