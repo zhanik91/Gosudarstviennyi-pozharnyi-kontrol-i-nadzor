@@ -21,12 +21,12 @@ import {
   FORM_7_DEAD_SOCIAL_STATUS_TO_ROW,
   FORM_7_INJURED_CONDITION_TO_ROW,
   FORM_7_INJURED_SOCIAL_STATUS_TO_ROW,
-  mapCoObjectCodeToRowId,
   normalizeIncidentVictimValue,
 } from "@shared/constants/incident-victim.constants";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
 import { applyScopeCondition, type ScopeUser } from "../services/authz";
+import { mapCoObjectCodeToForm7Rows } from "@shared/mappings/form7-co-object.mapping";
 
 // Helper to avoid circular dependency if possible, or just instantiate locally
 const orgStorage = new OrganizationStorage();
@@ -1964,7 +1964,13 @@ export class IncidentStorage {
           const incident = incidentMap.get(victim.incidentId);
           if (!incident) return;
 
-          const objectRowId = mapCoObjectCodeToRowId(incident.objectCode);
+          const objectRows = mapCoObjectCodeToForm7Rows(incident.objectCode, (message, meta) => {
+            console.warn(message, {
+              ...meta,
+              incidentId: incident.id,
+              victimId: victim.id,
+            });
+          });
 
           const timeBucket = resolveTimeOfDayBucket({
             dateTime: incident.dateTime,
@@ -2013,7 +2019,7 @@ export class IncidentStorage {
             }
 
             // Fill Object (5)
-            if (objectRowId) ensure(objectRowId).killed_total += 1;
+            ensure(objectRows.deadRowId).killed_total += 1;
             // Fill Time (8)
             if (timeRowId) ensure(timeRowId).killed_total += 1;
             // Fill Weekday (7)
@@ -2036,10 +2042,7 @@ export class IncidentStorage {
               ensure(injuredConditionMap[condition]).injured_total += 1;
             }
 
-            if (objectRowId) {
-               const suffix = objectRowId.split('.')[1];
-               ensure(`15.${suffix}`).injured_total += 1;
-            }
+            ensure(objectRows.injuredRowId).injured_total += 1;
 
             // Fill Time (18)
             if (timeRowId) {
