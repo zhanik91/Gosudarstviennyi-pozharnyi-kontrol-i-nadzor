@@ -18,6 +18,31 @@ import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJ
 import { Plus, Trash2 } from "lucide-react";
 
 // Updated schema to include victims array
+const STEPPE_REQUIRED_FIELDS: Array<keyof OSPIncidentFormDataDraft> = [
+  "steppeArea",
+  "steppeDamage",
+  "steppePeopleTotal",
+  "steppeExtinguishedTotal",
+  "steppeExtinguishedArea",
+];
+
+type OSPIncidentFormDataDraft = {
+  incidentType?: string;
+  causeCode?: string | number;
+  objectCode?: string | number;
+  steppeArea?: string | number;
+  steppeDamage?: string | number;
+  steppePeopleTotal?: string | number;
+  steppeExtinguishedTotal?: string | number;
+  steppeExtinguishedArea?: string | number;
+};
+
+const isEmptyRequiredValue = (value: unknown) => {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "string") return value.trim() === "";
+  return false;
+};
+
 const ospIncidentSchema = insertIncidentSchema
   .omit({
     orgUnitId: true,
@@ -56,6 +81,28 @@ const ospIncidentSchema = insertIncidentSchema
     // Coordinates for map
     latitude: z.string().optional(),
     longitude: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.incidentType === "fire") {
+      if (isEmptyRequiredValue(data.causeCode)) {
+        ctx.addIssue({ code: "custom", path: ["causeCode"], message: "Для пожара обязательна причина" });
+      }
+      if (isEmptyRequiredValue(data.objectCode)) {
+        ctx.addIssue({ code: "custom", path: ["objectCode"], message: "Для пожара обязателен объект" });
+      }
+    }
+
+    if (data.incidentType === "steppe_fire" || data.incidentType === "steppe_smolder") {
+      STEPPE_REQUIRED_FIELDS.forEach((fieldName) => {
+        if (isEmptyRequiredValue(data[fieldName])) {
+          ctx.addIssue({
+            code: "custom",
+            path: [fieldName],
+            message: "Для степного типа заполните обязательные поля раздела",
+          });
+        }
+      });
+    }
   });
 
 type OSPIncidentFormData = z.infer<typeof ospIncidentSchema>;
@@ -151,6 +198,23 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
   const isDistrictUser = (user as any)?.role === "DISTRICT";
   const userRole = (user as any)?.role;
   const isMchsUser = userRole === "MCHS" || userRole === "admin";
+
+  const isFireIncident = selectedIncidentType === "fire";
+
+  const isFieldRequired = (fieldName: string) => {
+    if (fieldName === "causeCode" || fieldName === "objectCode") {
+      return isFireIncident;
+    }
+
+    if (STEPPE_REQUIRED_FIELDS.includes(fieldName as keyof OSPIncidentFormDataDraft)) {
+      return isSteppeIncident;
+    }
+
+    return false;
+  };
+
+  const requiredLabel = (label: string, fieldName: string) =>
+    isFieldRequired(fieldName) ? `${label} *` : label;
 
   const isEditMode = !!incidentId;
 
@@ -594,7 +658,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         name="causeCode"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Причина</FormLabel>
+                                <FormLabel>{requiredLabel("Причина", "causeCode")}</FormLabel>
                                 <Select
                                   onValueChange={(value) => {
                                     field.onChange(value);
@@ -616,7 +680,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         name="objectCode"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Объект</FormLabel>
+                                <FormLabel>{requiredLabel("Объект", "objectCode")}</FormLabel>
                                 <Select
                                   onValueChange={(value) => {
                                     field.onChange(value);
@@ -1005,7 +1069,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         name="steppeArea"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Площадь, пройденная огнем (га)</FormLabel>
+                            <FormLabel>{requiredLabel("Площадь, пройденная огнем (га)", "steppeArea")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -1024,7 +1088,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         name="steppeDamage"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Ущерб (тыс. тг)</FormLabel>
+                            <FormLabel>{requiredLabel("Ущерб (тыс. тг)", "steppeDamage")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -1049,7 +1113,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         name="steppePeopleTotal"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Всего</FormLabel>
+                            <FormLabel>{requiredLabel("Всего", "steppePeopleTotal")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -1169,7 +1233,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         name="steppeExtinguishedTotal"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Ликвидировано (кол-во)</FormLabel>
+                            <FormLabel>{requiredLabel("Ликвидировано (кол-во)", "steppeExtinguishedTotal")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -1187,7 +1251,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                         name="steppeExtinguishedArea"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Ликвидировано (площадь, га)</FormLabel>
+                            <FormLabel>{requiredLabel("Ликвидировано (площадь, га)", "steppeExtinguishedArea")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
