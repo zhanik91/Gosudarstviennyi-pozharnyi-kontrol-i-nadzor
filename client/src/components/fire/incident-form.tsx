@@ -29,7 +29,7 @@ export default function IncidentForm() {
     resolver: zodResolver(incidentFormSchema),
     defaultValues: {
       dateTime: new Date().toISOString().slice(0, 16),
-      locality: "city_pgt",
+      locality: "cities",
       incidentType: "fire",
       damage: "0",
       deathsTotal: 0,
@@ -120,7 +120,7 @@ export default function IncidentForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="city_pgt">Города/ПГТ</SelectItem>
+                        <SelectItem value="cities">Города/ПГТ</SelectItem>
                         <SelectItem value="rural">Сельская местность</SelectItem>
                       </SelectContent>
                     </Select>

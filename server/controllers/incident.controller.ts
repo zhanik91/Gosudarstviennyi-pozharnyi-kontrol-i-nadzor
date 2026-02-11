@@ -44,6 +44,14 @@ const parseOptionalInteger = (value: unknown) => {
   return Number.isNaN(parsed) ? undefined : parsed;
 };
 
+const normalizeLocality = (value: unknown, fallback = "cities") => {
+  if (typeof value !== "string") return fallback;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return fallback;
+  if (normalized === "city_pgt") return "cities";
+  return normalized;
+};
+
 const parseJsonField = (value: unknown) => {
   if (value === undefined || value === null || value === "") return undefined;
   if (typeof value === "string") {
@@ -298,7 +306,7 @@ export class IncidentController {
         cause: req.body.cause || req.body.causeCode || '01',
         objectCode: req.body.objectCode || req.body.objectType || '01',
         objectType: req.body.objectType || req.body.objectCode || '01',
-        locality: req.body.locality || 'cities',
+        locality: normalizeLocality(req.body.locality),
       };
 
       console.log("✅ Prepared incident data:", incidentData);
@@ -413,6 +421,7 @@ export class IncidentController {
         buildingDetails: parseJsonField(req.body.buildingDetails),
         livestockLost: parseJsonField(req.body.livestockLost),
         destroyedItems: parseJsonField(req.body.destroyedItems),
+        locality: req.body.locality === undefined ? undefined : normalizeLocality(req.body.locality),
       };
       const updateData = insertIncidentSchema.partial().parse(updatePayload);
       const validatedVictims = victimsData
