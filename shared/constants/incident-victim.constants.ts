@@ -166,24 +166,3 @@ export function normalizeIncidentVictimValue(
 
   return LEGACY_INCIDENT_VICTIM_VALUE_MAPS[field][value as never] ?? value;
 }
-
-export function mapCoObjectCodeToRowId(code?: string | null): string | null {
-  if (!code) {
-    return null;
-  }
-
-  const normalized = code.trim();
-  const objectMap: Record<string, string> = {
-    "14.1.2": "5.3",
-    "14.1.1": "5.4",
-    "14.1.3": "5.10",
-    "14.7": "5.11",
-    "14.6": "5.6",
-    "14.4": "5.1",
-    "14.2": "5.1",
-    "14.3": "5.2",
-    "14.5": "5.2",
-  };
-
-  return objectMap[normalized] ?? null;
-}
