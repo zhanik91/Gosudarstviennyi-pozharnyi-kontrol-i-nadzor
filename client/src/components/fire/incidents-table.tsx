@@ -82,7 +82,7 @@ export default function IncidentsTable() {
 
   const formatLocality = (locality: string) => {
     const localities: Record<string, string> = {
-      city_pgt: "Города/ПГТ",
+      cities: "Города/ПГТ",
       rural: "Сельская местность",
     };
     return localities[locality] || locality;

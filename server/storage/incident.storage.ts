@@ -29,6 +29,11 @@ export class IncidentStorage {
   private incidentSchemaCheckPromise?: Promise<void>;
   private missingIncidentColumns: string[] = [];
 
+  private normalizeLocalityValue(locality: string | null | undefined) {
+    if (!locality) return locality;
+    return locality === "city_pgt" ? "cities" : locality;
+  }
+
   private async ensureIncidentSchemaChecked() {
     if (!this.incidentSchemaCheckPromise) {
       this.incidentSchemaCheckPromise = this.checkIncidentSchema();
@@ -935,14 +940,17 @@ export class IncidentStorage {
           injured: Number(row.injured) || 0,
           damage: Number(row.damage) || 0,
         })),
-        locality: form1LocalityRows.map((row) => ({
-          locality: row.locality ?? "unknown",
-          label: row.locality === "cities" ? "Город" : row.locality === "rural" ? "Село" : "Не указано",
-          count: Number(row.count) || 0,
-          deaths: Number(row.deaths) || 0,
-          injured: Number(row.injured) || 0,
-          damage: Number(row.damage) || 0,
-        })),
+        locality: form1LocalityRows.map((row) => {
+          const locality = this.normalizeLocalityValue(row.locality);
+          return {
+            locality: locality ?? "unknown",
+            label: locality === "cities" ? "Город" : locality === "rural" ? "Село" : "Не указано",
+            count: Number(row.count) || 0,
+            deaths: Number(row.deaths) || 0,
+            injured: Number(row.injured) || 0,
+            damage: Number(row.damage) || 0,
+          };
+        }),
         regions: form1Regions,
         totals: form1Totals,
       },
@@ -966,12 +974,15 @@ export class IncidentStorage {
         },
       },
       form5: {
-        locality: form5LocalityRows.map((row) => ({
-          locality: row.locality ?? "unknown",
-          label: row.locality === "cities" ? "Город" : row.locality === "rural" ? "Село" : "Не указано",
-          count: Number(row.count) || 0,
-          damage: Number(row.damage) || 0,
-        })),
+        locality: form5LocalityRows.map((row) => {
+          const locality = this.normalizeLocalityValue(row.locality);
+          return {
+            locality: locality ?? "unknown",
+            label: locality === "cities" ? "Город" : locality === "rural" ? "Село" : "Не указано",
+            count: Number(row.count) || 0,
+            damage: Number(row.damage) || 0,
+          };
+        }),
         details: {
           social: this.aggregateLabelSeries(form5Victims, v => v.socialStatus || "unknown"),
           causes: this.aggregateLabelSeries(form5Victims, v => v.deathCause || "unknown"),
@@ -1446,9 +1457,9 @@ export class IncidentStorage {
         (acc, incident) => {
           const value = valueGetter(incident);
           acc.total += value;
-          if (incident.locality === "cities") {
+          if (this.normalizeLocalityValue(incident.locality) === "cities") {
             acc.urban += value;
-          } else if (incident.locality === "rural") {
+          } else if (this.normalizeLocalityValue(incident.locality) === "rural") {
             acc.rural += value;
           }
           return acc;
@@ -1683,9 +1694,9 @@ export class IncidentStorage {
         const values: Record<string, { urban: number; rural: number }> = {};
         const addValue = (rowId: string, locality: string | null | undefined, amount: number) => {
           const existing = values[rowId] ?? { urban: 0, rural: 0 };
-          if (locality === "cities") {
+          if (this.normalizeLocalityValue(locality) === "cities") {
             existing.urban += amount;
-          } else if (locality === "rural") {
+          } else if (this.normalizeLocalityValue(locality) === "rural") {
             existing.rural += amount;
           }
           values[rowId] = existing;
@@ -1832,9 +1843,9 @@ export class IncidentStorage {
             return;
           }
           const existing = causeCounts.get(code) ?? { urban: 0, rural: 0 };
-          if (incident.locality === "cities") {
+          if (this.normalizeLocalityValue(incident.locality) === "cities") {
             existing.urban += 1;
-          } else if (incident.locality === "rural") {
+          } else if (this.normalizeLocalityValue(incident.locality) === "rural") {
             existing.rural += 1;
           }
           causeCounts.set(code, existing);
@@ -2176,15 +2187,15 @@ export class IncidentStorage {
     const query = db
       .select({
         totalIncidents: sql<number>`count(*)`,
-        cityIncidents: sql<number>`count(*) filter (where locality = 'cities')`,
+        cityIncidents: sql<number>`count(*) filter (where locality in ('cities', 'city_pgt'))`,
         ruralIncidents: sql<number>`count(*) filter (where locality = 'rural')`,
         totalDeaths: sql<number>`sum(deaths_total)`,
-        cityDeaths: sql<number>`sum(deaths_total) filter (where locality = 'cities')`,
+        cityDeaths: sql<number>`sum(deaths_total) filter (where locality in ('cities', 'city_pgt'))`,
         ruralDeaths: sql<number>`sum(deaths_total) filter (where locality = 'rural')`,
         childDeaths: sql<number>`sum(deaths_children)`,
         totalInjured: sql<number>`sum(injured_total)`,
         totalDamage: sql<number>`sum(damage)`,
-        cityDamage: sql<number>`sum(damage) filter (where locality = 'cities')`,
+        cityDamage: sql<number>`sum(damage) filter (where locality in ('cities', 'city_pgt'))`,
         ruralDamage: sql<number>`sum(damage) filter (where locality = 'rural')`,
       })
       .from(incidents)

@@ -61,8 +61,8 @@ const normalizeIncidentType = (value: string) => {
 const normalizeLocality = (value?: string | null) => {
   if (!value) return undefined;
   const normalized = value.trim().toLowerCase();
-  if (normalized.includes("город")) return "cities";
-  if (normalized.includes("сель")) return "rural";
+  if (normalized === "city_pgt" || normalized === "cities" || normalized.includes("город")) return "cities";
+  if (normalized === "rural" || normalized.includes("сель")) return "rural";
   return value.trim();
 };
 
