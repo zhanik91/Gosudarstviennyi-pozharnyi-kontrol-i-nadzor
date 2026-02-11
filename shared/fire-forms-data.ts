@@ -395,6 +395,7 @@ export const FORM_4_SOVP_ROWS: Form4SOVPRow[] = [
 // Форма 5-СПЖС: Структура строк (согласно Приказу №377)
 export interface Form5Row {
   id: string;
+  path?: string;
   number?: string;
   label: string;
   isSection?: boolean;
@@ -455,13 +456,13 @@ export const FORM_5_ROWS: Form5Row[] = [
     number: '6)',
     label: 'Погибло скота, голов всего:'
   },
-  { id: '6.1', label: 'Крупный рогатый скот (корова)' },
-  { id: '6.2', label: 'Мелкий рогатый скот (овца, коза)' },
-  { id: '6.3', label: 'лошадь' },
-  { id: '6.4', label: 'верблюд' },
-  { id: '6.5', label: 'свинья, осел' },
-  { id: '6.6', label: 'грызуны (кролик, нутрия)' },
-  { id: '6.7', label: 'птицы (гусь, утка, курица, индейка)' },
+  { id: 'section6_livestock_6_1', path: '6.1', label: 'Крупный рогатый скот (корова)' },
+  { id: 'section6_livestock_6_2', path: '6.2', label: 'Мелкий рогатый скот (овца, коза)' },
+  { id: 'section6_livestock_6_3', path: '6.3', label: 'лошадь' },
+  { id: 'section6_livestock_6_4', path: '6.4', label: 'верблюд' },
+  { id: 'section6_livestock_6_5', path: '6.5', label: 'свинья, осел' },
+  { id: 'section6_livestock_6_6', path: '6.6', label: 'грызуны (кролик, нутрия)' },
+  { id: 'section6_livestock_6_7', path: '6.7', label: 'птицы (гусь, утка, курица, индейка)' },
   {
     id: '7',
     number: '7)',

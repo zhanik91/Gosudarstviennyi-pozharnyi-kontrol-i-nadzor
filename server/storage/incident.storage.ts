@@ -1733,13 +1733,13 @@ export class IncidentStorage {
         addFromIncidents("5", (incident) => Number(incident.savedProperty || 0));
 
         const livestockMap: Record<string, string> = {
-          cows: "6.1.1",
-          sheep: "6.2.1",
-          horse: "6.3.1",
-          camel: "6.4.1",
-          pig: "6.5.1",
-          rodents: "6.6.1",
-          birds: "6.7.1",
+          cows: "section6_livestock_6_1",
+          sheep: "section6_livestock_6_2",
+          horse: "section6_livestock_6_3",
+          camel: "section6_livestock_6_4",
+          pig: "section6_livestock_6_5",
+          rodents: "section6_livestock_6_6",
+          birds: "section6_livestock_6_7",
         };
 
         residentialIncidents.forEach((incident) => {
@@ -1836,15 +1836,20 @@ export class IncidentStorage {
           causeCounts.set(code, existing);
         });
 
-        FORM_5_ROWS.forEach((row) => {
-          if (row.isSection || !row.id.startsWith("6")) {
-            return;
-          }
-          const mapped = causeCounts.get(row.id);
-          if (mapped) {
-            values[row.id] = mapped;
-          }
-        });
+        const section6 = FORM_5_ROWS.find((row) => row.id === "section-6");
+        const attachCauseValues = (rows: (typeof FORM_5_ROWS)[number]["children"]) => {
+          rows?.forEach((row) => {
+            if (row.id.startsWith("6.")) {
+              const mapped = causeCounts.get(row.id);
+              if (mapped) {
+                values[row.id] = mapped;
+              }
+            }
+            attachCauseValues(row.children);
+          });
+        };
+
+        attachCauseValues(section6?.children);
 
         const attachValues = (rows: typeof FORM_5_ROWS) =>
           rows.map((row) => ({
