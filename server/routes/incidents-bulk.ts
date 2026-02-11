@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { isAuthenticated } from "../auth-local";
 import { storage } from "../storage";
 import { insertIncidentSchema } from "@shared/schema";
+import { resolveTimeOfDayBucket } from "@shared/time-of-day";
 
 const parseNumber = (value: unknown) => {
   if (value === null || value === undefined || value === "") return 0;
@@ -157,6 +158,10 @@ export function registerBulkIncidentRoutes(app: Express) {
           objectCode: rowData?.objectCode || object.code || rowData?.objectType || "01",
           objectType: rowData?.objectType || object.label || rowData?.objectCode || "01",
           locality: normalizeLocality(rowData?.locality) || "cities",
+          timeOfDay: resolveTimeOfDayBucket({
+            dateTime,
+            timeOfDay: rowData?.timeOfDay,
+          }),
         };
 
         const parsed = insertIncidentSchema.safeParse(normalizedData);

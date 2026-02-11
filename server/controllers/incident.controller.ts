@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { insertIncidentSchema, insertIncidentVictimSchema } from "@shared/schema";
+import { resolveTimeOfDayBucket } from "@shared/time-of-day";
 import { toScopeUser } from "../services/authz";
 import { ZodError } from "zod";
 
@@ -364,6 +365,10 @@ export class IncidentController {
         objectCode: req.body.objectCode,
         objectType: req.body.objectType,
         locality: normalizeLocality(req.body.locality),
+        timeOfDay: resolveTimeOfDayBucket({
+          dateTime: req.body.dateTime,
+          timeOfDay: req.body.timeOfDay,
+        }),
       };
 
       console.log("✅ Prepared incident data:", incidentData);
@@ -497,6 +502,10 @@ export class IncidentController {
         livestockLost: parseJsonField(req.body.livestockLost),
         destroyedItems: parseJsonField(req.body.destroyedItems),
         locality: req.body.locality === undefined ? undefined : normalizeLocality(req.body.locality),
+        timeOfDay: resolveTimeOfDayBucket({
+          dateTime: req.body.dateTime,
+          timeOfDay: req.body.timeOfDay,
+        }),
       };
       const updateData = insertIncidentSchema.partial().parse(updatePayload);
       const validatedVictims = victimsData

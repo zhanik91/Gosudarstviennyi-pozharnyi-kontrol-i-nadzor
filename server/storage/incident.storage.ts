@@ -11,6 +11,7 @@ import {
   NON_FIRE_CASES,
 } from "@shared/fire-forms-data";
 import { REGION_NAMES } from "@shared/regions";
+import { resolveTimeOfDayBucket } from "@shared/time-of-day";
 import { eq, and, desc, gte, lte, sql, inArray, or, ilike } from "drizzle-orm";
 import { OrganizationStorage } from "./organization.storage";
 import { applyScopeCondition, type ScopeUser } from "../services/authz";
@@ -1377,6 +1378,7 @@ export class IncidentStorage {
         locality: incidents.locality,
         region: incidents.region,
         dateTime: incidents.dateTime,
+        timeOfDay: incidents.timeOfDay,
         causeCode: incidents.causeCode,
         causeDetailed: incidents.causeDetailed,
         objectCode: incidents.objectCode,
@@ -2041,15 +2043,20 @@ export class IncidentStorage {
              return null;
           };
 
-          // Helper for Time (Section 8)
-          const mapTime = (date: Date) => {
-             const h = date.getHours();
-             if (h >= 0 && h < 6) return '8.1';
-             if (h >= 6 && h < 12) return '8.2';
-             if (h >= 12 && h < 18) return '8.3';
-             return '8.4';
-          };
-          const timeRowId = incident.dateTime ? mapTime(new Date(incident.dateTime)) : null;
+          const timeBucket = resolveTimeOfDayBucket({
+            dateTime: incident.dateTime,
+            timeOfDay: incident.timeOfDay,
+          });
+          const timeRowId =
+            timeBucket === "00:00-06:00"
+              ? "8.1"
+              : timeBucket === "06:00-12:00"
+                ? "8.2"
+                : timeBucket === "12:00-18:00"
+                  ? "8.3"
+                  : timeBucket === "18:00-24:00"
+                    ? "8.4"
+                    : null;
 
           // Helper for Weekday (Section 7)
           const mapWeekday = (date: Date) => {

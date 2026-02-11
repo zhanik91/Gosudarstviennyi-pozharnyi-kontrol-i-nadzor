@@ -15,6 +15,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { normalizeTimeOfDayBucket, TIME_OF_DAY_BUCKETS } from "./time-of-day";
 
 // Session storage table for Replit Auth
 export const sessions = pgTable(
@@ -665,6 +666,10 @@ export const insertIncidentSchema = createInsertSchema(incidents, {
   objectType: z.string().trim().optional(),
   objectCode: z.string().trim().optional(),
   objectDetailed: z.string().trim().optional(),
+  timeOfDay: z.preprocess(
+    (value) => normalizeTimeOfDayBucket(value),
+    z.enum(TIME_OF_DAY_BUCKETS).optional(),
+  ),
 }).omit({
   id: true,
   createdAt: true,
