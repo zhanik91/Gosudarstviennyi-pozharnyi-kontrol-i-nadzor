@@ -44,12 +44,69 @@ const parseOptionalInteger = (value: unknown) => {
   return Number.isNaN(parsed) ? undefined : parsed;
 };
 
-const normalizeLocality = (value: unknown, fallback = "cities") => {
-  if (typeof value !== "string") return fallback;
+const normalizeLocality = (value: unknown) => {
+  if (typeof value !== "string") return undefined;
   const normalized = value.trim().toLowerCase();
-  if (!normalized) return fallback;
+  if (!normalized) return undefined;
   if (normalized === "city_pgt") return "cities";
   return normalized;
+};
+
+const INCIDENT_TYPE_REQUIRED_FIELDS: Record<string, string[]> = {
+  fire: ["causeCode", "objectCode"],
+  steppe_fire: [
+    "steppeArea",
+    "steppeDamage",
+    "steppePeopleTotal",
+    "steppeExtinguishedTotal",
+    "steppeExtinguishedArea",
+  ],
+  steppe_smolder: [
+    "steppeArea",
+    "steppeDamage",
+    "steppePeopleTotal",
+    "steppeExtinguishedTotal",
+    "steppeExtinguishedArea",
+  ],
+};
+
+const VALIDATION_FIELD_LABELS: Record<string, string> = {
+  locality: "Местность",
+  region: "Область",
+  city: "Город/Район",
+  causeCode: "Причина (код)",
+  objectCode: "Объект (код)",
+  steppeArea: "Площадь степного пожара",
+  steppeDamage: "Ущерб от степного пожара",
+  steppePeopleTotal: "Количество людей (степной пожар)",
+  steppeExtinguishedTotal: "Ликвидировано очагов",
+  steppeExtinguishedArea: "Площадь ликвидации",
+};
+
+const isValueMissing = (value: unknown) => {
+  if (value === null || value === undefined) return true;
+  if (typeof value === "string") return value.trim() === "";
+  return false;
+};
+
+const getIncidentValidationErrors = (incidentData: Record<string, unknown>) => {
+  const missingFields: string[] = [];
+  const incidentType = String(incidentData.incidentType || "");
+
+  ["locality", "region", "city"].forEach((fieldName) => {
+    if (isValueMissing(incidentData[fieldName])) {
+      missingFields.push(fieldName);
+    }
+  });
+
+  const typeFields = INCIDENT_TYPE_REQUIRED_FIELDS[incidentType] ?? [];
+  typeFields.forEach((fieldName) => {
+    if (isValueMissing(incidentData[fieldName])) {
+      missingFields.push(fieldName);
+    }
+  });
+
+  return Array.from(new Set(missingFields));
 };
 
 const parseJsonField = (value: unknown) => {
@@ -299,13 +356,13 @@ export class IncidentController {
         buildingDetails: parseJsonField(req.body.buildingDetails),
         livestockLost: parseJsonField(req.body.livestockLost),
         destroyedItems: parseJsonField(req.body.destroyedItems),
-        // Обязательные поля для валидации с дефолтными значениями
-        region: req.body.region || user?.region || 'Шымкент',
-        city: req.body.city || user?.district || '',
-        causeCode: req.body.causeCode || req.body.cause || '01',
-        cause: req.body.cause || req.body.causeCode || '01',
-        objectCode: req.body.objectCode || req.body.objectType || '01',
-        objectType: req.body.objectType || req.body.objectCode || '01',
+        // Без fallback-значений: обязательность проверяется явно ниже
+        region: req.body.region,
+        city: req.body.city,
+        causeCode: req.body.causeCode,
+        cause: req.body.cause,
+        objectCode: req.body.objectCode,
+        objectType: req.body.objectType,
         locality: normalizeLocality(req.body.locality),
       };
 
@@ -315,6 +372,20 @@ export class IncidentController {
       let victimsData: any[] = [];
       if (req.body.victims && Array.isArray(req.body.victims)) {
         victimsData = req.body.victims;
+      }
+
+      const validationErrors = getIncidentValidationErrors(incidentData);
+      if (validationErrors.length > 0) {
+        res.status(400).json({
+          message: "Ошибка валидации: не заполнены обязательные поля",
+          missingFields: validationErrors,
+          details: validationErrors.map((field) => ({
+            field,
+            label: VALIDATION_FIELD_LABELS[field] ?? field,
+            message: `Поле \"${VALIDATION_FIELD_LABELS[field] ?? field}\" обязательно`,
+          })),
+        });
+        return;
       }
 
       // Validate incident
@@ -344,9 +415,13 @@ export class IncidentController {
     } catch (error) {
       console.error("Error creating incident:", error);
       if (error instanceof ZodError) {
+        const details = error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message,
+        }));
         res.status(400).json({
-          message: `Ошибка валидации: ${error.message}`,
-          details: error.cause
+          message: "Ошибка валидации данных происшествия",
+          details,
         });
         return;
       }
