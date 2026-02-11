@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
+import { getTimeOfDayBucketFromDate } from "@shared/time-of-day";
 import { REGION_NAMES, getCitiesByRegion, getDistrictsByRegion, FIRE_CAUSES, OBJECT_TYPES as KZ_OBJECT_TYPES } from "@/data/kazakhstan-data";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -237,7 +238,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       description: "",
       causeDetailed: "",
       objectDetailed: "",
-      timeOfDay: "",
+      timeOfDay: getTimeOfDayBucketFromDate(new Date()) ?? "",
       latitude: "",
       longitude: "",
       victims: [],
@@ -273,6 +274,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       destroyedItems: "",
     },
   });
+  const watchedDateTime = form.watch("dateTime");
 
   // Populate form when data loads
   useEffect(() => {
@@ -371,6 +373,13 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
     }
   }, [activeTab, isSteppeIncident]);
 
+  useEffect(() => {
+    const normalizedTimeOfDay = getTimeOfDayBucketFromDate(watchedDateTime as string | number | Date | null | undefined) ?? "";
+    if (form.getValues("timeOfDay") !== normalizedTimeOfDay) {
+      form.setValue("timeOfDay", normalizedTimeOfDay);
+    }
+  }, [form, watchedDateTime]);
+
   const normalizeCurrency = (value?: string | number) => {
     if (value === undefined || value === null || value === "") return "0";
     const numericValue = typeof value === "number" ? value : parseFloat(value.toString().replace(",", "."));
@@ -396,6 +405,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       const formattedData = {
         ...data,
         dateTime: new Date(data.dateTime as string).toISOString(),
+        timeOfDay: getTimeOfDayBucketFromDate(data.dateTime as string | number | Date | null | undefined) ?? "",
         damage: normalizeCurrency(data.damage as string | number | undefined),
         savedProperty: normalizeCurrency(data.savedProperty as string | number | undefined),
         steppeArea: normalizeCurrency(data.steppeArea as string | number | undefined),
@@ -645,7 +655,7 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                     <FormItem>
                       <FormLabel>Время суток</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Напр.: 00:00-06:00" />
+                        <Input {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
