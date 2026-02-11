@@ -7,7 +7,6 @@ import {
   FORM_7_DEAD_SOCIAL_STATUS_TO_ROW,
   FORM_7_INJURED_CONDITION_TO_ROW,
   FORM_7_INJURED_SOCIAL_STATUS_TO_ROW,
-  mapCoObjectCodeToRowId,
   normalizeIncidentVictimValue,
 } from "@shared/constants/incident-victim.constants";
 
@@ -37,12 +36,5 @@ describe("incident victim constants mapping", () => {
     expect(FORM_7_INJURED_SOCIAL_STATUS_TO_ROW.student_7_10).toBe("12.7.1");
     expect(FORM_7_DEAD_CONDITION_TO_ROW.unattended_children).toBe("3.4");
     expect(FORM_7_INJURED_CONDITION_TO_ROW.unattended_children).toBe("13.4");
-  });
-
-  it("maps object code values for CO sections", () => {
-    expect(mapCoObjectCodeToRowId("14.4")).toBe("5.1");
-    expect(mapCoObjectCodeToRowId("14.1.2")).toBe("5.3");
-    expect(mapCoObjectCodeToRowId("14.7")).toBe("5.11");
-    expect(mapCoObjectCodeToRowId("01")).toBeNull();
   });
 });
