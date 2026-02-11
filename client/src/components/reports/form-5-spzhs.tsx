@@ -80,7 +80,7 @@ export default function Form5SPZHS() {
         if (value < 0) {
           errors.push({
             rowId: row.id,
-            message: `Строка ${row.number ?? row.label}: Отрицательные значения не допускаются`,
+            message: `Строка ${row.number ?? row.path ?? row.label}: Отрицательные значения не допускаются`,
             type: 'error'
           });
         }
@@ -88,7 +88,7 @@ export default function Form5SPZHS() {
         if (valueType === 'integer' && !Number.isInteger(value)) {
           errors.push({
             rowId: row.id,
-            message: `Строка ${row.number ?? row.label}: показатель "${column.label}" должен быть целым числом`,
+            message: `Строка ${row.number ?? row.path ?? row.label}: показатель "${column.label}" должен быть целым числом`,
             type: 'error'
           });
         }
@@ -98,7 +98,7 @@ export default function Form5SPZHS() {
           if (!Number.isInteger(value * multiplier)) {
             errors.push({
               rowId: row.id,
-              message: `Строка ${row.number ?? row.label}: показатель "${column.label}" должен иметь точность до ${precision} знака`,
+              message: `Строка ${row.number ?? row.path ?? row.label}: показатель "${column.label}" должен иметь точность до ${precision} знака`,
               type: 'error'
             });
           }
@@ -161,7 +161,7 @@ export default function Form5SPZHS() {
         const data = row.isSection ? { urban: '', rural: '' } : getRowData(row.id);
 
         const exportRow: any = {
-          "№ п/п": row.number ?? '',
+          "№ п/п": row.number ?? row.path ?? '',
           "Наименование показателя": `${prefix}${row.label}`
         };
 
