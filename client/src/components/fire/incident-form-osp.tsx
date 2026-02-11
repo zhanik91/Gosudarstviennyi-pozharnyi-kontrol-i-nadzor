@@ -180,6 +180,13 @@ const DEATH_CAUSES = [
   { value: "other", label: "Другое" },
 ];
 
+const DEATH_PLACES = [
+  { value: "on_site", label: "На месте происшествия" },
+  { value: "hospital", label: "В медицинском учреждении" },
+  { value: "en_route", label: "В пути (при транспортировке)" },
+  { value: "other", label: "Другое" },
+];
+
 interface IncidentFormOSPProps {
   onSuccess?: () => void;
   incidentId?: string; // If provided, mode is "edit"
@@ -456,6 +463,34 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
   });
 
   const onSubmit = (data: OSPIncidentFormData) => {
+    const victims = (data.victims ?? []) as Array<{
+      status?: string;
+      deathCause?: string | null;
+      deathPlace?: string | null;
+      condition?: string | null;
+    }>;
+    const victimsWithMissingCriticalData = victims
+      .map((victim, index) => ({ victim, index }))
+      .filter(({ victim }) => {
+        if (victim.status === "dead") {
+          return !victim.deathCause || !victim.deathPlace;
+        }
+
+        if (victim.status === "injured") {
+          return !victim.condition;
+        }
+
+        return false;
+      });
+
+    if (victimsWithMissingCriticalData.length > 0) {
+      const victimNumbers = victimsWithMissingCriticalData.map(({ index }) => index + 1).join(", ");
+      toast({
+        title: "Внимание",
+        description: `Проверьте критичные атрибуты у пострадавших №${victimNumbers}: причина/место смерти для погибших и состояние для травмированных.`,
+      });
+    }
+
     if (!data.city && selectedRegion && (user as any)?.district) {
       data.city = (user as any).district;
     }
@@ -472,8 +507,8 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       age: 0,
       socialStatus: "worker",
       deathCause: "high_temp",
-      deathPlace: "on_site",
-      condition: "other",
+      deathPlace: "",
+      condition: "",
     });
   };
 
@@ -975,22 +1010,43 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                                             </FormItem>
                                         )}
                                     />
-                                     {form.watch(`victims.${index}.status`) === 'dead' && (
-                                         <FormField
-                                            control={form.control}
-                                            name={`victims.${index}.deathCause`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Причина смерти</FormLabel>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                                        <SelectContent>
-                                                            {DEATH_CAUSES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormItem>
-                                            )}
-                                        />
+                                     {(form.watch(`victims.${index}.status`) === "dead" || form.watch(`victims.${index}.status`) === "injured") && (
+                                      <FormField
+                                        control={form.control}
+                                        name={`victims.${index}.deathPlace`}
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>
+                                              {form.watch(`victims.${index}.status`) === "dead" ? "Место смерти" : "Место госпитализации"}
+                                            </FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                              <FormControl><SelectTrigger><SelectValue placeholder="Выберите место" /></SelectTrigger></FormControl>
+                                              <SelectContent>
+                                                {DEATH_PLACES.map((place) => (
+                                                  <SelectItem key={place.value} value={place.value}>{place.label}</SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          </FormItem>
+                                        )}
+                                      />
+                                     )}
+                                     {form.watch(`victims.${index}.status`) === "dead" && (
+                                      <FormField
+                                        control={form.control}
+                                        name={`victims.${index}.deathCause`}
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Причина смерти</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                              <SelectContent>
+                                                {DEATH_CAUSES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                                              </SelectContent>
+                                            </Select>
+                                          </FormItem>
+                                        )}
+                                      />
                                      )}
                                 </CardContent>
                             </Card>
