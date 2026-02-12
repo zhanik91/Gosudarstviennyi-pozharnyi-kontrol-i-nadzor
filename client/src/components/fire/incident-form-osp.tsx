@@ -206,7 +206,6 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       description: "",
       causeDetailed: "",
       objectDetailed: "",
-      timeOfDay: getTimeOfDayBucketFromDate(new Date()) ?? "",
       latitude: "",
       longitude: "",
       victims: [],
@@ -242,7 +241,6 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       destroyedItems: "",
     },
   });
-  const watchedDateTime = form.watch("dateTime");
 
   // Populate form when data loads
   useEffect(() => {
@@ -340,13 +338,6 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
       setActiveTab("general");
     }
   }, [activeTab, isSteppeIncident]);
-
-  useEffect(() => {
-    const normalizedTimeOfDay = getTimeOfDayBucketFromDate(watchedDateTime as string | number | Date | null | undefined) ?? "";
-    if (form.getValues("timeOfDay") !== normalizedTimeOfDay) {
-      form.setValue("timeOfDay", normalizedTimeOfDay);
-    }
-  }, [form, watchedDateTime]);
 
   const normalizeCurrency = (value?: string | number) => {
     if (value === undefined || value === null || value === "") return "0";
@@ -639,19 +630,6 @@ export default function IncidentFormOSP({ onSuccess, incidentId }: IncidentFormO
                       <FormLabel>Описание</FormLabel>
                       <FormControl>
                         <Textarea {...field} placeholder="Краткое описание происшествия" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="timeOfDay"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Время суток</FormLabel>
-                      <FormControl>
-                        <Input {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
